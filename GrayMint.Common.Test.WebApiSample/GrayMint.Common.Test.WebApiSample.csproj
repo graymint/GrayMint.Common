@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Amazon.Extensions.CognitoAuthentication" Version="2.2.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GrayMint.Common.AspNetCore.SimpleUserManagement\GrayMint.Common.AspNetCore.SimpleUserManagement.csproj" />
+    <ProjectReference Include="..\GrayMint.Common.AspNetCore\GrayMint.Common.AspNetCore.csproj" />
+  </ItemGroup>
+
+</Project>
