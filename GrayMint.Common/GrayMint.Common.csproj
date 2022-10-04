@@ -10,8 +10,8 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <IsPackable>true</IsPackable>
     <LangVersion>10.0</LangVersion>
-    <PackageProjectUrl>https://github.com/graymint/GrayMint.common</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/graymint/GrayMint.common</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/graymint/GrayMint.Common</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/graymint/GrayMint.Common</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>

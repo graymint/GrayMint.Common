@@ -9,6 +9,8 @@
     <Description>A few utils which used in some EF Core projects.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <IsPackable>true</IsPackable>
+    <PackageProjectUrl>https://github.com/graymint/GrayMint.Common</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/graymint/GrayMint.Common</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>

@@ -7,6 +7,8 @@
     <Nullable>enable</Nullable>
     <Version>1.0.34</Version>
     <IsPackable>false</IsPackable>
+    <PackageProjectUrl>https://github.com/graymint/GrayMint.Common</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/graymint/GrayMint.Common</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
