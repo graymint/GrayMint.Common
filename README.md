@@ -1,1 +1,2 @@
 # GrayMint.Common
+test
