@@ -43,12 +43,12 @@ public class ApiClientBase
 
     protected virtual ValueTask PrepareRequestAsync(HttpClient client, HttpRequestMessage request, string url, CancellationToken ct)
     {
-        return ValueTask.CompletedTask;
+        return new ValueTask();
     }
 
     protected virtual ValueTask ProcessResponseAsync(HttpClient client, HttpResponseMessage response, CancellationToken ct)
     {
-        return ValueTask.CompletedTask;
+        return new ValueTask();
     }
 
 
@@ -65,7 +65,7 @@ public class ApiClientBase
     {
         if (ReadResponseAsString)
         {
-            var responseText = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            var responseText = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             try
             {
                 var typedBody = JsonSerializer.Deserialize<T>(responseText, JsonSerializerSettings);
@@ -81,7 +81,7 @@ public class ApiClientBase
         {
             try
             {
-                await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+                await using var responseStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
                 var typedBody = await JsonSerializer.DeserializeAsync<T>(responseStream, JsonSerializerSettings, cancellationToken).ConfigureAwait(false);
                 return new HttpResult<T?>(response, typedBody, string.Empty);
             }
@@ -232,7 +232,7 @@ public class ApiClientBase
             return objectResponse!;
         }
 
-        var responseData = response.Content != null ? await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : null;
+        var responseData = response.Content != null ? await response.Content.ReadAsStringAsync().ConfigureAwait(false) : null;
         throw new ApiException("The HTTP status code of the response was not expected (" + status + ").", status, responseData, headers, null);
     }
 
