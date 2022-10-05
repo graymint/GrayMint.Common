@@ -20,7 +20,6 @@ public class AwsCognitoTest : BaseControllerTest
         var user = new CognitoUser("unit-tester", TestInit1.CognitoAuthenticationOptions.CognitoClientId, userPool, provider);
         var authRequest = new InitiateSrpAuthRequest()
         {
-            
             Password = "Password1@"
         };
 
@@ -35,6 +34,7 @@ public class AwsCognitoTest : BaseControllerTest
         var  idToken = await GetCredsAsync();
         TestInit1.HttpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, idToken);
+        
         await TestInit1.AppsClient.ListAsync();
     }
 

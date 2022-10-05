@@ -78,14 +78,17 @@ public static class CognitoAuthenticationExtension
     private class CognitoTokenValidator
     {
         private readonly HttpClient _httpClient;
+        private readonly IOptions<AppAuthSettings> _appAuthOptions;
         private readonly IOptions<CognitoAuthenticationOptions> _cognitoOptions;
         private readonly IMemoryCache _memoryCache;
 
         public CognitoTokenValidator(HttpClient httpClient,
+            IOptions<AppAuthSettings> appAuthOptions,
             IOptions<CognitoAuthenticationOptions> cognitoOptions,
             IMemoryCache memoryCache)
         {
             _httpClient = httpClient;
+            _appAuthOptions = appAuthOptions;
             _cognitoOptions = cognitoOptions;
             _memoryCache = memoryCache;
         }
@@ -134,7 +137,7 @@ public static class CognitoAuthenticationExtension
                 openIdUserInfo = EzUtil.JsonDeserialize<OpenIdUserInfo>(json);
             }
 
-            _memoryCache.Set(cacheKey, openIdUserInfo);
+            _memoryCache.Set(cacheKey, openIdUserInfo, _appAuthOptions.Value.CacheTimeout);
             return openIdUserInfo;
         }
 

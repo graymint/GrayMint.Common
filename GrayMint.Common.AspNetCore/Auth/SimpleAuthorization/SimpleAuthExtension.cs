@@ -16,6 +16,7 @@ public static class SimpleAuthExtension
             options.AddPolicy(SimpleAuth.Policy, new AuthorizationPolicyBuilder()
                 .AddAuthenticationSchemes(BotAuthenticationDefaults.AuthenticationScheme)
                 .AddAuthenticationSchemes(CognitoAuthenticationDefaults.AuthenticationScheme)
+                .AddAuthenticationSchemes(AppCommonSettings.LegacyAuthScheme)
                 .AddRequirements(new SimpleAuthRequirement())
                 .RequireAuthenticatedUser()
                 .Build());

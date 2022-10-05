@@ -1,7 +1,10 @@
 using GrayMint.Common.AspNetCore.Auth.BotAuthentication;
 using GrayMint.Common.AspNetCore.Auth.CognitoAuthentication;
 using GrayMint.Common.AspNetCore.Auth.SimpleAuthorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 
 namespace GrayMint.Common.AspNetCore;
 
@@ -52,6 +55,36 @@ public static class AppCommon
         {
             // bot authentication
             var authenticationBuilder = services.AddAuthentication();
+
+            //todo add legacy 
+            authenticationBuilder.AddJwtBearer(AppCommonSettings.LegacyAuthScheme, jwtBearerOptions =>
+            {
+                jwtBearerOptions.TokenValidationParameters = new TokenValidationParameters
+                {
+                    NameClaimType = "name",
+                    RequireSignedTokens = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(appCommonSettings.AuthKey)),
+                    ValidIssuer = appCommonSettings.AuthIssuer,
+                    ValidAudience = appCommonSettings.AuthIssuer,
+                    ValidateAudience = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidateIssuer = true,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.FromSeconds(TokenValidationParameters.DefaultClockSkew.TotalSeconds)
+                };
+                jwtBearerOptions.Events = new JwtBearerEvents()
+                {
+                    OnTokenValidated = async context =>
+                    {
+                        var claimsIdentity = new ClaimsIdentity();
+                        foreach (var claim in context.Principal!.Claims.Where(x => x.Type == ClaimTypes.Role))
+                            claimsIdentity.AddClaim(SimpleAuth.CreateAppRoleClaim(claim.Value, "*"));
+
+                    }
+                };
+            });
+
+
             if (options.AddBotAuthentication)
                 authenticationBuilder.AddBotAuthentication(builder.Configuration.GetSection("Auth"));
 
