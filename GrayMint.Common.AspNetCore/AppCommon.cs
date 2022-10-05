@@ -76,6 +76,7 @@ public static class AppCommon
                 {
                     OnTokenValidated = async context =>
                     {
+                        await Task.Delay(0);
                         var claimsIdentity = new ClaimsIdentity();
                         foreach (var claim in context.Principal!.Claims.Where(x => x.Type == ClaimTypes.Role))
                             claimsIdentity.AddClaim(SimpleAuth.CreateAppRoleClaim(claim.Value, "*"));
