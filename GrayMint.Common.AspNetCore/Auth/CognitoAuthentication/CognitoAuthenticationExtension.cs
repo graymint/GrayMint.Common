@@ -3,7 +3,6 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -23,16 +22,18 @@ public static class CognitoAuthenticationExtension
         authenticationBuilder
             .AddJwtBearer(CognitoAuthenticationDefaults.AuthenticationScheme, options =>
             {
+                var cognitoArn = new AwsArn(cognitoOptions.CognitoArn);
                 options.RequireHttpsMetadata = true;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidIssuer = cognitoOptions.CognitoIssuer,
+                    ValidIssuer = cognitoOptions.CognitoArn,
                     ValidateIssuerSigningKey = true,
                     ValidateIssuer = true,
                     ValidateLifetime = false, //todo
                     ValidateAudience = false,
                 };
-                options.MetadataAddress = $"{cognitoOptions.CognitoIssuer}/.well-known/openid-configuration";
+                options.MetadataAddress = $"https://{cognitoArn.Service}.{cognitoArn.Region}.amazonaws.com/{cognitoArn.ResourceId}/.well-known/openid-configuration";
+
                 options.SaveToken = true;
 
 
@@ -52,19 +53,26 @@ public static class CognitoAuthenticationExtension
         return authenticationBuilder;
     }
 
+    // ReSharper disable once ClassNeverInstantiated.Local
     private class OpenIdUserInfo
     {
         [JsonPropertyName("sub")]
-        public string Sub { get; set; } = default!;
 
+        // ReSharper disable once UnusedAutoPropertyAccessor.Local
+        // ReSharper disable once UnusedMember.Local
+        public string Sub { get; init; } = default!;
+
+        // ReSharper disable once UnusedAutoPropertyAccessor.Local
         [JsonPropertyName("email_verified")]
-        public string? EmailVerified { get; set; }
+        public string? EmailVerified { get; init; }
 
+        // ReSharper disable once UnusedAutoPropertyAccessor.Local
         [JsonPropertyName("email")]
-        public string? Email { get; set; }
+        public string? Email { get; init; }
 
+        // ReSharper disable once UnusedMember.Local
         [JsonPropertyName("username")]
-        public string? Username { get; set; }
+        public string? Name { get; init; }
     }
 
     private class CognitoTokenValidator
@@ -97,19 +105,37 @@ public static class CognitoAuthenticationExtension
             if (context.Options.ConfigurationManager == null)
                 throw new UnauthorizedAccessException("ConfigurationManager is not set.");
             var configuration = await context.Options.ConfigurationManager.GetConfigurationAsync(CancellationToken.None);
+            var tokenUse = jwtSecurityToken.Claims.FirstOrDefault(x => x.Type == "token_use")?.Value
+                           ?? throw new UnauthorizedAccessException("Could not find token_use.");
 
-            // get userInfo message
-            var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, configuration.UserInfoEndpoint);
-            httpRequestMessage.Headers.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, accessToken);
-            var httpResponseMessage = await _httpClient.SendAsync(httpRequestMessage);
-            httpResponseMessage.EnsureSuccessStatusCode();
-            var json = await httpResponseMessage.Content.ReadAsStringAsync();
-            var openIdUserInfo = EzUtil.JsonDeserialize<OpenIdUserInfo>(json);
+            // get userInfo message from id token
+            OpenIdUserInfo openIdUserInfo;
+            if (tokenUse == "id")
+            {
+                openIdUserInfo = new OpenIdUserInfo()
+                {
+                    Sub = jwtSecurityToken.Claims.Single(x => x.Type == "sub").Value,
+                    Email = jwtSecurityToken.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value,
+                    EmailVerified = jwtSecurityToken.Claims.FirstOrDefault(x => x.Type == "email_verified")?.Value,
+                };
+            }
+            else
+            {
+                // get userInfo message access token
+                if (!jwtSecurityToken.Claims.Any(x => x.Type == "scope" && x.Value.Split(' ').Contains("openid")))
+                    throw new UnauthorizedAccessException("openid scope was expected.");
+
+                var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, configuration.UserInfoEndpoint);
+                httpRequestMessage.Headers.Authorization =
+                    new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, accessToken);
+                var httpResponseMessage = await _httpClient.SendAsync(httpRequestMessage);
+                httpResponseMessage.EnsureSuccessStatusCode();
+                var json = await httpResponseMessage.Content.ReadAsStringAsync();
+                openIdUserInfo = EzUtil.JsonDeserialize<OpenIdUserInfo>(json);
+            }
+
             _memoryCache.Set(cacheKey, openIdUserInfo);
-
-
             return openIdUserInfo;
-
         }
 
         public async Task Validate(TokenValidatedContext context)
@@ -120,7 +146,21 @@ public static class CognitoAuthenticationExtension
                 return;
             }
 
-            if (!context.Principal.HasClaim(x => x.Type == "client_id" && x.Value == _cognitoOptions.Value.CognitoClientId))
+            // validate audience or client
+            var jwtSecurityToken = (JwtSecurityToken)context.SecurityToken;
+            var tokenUse = jwtSecurityToken.Claims.FirstOrDefault(x => x.Type == "token_use")?.Value
+                           ?? throw new UnauthorizedAccessException("Could not find token_use.");
+            if (tokenUse != "access" && tokenUse != "id") throw new UnauthorizedAccessException("Unknown token_use.");
+
+            // aud for id token
+            if (tokenUse == "id" && !context.Principal.HasClaim(x => x.Type == "aud" && x.Value == _cognitoOptions.Value.CognitoClientId))
+            {
+                context.Fail("client_id does not match");
+                return;
+            }
+
+            // aud for id token
+            if (tokenUse == "access" && !context.Principal.HasClaim(x => x.Type == "client_id" && x.Value == _cognitoOptions.Value.CognitoClientId))
             {
                 context.Fail("client_id does not match");
                 return;

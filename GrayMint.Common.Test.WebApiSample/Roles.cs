@@ -5,5 +5,5 @@ public static class Roles
     public const string System = nameof(System);
     public const string AppCreator = nameof(AppCreator);
     public const string AppUser = nameof(AppUser);
-    public const string SystemAdmin = "cognito:Payment_Admin";
+    public const string SystemAdmin = "cognito:Enterprise_Admin";
 }
