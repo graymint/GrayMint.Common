@@ -2,7 +2,7 @@
 
 namespace GrayMint.Common;
 
-public static class EzUtil
+public static class GmUtil
 {
     public static async Task ForEachAsync<T>(T[] source, Func<T, Task> body, int maxDegreeOfParallelism,
         CancellationToken cancellationToken)

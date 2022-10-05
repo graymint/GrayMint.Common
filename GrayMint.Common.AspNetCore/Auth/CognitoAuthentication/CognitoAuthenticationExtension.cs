@@ -134,7 +134,7 @@ public static class CognitoAuthenticationExtension
                 var httpResponseMessage = await _httpClient.SendAsync(httpRequestMessage);
                 httpResponseMessage.EnsureSuccessStatusCode();
                 var json = await httpResponseMessage.Content.ReadAsStringAsync();
-                openIdUserInfo = EzUtil.JsonDeserialize<OpenIdUserInfo>(json);
+                openIdUserInfo = GmUtil.JsonDeserialize<OpenIdUserInfo>(json);
             }
 
             _memoryCache.Set(cacheKey, openIdUserInfo, _appAuthOptions.Value.CacheTimeout);
