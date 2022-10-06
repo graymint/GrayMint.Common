@@ -34,7 +34,7 @@ internal class SimpleAuthUserResolver : IBotAuthenticationProvider
         var email = principal.FindFirst(ClaimTypes.Email)?.Value;
         try
         {
-            userAuthInfo = string.IsNullOrEmpty(email) ? null : await _simpleUserProvider.GetAuthUser(email);
+            userAuthInfo = string.IsNullOrEmpty(email) ? null : await _simpleUserProvider.GetAuthUserByEmail(email);
         }
         catch (Exception ex) when(NotExistsException.Is(ex))
         {

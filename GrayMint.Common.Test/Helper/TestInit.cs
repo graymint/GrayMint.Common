@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http.Headers;
-using GrayMint.Common.AspNetCore;
 using GrayMint.Common.AspNetCore.Auth.BotAuthentication;
 using GrayMint.Common.AspNetCore.Auth.CognitoAuthentication;
 using GrayMint.Common.AspNetCore.SimpleUserManagement;
@@ -12,7 +11,7 @@ using GrayMint.Common.Test.Api;
 using GrayMint.Common.Test.WebApiSample;
 using Microsoft.Extensions.Options;
 
-namespace GrayMint.Common.Test;
+namespace GrayMint.Common.Test.Helper;
 
 public class TestInit : IDisposable
 {
@@ -20,10 +19,11 @@ public class TestInit : IDisposable
     public HttpClient HttpClient { get; set; }
     public IServiceScope CurrentServiceScope { get; }
     public AuthenticationHeaderValue AppCreatorAuthenticationHeader { get; private set; } = default!;
-    
+
     public App App { get; private set; } = default!;
     public CognitoAuthenticationOptions CognitoAuthenticationOptions => WebApp.Services.GetRequiredService<IOptions<CognitoAuthenticationOptions>>().Value;
     public AppsClient AppsClient => new(HttpClient);
+    public UsersClient UsersClient => new(HttpClient);
     public ItemsClient ItemsClient => new(HttpClient);
 
 
@@ -39,7 +39,7 @@ public class TestInit : IDisposable
                 builder.UseEnvironment(environment);
                 builder.ConfigureServices(services =>
                 {
-                    _  = services;
+                    _ = services;
                 });
             });
 
@@ -55,7 +55,7 @@ public class TestInit : IDisposable
 
     private async Task Init()
     {
-        var appCreatorUser = await CreateUserAndAddToRole(TestInit.NewEmail(), Roles.AppCreator);
+        var appCreatorUser = await CreateUserAndAddToRole(NewEmail(), Roles.AppCreator);
         AppCreatorAuthenticationHeader = await CreateAuthorizationHeader(appCreatorUser.Email);
         HttpClient.DefaultRequestHeaders.Authorization = AppCreatorAuthenticationHeader;
         App = await AppsClient.CreateAppAsync(Guid.NewGuid().ToString());
@@ -76,7 +76,7 @@ public class TestInit : IDisposable
         {
             role = await roleProvider.GetByName(roleName);
         }
-        catch (Exception ex) when(NotExistsException.Is(ex))
+        catch (Exception ex) when (NotExistsException.Is(ex))
         {
             role = await roleProvider.Create(new RoleCreateRequest(roleName));
         }
@@ -88,7 +88,7 @@ public class TestInit : IDisposable
         {
             user = await userProvider.GetByEmail(email);
         }
-        catch (Exception ex) when(NotExistsException.Is(ex))
+        catch (Exception ex) when (NotExistsException.Is(ex))
         {
             user = await userProvider.Create(new UserCreateRequest($"{Guid.NewGuid()}@local")
             {

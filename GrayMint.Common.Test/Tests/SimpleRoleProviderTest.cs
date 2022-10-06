@@ -5,7 +5,7 @@ using GrayMint.Common.Test.Helper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace GrayMint.Common.Test;
+namespace GrayMint.Common.Test.Tests;
 
 [TestClass]
 public class SimpleRoleProviderTest : BaseControllerTest
@@ -157,7 +157,7 @@ public class SimpleRoleProviderTest : BaseControllerTest
         await roleProvider.AddUser(role1.RoleId, user.UserId, "1");
         await roleProvider.AddUser(role2.RoleId, user.UserId, "1");
 
-        var authUser = await userProvider.GetAuthUser(user.Email);
+        var authUser = await userProvider.GetAuthUserByEmail(user.Email);
         Assert.IsNotNull(authUser);
         Assert.AreEqual(user.AuthCode, authUser.AuthCode);
         Assert.AreEqual(3, authUser.UserRoles.Length);

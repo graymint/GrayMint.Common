@@ -1,6 +1,4 @@
-﻿using System.Security.Authentication;
-using GrayMint.Common.AspNetCore.Auth.SimpleAuthorization;
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -58,19 +56,30 @@ public static class BotAuthenticationExtension
         public async Task Validate(TokenValidatedContext context)
         {
             if (context.Principal == null)
-                throw new AuthenticationException("Principal has not been validated.");
+            {
+                context.Fail("Principal has not been validated.");
+                return;
+            }
 
             var authCode = await _botAuthenticationProvider.GetAuthCode(context.Principal);
             if (string.IsNullOrEmpty(authCode))
-                throw new AuthenticationException($"{BotAuthenticationDefaults.AuthenticationScheme} needs authCode.");
+            {
+                context.Fail($"{BotAuthenticationDefaults.AuthenticationScheme} needs authCode.");
+                return;
+            }
 
             // deserialize access token
             var tokenAuthCode = context.Principal.Claims.SingleOrDefault(x => x.Type == "AuthCode")?.Value;
             if (string.IsNullOrEmpty(authCode))
-                throw new AuthenticationException($"Could not find {nameof(SimpleAuthUser.AuthCode)} in the token.");
+            {
+                context.Fail("Could not find AuthCode in the token.");
+                return;
+            }
 
             if (authCode != tokenAuthCode)
-                throw new AuthenticationException($"Invalid {nameof(SimpleAuthUser.AuthCode)}.");
+            {
+                context.Fail("Invalid AuthCode.");
+            }
         }
     }
 }

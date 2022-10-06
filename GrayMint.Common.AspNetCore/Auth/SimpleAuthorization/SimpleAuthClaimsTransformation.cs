@@ -1,18 +1,15 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.Extensions.Options;
 
 namespace GrayMint.Common.AspNetCore.Auth.SimpleAuthorization;
 
 internal class SimpleAuthClaimsTransformation : IClaimsTransformation
 {
     private readonly SimpleAuthUserResolver _authUserResolver;
-    private readonly IOptions<SimpleAuthOptions> _simpleAuthOptions;
 
-    public SimpleAuthClaimsTransformation(SimpleAuthUserResolver authUserResolver, IOptions<SimpleAuthOptions> simpleAuthOptions)
+    public SimpleAuthClaimsTransformation(SimpleAuthUserResolver authUserResolver)
     {
         _authUserResolver = authUserResolver;
-        _simpleAuthOptions = simpleAuthOptions;
     }
 
     public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)

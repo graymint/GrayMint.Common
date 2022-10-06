@@ -115,7 +115,7 @@ public class ApiClientBase
                 }
 
                 var converted = Convert.ToString(Convert.ChangeType(value, Enum.GetUnderlyingType(value.GetType()), cultureInfo));
-                return converted ?? string.Empty;
+                return converted;
             }
         }
         else if (value is bool b)

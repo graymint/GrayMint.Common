@@ -6,7 +6,7 @@ using GrayMint.Common.Test.Helper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace GrayMint.Common.Test;
+namespace GrayMint.Common.Test.Tests;
 
 [TestClass]
 public class AwsCognitoTest : BaseControllerTest
@@ -31,10 +31,10 @@ public class AwsCognitoTest : BaseControllerTest
     [TestMethod]
     public async Task CognitoTest()
     {
-        var  idToken = await GetCredsAsync();
+        var idToken = await GetCredsAsync();
         TestInit1.HttpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, idToken);
-        
+
         await TestInit1.AppsClient.ListAsync();
     }
 

@@ -1,21 +1,10 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
-using Microsoft.Extensions.Options;
 
 namespace GrayMint.Common.AspNetCore.Auth.SimpleAuthorization;
 
 public class SimpleAuthHandler : AuthorizationHandler<SimpleAuthRequirement>
 {
-    private readonly ISimpleAuthUserProvider _simpleUserProvider;
-    private readonly AppCommonSettings _appCommonSettings;
-
-    public SimpleAuthHandler(ISimpleAuthUserProvider simpleUserProvider, IOptions<AppCommonSettings> appCommonSettings)
-    {
-        _simpleUserProvider = simpleUserProvider;
-        _appCommonSettings = appCommonSettings.Value;
-    }
-
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context,
         SimpleAuthRequirement requirement)
     {

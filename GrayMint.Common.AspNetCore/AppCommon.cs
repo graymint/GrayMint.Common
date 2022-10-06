@@ -21,12 +21,14 @@ public static class AppCommon
         var appCommonSettings = builder.Configuration.GetSection("App").Get<AppCommonSettings>()
                                 ?? throw new Exception("Could not load App section in appsettings.json file.");
         appCommonSettings.Validate();
+        builder.Services.Configure<AppCommonSettings>(builder.Configuration.GetSection("App"));
 
 
         // auth settings
         var appAuthSettings = builder.Configuration.GetSection("Auth").Get<AppAuthSettings>()
                               ?? throw new Exception("Could not find Auth section in appsettings.json file.");
         appAuthSettings.Validate(builder.Environment.IsProduction());
+        builder.Services.Configure<AppAuthSettings>(builder.Configuration.GetSection("Auth"));
 
         // cors
         if (options.AddCors)

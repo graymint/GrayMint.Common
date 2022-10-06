@@ -1,8 +1,7 @@
-﻿using System.Security.Claims;
-
-namespace GrayMint.Common.AspNetCore.Auth.SimpleAuthorization;
+﻿namespace GrayMint.Common.AspNetCore.Auth.SimpleAuthorization;
 
 public interface ISimpleAuthUserProvider
 {
-    Task<SimpleAuthUser?> GetAuthUser(string email);
+    Task ResetAuthCodeByEmail(string email);
+    Task<SimpleAuthUser?> GetAuthUserByEmail(string email);
 }   

@@ -7,10 +7,10 @@ namespace GrayMint.Common.AspNetCore.Auth.SimpleAuthorization;
 
 public static class SimpleAuthExtension
 {
-    public static IServiceCollection AddSimpleAuthorization(this IServiceCollection services, IConfiguration configuration) 
+    public static IServiceCollection AddSimpleAuthorization(this IServiceCollection services, IConfiguration configuration)
     {
-        var botAuthenticationOptions = configuration.Get<BotAuthenticationOptions>();
-        
+        _ = configuration;
+
         services.AddAuthorization(options =>
         {
             options.AddPolicy(SimpleAuth.Policy, new AuthorizationPolicyBuilder()

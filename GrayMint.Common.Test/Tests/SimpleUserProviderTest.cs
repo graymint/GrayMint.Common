@@ -5,7 +5,7 @@ using GrayMint.Common.Test.Helper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace GrayMint.Common.Test;
+namespace GrayMint.Common.Test.Tests;
 
 [TestClass]
 public class SimpleUserProviderTest : BaseControllerTest
@@ -89,7 +89,7 @@ public class SimpleUserProviderTest : BaseControllerTest
             Description = Guid.NewGuid().ToString()
         };
         await simpleUserProvider.Create(request);
-        
+
         // AlreadyExists exception
         try
         {
