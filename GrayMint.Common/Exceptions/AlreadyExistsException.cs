@@ -18,6 +18,6 @@ public class AlreadyExistsException : Exception
         if (ex.Data.Contains("HelpLink.EvtID") && ex.Data["HelpLink.EvtID"]?.ToString() is "2601" or "2627")
             return true;
 
-        return ex.InnerException == null || Is(ex.InnerException);
+        return ex.InnerException != null && Is(ex.InnerException);
     }
 }

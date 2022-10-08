@@ -12,6 +12,6 @@ public class NotExistsException : Exception
                 ex.Message.Contains("Sequence contains no elements")))
             return true;
 
-        return ex.InnerException == null || Is(ex.InnerException);
+        return ex.InnerException != null && Is(ex.InnerException);
     }   
 }
