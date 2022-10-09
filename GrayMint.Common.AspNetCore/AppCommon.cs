@@ -11,7 +11,7 @@ namespace GrayMint.Common.AspNetCore;
 public static class AppCommon
 {
     public const string CorsPolicyName = "AllowAllCorsPolicy";
-    internal const string OptionsValidationMsgTemplate = "The App in AppSettings must be initialized properly. OptionName: {0}";
+    public const string OptionsValidationMsgTemplate = "The App in AppSettings must be initialized properly. OptionName: {0}";
 
     public static void RegisterServices(WebApplicationBuilder builder, RegisterServicesOptions options) 
     {
