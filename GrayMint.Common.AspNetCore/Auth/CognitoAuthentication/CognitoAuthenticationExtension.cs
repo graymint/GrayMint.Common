@@ -29,7 +29,7 @@ public static class CognitoAuthenticationExtension
                     ValidIssuer = cognitoOptions.CognitoArn,
                     ValidateIssuerSigningKey = true,
                     ValidateIssuer = true,
-                    ValidateLifetime = false, //todo
+                    ValidateLifetime = true,
                     ValidateAudience = false,
                 };
                 options.MetadataAddress = $"https://{cognitoArn.Service}.{cognitoArn.Region}.amazonaws.com/{cognitoArn.ResourceId}/.well-known/openid-configuration";
@@ -155,14 +155,14 @@ public static class CognitoAuthenticationExtension
                            ?? throw new UnauthorizedAccessException("Could not find token_use.");
             if (tokenUse != "access" && tokenUse != "id") throw new UnauthorizedAccessException("Unknown token_use.");
 
-            // aud for id token
+            // validate aud for id token
             if (tokenUse == "id" && !context.Principal.HasClaim(x => x.Type == "aud" && x.Value == _cognitoOptions.Value.CognitoClientId))
             {
                 context.Fail("client_id does not match");
                 return;
             }
 
-            // aud for id token
+            // validate client_id for access token
             if (tokenUse == "access" && !context.Principal.HasClaim(x => x.Type == "client_id" && x.Value == _cognitoOptions.Value.CognitoClientId))
             {
                 context.Fail("client_id does not match");
