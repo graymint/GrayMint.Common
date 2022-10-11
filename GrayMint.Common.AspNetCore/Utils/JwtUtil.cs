@@ -6,6 +6,7 @@ namespace GrayMint.Common.AspNetCore.Utils;
 
 public class JwtUtil
 {
+
     public static string CreateAccessToken(byte[] key, string authIssuer, string authCode, string id, string email, string[]? roles)
     {
         return JwtUtil.CreateSymmetricJwt(key, authIssuer,
