@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Authors>GrayMint</Authors>
@@ -15,8 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GrayMint.Common.AspNetCore\GrayMint.Common.AspNetCore.csproj" />
-    <ProjectReference Include="..\GrayMint.Common.EntityFrameworkCore\GrayMint.Common.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\GrayMint.Common.AspNetCore.SimpleRoleAuthorization\GrayMint.Common.AspNetCore.SimpleRoleAuthorization.csproj" />
   </ItemGroup>
 
 </Project>

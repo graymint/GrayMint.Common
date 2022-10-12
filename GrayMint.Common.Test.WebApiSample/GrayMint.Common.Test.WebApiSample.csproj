@@ -13,7 +13,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\GrayMint.Common.AspNetCore.SimpleUserManagement\GrayMint.Common.AspNetCore.SimpleUserManagement.csproj" />
-    <ProjectReference Include="..\GrayMint.Common.AspNetCore\GrayMint.Common.AspNetCore.csproj" />
   </ItemGroup>
 
 </Project>

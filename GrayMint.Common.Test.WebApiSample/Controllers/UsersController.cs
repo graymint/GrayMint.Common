@@ -1,7 +1,7 @@
 using System.Net.Mime;
 using System.Security.Claims;
 using GrayMint.Common.AspNetCore.Auth.BotAuthentication;
-using GrayMint.Common.AspNetCore.Auth.SimpleAuthorization;
+using GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 using GrayMint.Common.AspNetCore.SimpleUserManagement;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +21,7 @@ public class UsersController : ControllerBase
         _botAuthenticationTokenBuilder = botAuthenticationTokenBuilder;
     }
 
-    [Authorize(SimpleAuth.Policy, Roles = Roles.AppCreator)]
+    [Authorize(SimpleRoleAuth.Policy, Roles = Roles.AppCreator)]
     [HttpGet("{email}/auth-token")]
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<string> GetAuthTokenByEmail(string email, bool createNew)
@@ -32,7 +32,7 @@ public class UsersController : ControllerBase
         return token.Parameter!;
     }
 
-    [Authorize(SimpleAuth.Policy)]
+    [Authorize(SimpleRoleAuth.Policy)]
     [HttpPost("{appId}/reset-auth-token")]
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<string> ResetMyToken()

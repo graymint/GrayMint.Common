@@ -1,4 +1,4 @@
-using GrayMint.Common.AspNetCore.Auth.SimpleAuthorization;
+using GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 using GrayMint.Common.Test.WebApiSample.Models;
 using GrayMint.Common.Test.WebApiSample.Persistence;
 using Microsoft.AspNetCore.Authorization;
@@ -18,7 +18,7 @@ public class ItemsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(SimpleAuth.Policy, Roles = Roles.AppUser)]
+    [Authorize(SimpleRoleAuth.Policy, Roles = Roles.AppUser)]
     public async Task<Item> Create(int appId, string itemName)
     {
         var ret = await _dbContext.Items.AddAsync(new Item { AppId = appId, ItemName = itemName });

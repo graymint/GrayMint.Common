@@ -1,10 +1,10 @@
 ﻿using System.Security.Claims;
 
-namespace GrayMint.Common.AspNetCore.Auth.SimpleAuthorization;
+namespace GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 
-public static class SimpleAuth
+public static class SimpleRoleAuth
 {
-    public const string Policy = "Policy";
+    public const string Policy = "SimpleRolePolicy";
     public const string RoleClaimType = "app-role";
 
     public static string CreateAppRoleName(string roleName, string appId)

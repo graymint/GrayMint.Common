@@ -1,13 +1,13 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 
-namespace GrayMint.Common.AspNetCore.Auth.SimpleAuthorization;
+namespace GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 
-internal class SimpleAuthClaimsTransformation : IClaimsTransformation
+internal class SimpleRoleAuthClaimsTransformation : IClaimsTransformation
 {
-    private readonly SimpleAuthUserResolver _authUserResolver;
+    private readonly SimpleUserResolver _authUserResolver;
 
-    public SimpleAuthClaimsTransformation(SimpleAuthUserResolver authUserResolver)
+    public SimpleRoleAuthClaimsTransformation(SimpleUserResolver authUserResolver)
     {
         _authUserResolver = authUserResolver;
     }
@@ -17,7 +17,7 @@ internal class SimpleAuthClaimsTransformation : IClaimsTransformation
         // convert standard role claims to app-role claims
         var claimsIdentity = new ClaimsIdentity();
         foreach (var claim in principal.Claims.Where(x => x.Type == ClaimTypes.Role))
-            claimsIdentity.AddClaim(SimpleAuth.CreateAppRoleClaim(claim.Value, "*"));
+            claimsIdentity.AddClaim(SimpleRoleAuth.CreateAppRoleClaim(claim.Value, "*"));
 
         // add simple roles to app-role claims
         var authUser = await _authUserResolver.GetSimpleAuthUser(principal);
@@ -29,7 +29,7 @@ internal class SimpleAuthClaimsTransformation : IClaimsTransformation
             // RoleName/apps/appId
             foreach (var userRole in authUser.UserRoles)
             {
-                claimsIdentity.AddClaim(SimpleAuth.CreateAppRoleClaim(userRole.RoleName, userRole.AppId));
+                claimsIdentity.AddClaim(SimpleRoleAuth.CreateAppRoleClaim(userRole.RoleName, userRole.AppId));
                 if (!claimsIdentity.HasClaim(x => x.Type == ClaimTypes.Role && x.Value == userRole.RoleName))
                     claimsIdentity.AddClaim(new Claim(ClaimTypes.Role, userRole.RoleName));
             }

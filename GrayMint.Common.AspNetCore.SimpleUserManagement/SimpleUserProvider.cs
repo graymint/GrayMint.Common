@@ -1,13 +1,11 @@
-﻿using GrayMint.Common.AspNetCore.Auth.SimpleAuthorization;
+﻿using GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 using GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
 using GrayMint.Common.AspNetCore.SimpleUserManagement.Persistence;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace GrayMint.Common.AspNetCore.SimpleUserManagement;
 
-public class SimpleUserProvider : ISimpleAuthUserProvider
+public class SimpleUserProvider : ISimpleRoleAuthUserProvider
 {
     private readonly SimpleUserDbContext _simpleUserDbContext;
 
@@ -23,17 +21,17 @@ public class SimpleUserProvider : ISimpleAuthUserProvider
         await _simpleUserDbContext.SaveChangesAsync();
     }
 
-    public async Task<SimpleAuthUser?> GetAuthUserByEmail(string email)
+    public async Task<SimpleUser?> GetAuthUserByEmail(string email)
     {
         var userModel = await _simpleUserDbContext.Users
             .Include(x => x.UserRoles)!
             .ThenInclude(x => x.Role)
             .SingleAsync(x => x.Email == email);
 
-        var authUser = new SimpleAuthUser
+        var authUser = new SimpleUser
         {
             AuthCode = userModel.AuthCode,
-            UserRoles = userModel.UserRoles!.Select(x => new SimpleAuthUserRole(x.Role!.RoleName, x.AppId)).ToArray()
+            UserRoles = userModel.UserRoles!.Select(x => new SimpleUserRole(x.Role!.RoleName, x.AppId)).ToArray()
         };
         return authUser;
     }
@@ -98,22 +96,5 @@ public class SimpleUserProvider : ISimpleAuthUserProvider
         var userModel = new Models.User { UserId = int.Parse(userId) };
         _simpleUserDbContext.Users.Remove(userModel);
         await _simpleUserDbContext.SaveChangesAsync();
-    }
-
-    public static void RegisterSimpleUserProvider(WebApplicationBuilder builder, Action<DbContextOptionsBuilder>? optionsAction = null)
-    {
-        builder.Services.AddDbContext<SimpleUserDbContext>(optionsAction);
-        builder.Services.AddScoped<ISimpleAuthUserProvider, SimpleUserProvider>();
-        builder.Services.AddScoped<SimpleUserProvider>();
-        builder.Services.AddScoped<SimpleRoleProvider>();
-    }
-
-    public static async Task UseSimpleUserProvider(WebApplication webApplication)
-    {
-        await using var scope = webApplication.Services.CreateAsyncScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<SimpleUserDbContext>();
-        await dbContext.EnsureTablesCreated();
-
-        await dbContext.SaveChangesAsync();
     }
 }

@@ -4,16 +4,16 @@ using GrayMint.Common.Exceptions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
-namespace GrayMint.Common.AspNetCore.Auth.SimpleAuthorization;
+namespace GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 
-internal class SimpleAuthUserResolver : IBotAuthenticationProvider
+internal class SimpleUserResolver : IBotAuthenticationProvider
 {
     private readonly IMemoryCache _memoryCache;
-    private readonly ISimpleAuthUserProvider _simpleUserProvider;
+    private readonly ISimpleRoleAuthUserProvider _simpleUserProvider;
     private readonly AppAuthSettings _appAuthSettings;
 
-    public SimpleAuthUserResolver(IMemoryCache memoryCache,
-        ISimpleAuthUserProvider simpleUserProvider,
+    public SimpleUserResolver(IMemoryCache memoryCache,
+        ISimpleRoleAuthUserProvider simpleUserProvider,
         IOptions<AppAuthSettings> appAuthSettings)
     {
         _memoryCache = memoryCache;
@@ -21,13 +21,13 @@ internal class SimpleAuthUserResolver : IBotAuthenticationProvider
         _appAuthSettings = appAuthSettings.Value;
     }
 
-    public async Task<SimpleAuthUser?> GetSimpleAuthUser(ClaimsPrincipal principal)
+    public async Task<SimpleUser?> GetSimpleAuthUser(ClaimsPrincipal principal)
     {
         var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
         // try to find from cache
         var cacheKey = userId != null ? $"SimpleAuthUser:{userId}" : null;
-        if (cacheKey != null && _memoryCache.TryGetValue(cacheKey, out SimpleAuthUser? userAuthInfo))
+        if (cacheKey != null && _memoryCache.TryGetValue(cacheKey, out SimpleUser? userAuthInfo))
             return userAuthInfo;
 
         // add to cache
@@ -36,7 +36,7 @@ internal class SimpleAuthUserResolver : IBotAuthenticationProvider
         {
             userAuthInfo = string.IsNullOrEmpty(email) ? null : await _simpleUserProvider.GetAuthUserByEmail(email);
         }
-        catch (Exception ex) when(NotExistsException.Is(ex))
+        catch (Exception ex) when (NotExistsException.Is(ex))
         {
             userAuthInfo = null;
         }

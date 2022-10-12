@@ -1,4 +1,4 @@
-using GrayMint.Common.AspNetCore.Auth.SimpleAuthorization;
+using GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 using GrayMint.Common.Test.WebApiSample.Models;
 using GrayMint.Common.Test.WebApiSample.Persistence;
 using Microsoft.AspNetCore.Authorization;
@@ -19,7 +19,7 @@ public class AppsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(SimpleAuth.Policy, Roles = Roles.AppCreator)]
+    [Authorize(SimpleRoleAuth.Policy, Roles = Roles.AppCreator)]
     public async Task<App> CreateApp(string appName)
     {
         var ret = await _dbContext.Apps.AddAsync(new App { AppName = appName });
@@ -27,7 +27,7 @@ public class AppsController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(SimpleAuth.Policy, Roles = $"{Roles.SystemAdmin},{Roles.AppCreator}")]
+    [Authorize(SimpleRoleAuth.Policy, Roles = $"{Roles.SystemAdmin},{Roles.AppCreator}")]
     public async Task<App[]> List()
     {
         var ret = await _dbContext.Apps.ToArrayAsync();
