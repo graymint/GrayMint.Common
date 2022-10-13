@@ -7,11 +7,11 @@ namespace GrayMint.Common.AspNetCore;
 public static class AppCommon
 {
     public const string CorsPolicyName = "AllowAllCorsPolicy";
-    public const string OptionsValidationMsgTemplate = "The App in AppSettings must be initialized properly. OptionName: {0}";
+    public const string OptionsValidationMsgTemplate = "The AppSettings must be initialized properly. OptionName: {0}";
 
     public static void ThrowOptionsValidationException(string optionsName, Type optionsType, string? failureMessage = null)
     {
-        var failureMessages = new [] { string.Format(AppCommon.OptionsValidationMsgTemplate, optionsName) };
+        var failureMessages = new [] { string.Format(OptionsValidationMsgTemplate, optionsName) };
         if (failureMessage != null) failureMessages = failureMessages.Concat(new []{failureMessage}).ToArray();
 
         throw new OptionsValidationException(optionsName, optionsType, failureMessages);

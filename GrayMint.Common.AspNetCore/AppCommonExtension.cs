@@ -10,7 +10,7 @@ namespace GrayMint.Common.AspNetCore;
 
 public static class AppCommonExtension
 {
-    public static void RegisterAppCommonServices(this WebApplicationBuilder builder, 
+    public static void RegisterAppCommonServices(this WebApplicationBuilder builder,
         IConfiguration appConfiguration,
         IConfiguration authConfiguration,
         RegisterServicesOptions options)
