@@ -1,2 +1,2 @@
 # GrayMint.Common
-Publish 5
+Publish 6
