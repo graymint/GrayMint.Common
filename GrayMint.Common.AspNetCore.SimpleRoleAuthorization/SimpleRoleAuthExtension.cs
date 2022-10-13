@@ -9,8 +9,11 @@ namespace GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 
 public static class SimpleRoleAuthExtension
 {
-    public static IServiceCollection AddSimpleRoleAuthorization(this IServiceCollection services, bool requireBotAuthentication, bool requireCognitoAuthentication)
+    public static IServiceCollection AddSimpleRoleAuthorization(this IServiceCollection services, IConfiguration configuration, bool requireBotAuthentication, bool requireCognitoAuthentication)
     {
+        var simpleRoleAuthOptions = configuration.Get<SimpleRoleAuthOptions>();
+        simpleRoleAuthOptions.Validate();
+
         services.AddAuthorization(options =>
         {
             var policyBuilder = new AuthorizationPolicyBuilder();
@@ -24,6 +27,7 @@ public static class SimpleRoleAuthExtension
                 .Build());
         });
 
+        services.Configure<SimpleRoleAuthOptions>(configuration);
         services.AddScoped<IBotAuthenticationProvider, SimpleUserResolver>();
         services.AddScoped<IAuthorizationHandler, SimpleRoleAuthHandler>();
         services.AddTransient<IClaimsTransformation, SimpleRoleAuthClaimsTransformation>();

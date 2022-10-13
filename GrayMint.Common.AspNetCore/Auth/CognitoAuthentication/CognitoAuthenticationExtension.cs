@@ -36,7 +36,6 @@ public static class CognitoAuthenticationExtension
 
                 options.SaveToken = true;
 
-
                 options.Events = new JwtBearerEvents()
                 {
                     OnTokenValidated = async context =>
@@ -78,17 +77,14 @@ public static class CognitoAuthenticationExtension
     private class CognitoTokenValidator
     {
         private readonly HttpClient _httpClient;
-        private readonly IOptions<AppAuthSettings> _appAuthOptions;
         private readonly IOptions<CognitoAuthenticationOptions> _cognitoOptions;
         private readonly IMemoryCache _memoryCache;
 
         public CognitoTokenValidator(HttpClient httpClient,
-            IOptions<AppAuthSettings> appAuthOptions,
             IOptions<CognitoAuthenticationOptions> cognitoOptions,
             IMemoryCache memoryCache)
         {
             _httpClient = httpClient;
-            _appAuthOptions = appAuthOptions;
             _cognitoOptions = cognitoOptions;
             _memoryCache = memoryCache;
         }
@@ -137,7 +133,7 @@ public static class CognitoAuthenticationExtension
                 openIdUserInfo = GmUtil.JsonDeserialize<OpenIdUserInfo>(json);
             }
 
-            _memoryCache.Set(cacheKey, openIdUserInfo, _appAuthOptions.Value.CacheTimeout);
+            _memoryCache.Set(cacheKey, openIdUserInfo, _cognitoOptions.Value.CacheTimeout);
             return openIdUserInfo;
         }
 

@@ -10,15 +10,15 @@ internal class SimpleUserResolver : IBotAuthenticationProvider
 {
     private readonly IMemoryCache _memoryCache;
     private readonly ISimpleRoleAuthUserProvider _simpleUserProvider;
-    private readonly AppAuthSettings _appAuthSettings;
+    private readonly SimpleRoleAuthOptions _simpleRoleAuthOptions;
 
     public SimpleUserResolver(IMemoryCache memoryCache,
         ISimpleRoleAuthUserProvider simpleUserProvider,
-        IOptions<AppAuthSettings> appAuthSettings)
+        IOptions<SimpleRoleAuthOptions> simpleRoleAuthOptions)
     {
         _memoryCache = memoryCache;
         _simpleUserProvider = simpleUserProvider;
-        _appAuthSettings = appAuthSettings.Value;
+        _simpleRoleAuthOptions = simpleRoleAuthOptions.Value;
     }
 
     public async Task<SimpleUser?> GetSimpleAuthUser(ClaimsPrincipal principal)
@@ -42,7 +42,7 @@ internal class SimpleUserResolver : IBotAuthenticationProvider
         }
 
         if (cacheKey != null)
-            _memoryCache.Set(cacheKey, userAuthInfo, _appAuthSettings.CacheTimeout);
+            _memoryCache.Set(cacheKey, userAuthInfo, _simpleRoleAuthOptions.CacheTimeout);
 
         return userAuthInfo;
     }

@@ -12,7 +12,7 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         builder.RegisterAppCommonServices(builder.Configuration.GetSection("App"),  builder.Configuration.GetSection("Auth"),  new RegisterServicesOptions{AddCognitoAuthentication = true});
-        builder.Services.AddSimpleRoleAuthorization( true, true);
+        builder.Services.AddSimpleRoleAuthorization(builder.Configuration.GetSection("Auth"), true, true);
         builder.Services.RegisterSimpleUserProvider(options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
         builder.Services.AddDbContext<WebApiSampleDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
 

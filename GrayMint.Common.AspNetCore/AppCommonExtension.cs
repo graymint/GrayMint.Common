@@ -23,13 +23,6 @@ public static class AppCommonExtension
         appCommonSettings.Validate();
         services.Configure<AppCommonSettings>(appConfiguration);
 
-
-        // auth settings
-        var appAuthSettings = authConfiguration.Get<AppAuthSettings>()
-                              ?? throw new Exception("Could not find Auth section in appsettings.json file.");
-        appAuthSettings.Validate(builder.Environment.IsProduction());
-        services.Configure<AppAuthSettings>(authConfiguration);
-
         // cors
         if (options.AddCors)
             services.AddCors(o => o.AddPolicy(AppCommon.CorsPolicyName, corsPolicyBuilder =>
@@ -92,7 +85,7 @@ public static class AppCommonExtension
 
 
             if (options.AddBotAuthentication)
-                authenticationBuilder.AddBotAuthentication(authConfiguration);
+                authenticationBuilder.AddBotAuthentication(authConfiguration, builder.Environment.IsProduction());
 
             // Cognito authentication
             if (options.AddCognitoAuthentication)

@@ -1,16 +1,22 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace GrayMint.Common.AspNetCore.Auth.BotAuthentication;
 
 public static class BotAuthenticationExtension
 {
-    public static AuthenticationBuilder AddBotAuthentication(this AuthenticationBuilder authenticationBuilder, IConfiguration configuration)
+    public static AuthenticationBuilder AddBotAuthentication(this AuthenticationBuilder authenticationBuilder, IConfiguration configuration, bool isProduction)
     {
         var botAuthenticationOptions = configuration.Get<BotAuthenticationOptions>();
-        var securityKey = new SymmetricSecurityKey(botAuthenticationOptions.BotKey);
+        botAuthenticationOptions.Validate(isProduction);
 
+        var securityKey = new SymmetricSecurityKey(botAuthenticationOptions.BotKey);
         authenticationBuilder
             .AddJwtBearer(BotAuthenticationDefaults.AuthenticationScheme, options =>
             {
@@ -20,7 +26,7 @@ public static class BotAuthenticationExtension
                     RequireSignedTokens = true,
                     IssuerSigningKey = securityKey,
                     ValidIssuer = botAuthenticationOptions.BotIssuer,
-                    ValidAudience = botAuthenticationOptions.BotIssuer,
+                    ValidAudience = botAuthenticationOptions.BotAudience ?? botAuthenticationOptions.BotIssuer,
                     ValidateAudience = true,
                     ValidateIssuerSigningKey = true,
                     ValidateIssuer = true,
@@ -47,39 +53,47 @@ public static class BotAuthenticationExtension
     private class BotTokenValidator
     {
         private readonly IBotAuthenticationProvider _botAuthenticationProvider;
+        private readonly IMemoryCache _memoryCache;
+        private readonly IOptions<BotAuthenticationOptions> _botAuthenticationOptions;
 
-        public BotTokenValidator(IBotAuthenticationProvider botAuthenticationProvider)
+        public BotTokenValidator(IBotAuthenticationProvider botAuthenticationProvider, IMemoryCache memoryCache, IOptions<BotAuthenticationOptions> botAuthenticationOptions)
         {
             _botAuthenticationProvider = botAuthenticationProvider;
+            _memoryCache = memoryCache;
+            _botAuthenticationOptions = botAuthenticationOptions;
         }
 
-        public async Task Validate(TokenValidatedContext context)
+        public async Task<string?> GetValidateError(TokenValidatedContext context)
         {
             if (context.Principal == null)
-            {
-                context.Fail("Principal has not been validated.");
-                return;
-            }
+                return "Principal has not been validated.";
 
             var authCode = await _botAuthenticationProvider.GetAuthCode(context.Principal);
             if (string.IsNullOrEmpty(authCode))
-            {
-                context.Fail($"{BotAuthenticationDefaults.AuthenticationScheme} needs authCode.");
-                return;
-            }
+                return $"{BotAuthenticationDefaults.AuthenticationScheme} needs authCode.";
 
             // deserialize access token
             var tokenAuthCode = context.Principal.Claims.SingleOrDefault(x => x.Type == "AuthCode")?.Value;
             if (string.IsNullOrEmpty(authCode))
+                return "Could not find AuthCode in the token.";
+
+            return authCode != tokenAuthCode ? "Invalid AuthCode." : null;
+        }
+
+        public async Task Validate(TokenValidatedContext context)
+        {
+            var jwtSecurityToken = (JwtSecurityToken)context.SecurityToken;
+            var accessToken = jwtSecurityToken.RawData;
+            var accessTokenHash = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(accessToken));
+            var cacheKey = "BotAuthentication/" + Convert.ToBase64String(accessTokenHash);
+            if (!_memoryCache.TryGetValue<string?>(cacheKey, out var error))
             {
-                context.Fail("Could not find AuthCode in the token.");
-                return;
+                error = await GetValidateError(context);
+                _memoryCache.Set(cacheKey, error, _botAuthenticationOptions.Value.CacheTimeout);
             }
 
-            if (authCode != tokenAuthCode)
-            {
-                context.Fail("Invalid AuthCode.");
-            }
+            if (error != null)
+                context.Fail(error);
         }
     }
 }
