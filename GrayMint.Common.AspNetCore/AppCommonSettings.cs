@@ -13,10 +13,7 @@ public class AppCommonSettings
     internal void Validate()
     {
         // Configure Settings
-        const string msg = "The App in AppSettings must be initialized properly. OptionName: {0}";
-
-        var propertyName = nameof(AppName);
         if (string.IsNullOrWhiteSpace(AppName))
-            throw new OptionsValidationException(propertyName, typeof(string), new[] { string.Format(msg, propertyName) });
+            AppCommon.ThrowOptionsValidationException(nameof(AppName), typeof(string));
     }
 }
