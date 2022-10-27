@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Options;
-
 namespace GrayMint.Common.AspNetCore;
 
 public class AppCommonSettings

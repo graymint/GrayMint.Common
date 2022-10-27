@@ -1,7 +1,5 @@
 using System.Net;
 using System.Security.Claims;
-using GrayMint.Common.AspNetCore.Auth.BotAuthentication;
-using GrayMint.Common.AspNetCore.Auth.CognitoAuthentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.IdentityModel.Tokens;
@@ -10,10 +8,9 @@ namespace GrayMint.Common.AspNetCore;
 
 public static class AppCommonExtension
 {
-    public static void RegisterAppCommonServices(this WebApplicationBuilder builder,
+    public static void AddGrayMintCommonServices(this WebApplicationBuilder builder,
         IConfiguration appConfiguration,
-        IConfiguration authConfiguration,
-        RegisterServicesOptions options)
+        RegisterServicesOptions servicesOptions)
     {
         var services = builder.Services;
 
@@ -24,7 +21,7 @@ public static class AppCommonExtension
         services.Configure<AppCommonSettings>(appConfiguration);
 
         // cors
-        if (options.AddCors)
+        if (servicesOptions.AddCors)
             services.AddCors(o => o.AddPolicy(AppCommon.CorsPolicyName, corsPolicyBuilder =>
             {
                 corsPolicyBuilder
@@ -35,7 +32,7 @@ public static class AppCommonExtension
             }));
 
         // Add services to the container.
-        if (options.AddControllers)
+        if (servicesOptions.AddControllers)
             services.AddControllers(mvcOptions =>
             {
                 mvcOptions.ModelMetadataDetailsProviders.Add(
@@ -43,59 +40,46 @@ public static class AppCommonExtension
             });
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-        if (options.AddSwagger)
+        if (servicesOptions.AddSwagger)
         {
             services.AddEndpointsApiExplorer();
-            services.AddAppSwagger(appCommonSettings.AppName);
+            services.AddAppSwagger(appCommonSettings.AppName, servicesOptions.AddSwaggerVersioning);
         }
 
         // Add authentications
-        if (options.AddBotAuthentication || options.AddCognitoAuthentication)
+        //todo add legacy 
+        services.AddAuthentication().
+        AddJwtBearer(AppCommonSettings.LegacyAuthScheme, jwtBearerOptions =>
         {
-            // bot authentication
-            var authenticationBuilder = services.AddAuthentication();
-
-            //todo add legacy 
-            authenticationBuilder.AddJwtBearer(AppCommonSettings.LegacyAuthScheme, jwtBearerOptions =>
+            jwtBearerOptions.TokenValidationParameters = new TokenValidationParameters
             {
-                jwtBearerOptions.TokenValidationParameters = new TokenValidationParameters
+                NameClaimType = "name",
+                RequireSignedTokens = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(appCommonSettings.AuthKey)),
+                ValidIssuer = appCommonSettings.AuthIssuer,
+                ValidAudience = appCommonSettings.AuthIssuer,
+                ValidateAudience = true,
+                ValidateIssuerSigningKey = true,
+                ValidateIssuer = true,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.FromSeconds(TokenValidationParameters.DefaultClockSkew.TotalSeconds)
+            };
+            jwtBearerOptions.Events = new JwtBearerEvents()
+            {
+                OnTokenValidated = async context =>
                 {
-                    NameClaimType = "name",
-                    RequireSignedTokens = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(appCommonSettings.AuthKey)),
-                    ValidIssuer = appCommonSettings.AuthIssuer,
-                    ValidAudience = appCommonSettings.AuthIssuer,
-                    ValidateAudience = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidateIssuer = true,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.FromSeconds(TokenValidationParameters.DefaultClockSkew.TotalSeconds)
-                };
-                jwtBearerOptions.Events = new JwtBearerEvents()
-                {
-                    OnTokenValidated = async context =>
-                    {
-                        await Task.Delay(0);
-                        var claimsIdentity = new ClaimsIdentity();
-                        foreach (var claim in context.Principal!.Claims.Where(x => x.Type == ClaimTypes.Role))
-                            claimsIdentity.AddClaim(new Claim("app-role", $"{claim.Value}/apps/*"));
-                    }
-                };
-            });
+                    await Task.Delay(0);
+                    var claimsIdentity = new ClaimsIdentity();
+                    foreach (var claim in context.Principal!.Claims.Where(x => x.Type == ClaimTypes.Role))
+                        claimsIdentity.AddClaim(new Claim("app-role", $"{claim.Value}/apps/*"));
+                }
+            };
+        });
 
-
-            if (options.AddBotAuthentication)
-                authenticationBuilder.AddBotAuthentication(authConfiguration, builder.Environment.IsProduction());
-
-            // Cognito authentication
-            if (options.AddCognitoAuthentication)
-                authenticationBuilder.AddCognitoAuthentication(authConfiguration);
-        }
-
-        if (options.AddMemoryCache)
+        if (servicesOptions.AddMemoryCache)
             services.AddMemoryCache();
 
-        if (options.AddHttpClient)
+        if (servicesOptions.AddHttpClient)
             services.AddHttpClient();
     }
 

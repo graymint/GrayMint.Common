@@ -1,4 +1,6 @@
-﻿namespace GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
+﻿using GrayMint.Common.Client;
+
+namespace GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
 
 public class RoleUpdateRequest
 {

@@ -8,7 +8,7 @@ namespace GrayMint.Common.AspNetCore.SimpleUserManagement;
 
 public static class SimpleUserProviderExtension
 {
-    public static void RegisterSimpleUserProvider(this IServiceCollection services, Action<DbContextOptionsBuilder>? optionsAction = null)
+    public static void AddSimpleUserProvider(this IServiceCollection services, Action<DbContextOptionsBuilder>? optionsAction = null)
     {
         services.AddDbContext<SimpleUserDbContext>(optionsAction);
         services.AddScoped<ISimpleRoleAuthUserProvider, SimpleUserProvider>();

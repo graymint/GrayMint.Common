@@ -62,7 +62,7 @@
   },
   "codeGenerators": {
     "openApiToCSharpClient": {
-      "clientBaseClass": "BaseApiClient",
+      "clientBaseClass": null,
       "configurationClass": null,
       "generateClientClasses": true,
       "generateClientInterfaces": false,
@@ -79,7 +79,7 @@
       "useBaseUrl": false,
       "generateBaseUrlProperty": true,
       "generateSyncMethods": false,
-      "generatePrepareRequestAndProcessResponseAsAsyncMethods": true,
+      "generatePrepareRequestAndProcessResponseAsAsyncMethods": false,
       "exposeJsonSerializerSettings": false,
       "clientClassAccessModifier": "public",
       "typeAccessModifier": "public",
@@ -144,7 +144,7 @@
       "enumNameGeneratorType": null,
       "serviceHost": null,
       "serviceSchemes": null,
-      "output": "Api.cs",
+      "output": "$(apiFile)",
       "newLineBehavior": "Auto"
     }
   }

@@ -17,11 +17,11 @@ public static class AppExceptionExtension
             _next = next;
         }
 
-        private static string GetTypeName(Exception ex)
+        private static Type GetExceptionType(Exception ex)
         {
-            if (AlreadyExistsException.Is(ex)) return nameof(AlreadyExistsException);
-            if (NotExistsException.Is(ex)) return nameof(NotExistsException);
-            return ex.GetType().ToString();
+            if (AlreadyExistsException.Is(ex)) return typeof(AlreadyExistsException);
+            if (NotExistsException.Is(ex)) return typeof(NotExistsException);
+            return ex.GetType();
         }
 
         public async Task Invoke(HttpContext context)
@@ -43,7 +43,8 @@ public static class AppExceptionExtension
                 var error = new
                 {
                     Data = new Dictionary<string, string?>(),
-                    Type = GetTypeName(ex),
+                    TypeName = GetExceptionType(ex).Name,
+                    TypeFullName = GetExceptionType(ex).FullName,
                     ex.Message
                 };
 

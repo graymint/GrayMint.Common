@@ -113,8 +113,8 @@ public static class CognitoAuthenticationExtension
             {
                 openIdUserInfo = new OpenIdUserInfo()
                 {
-                    Sub = jwtSecurityToken.Claims.Single(x => x.Type == "sub").Value,
-                    Email = jwtSecurityToken.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value,
+                    Sub = jwtSecurityToken.Claims.Single(x => x.Type == JwtRegisteredClaimNames.Sub).Value,
+                    Email = jwtSecurityToken.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Email)?.Value,
                     EmailVerified = jwtSecurityToken.Claims.FirstOrDefault(x => x.Type == "email_verified")?.Value,
                 };
             }
@@ -177,8 +177,8 @@ public static class CognitoAuthenticationExtension
             var claimsIdentity = new ClaimsIdentity();
 
             // add email claim
-            if (!context.Principal.HasClaim(x => x.Type == ClaimTypes.Email) && !string.IsNullOrEmpty(userInfo.Email))
-                claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, userInfo.Email));
+            if (!context.Principal.HasClaim(x => x.Type == JwtRegisteredClaimNames.Email) && !string.IsNullOrEmpty(userInfo.Email))
+                claimsIdentity.AddClaim(new Claim(JwtRegisteredClaimNames.Email, userInfo.Email));
 
             // Convert cognito roles to standard roles
             foreach (var claim in context.Principal.Claims.Where(x => x.Type == "cognito:groups"))

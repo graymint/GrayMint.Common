@@ -64,7 +64,7 @@ public class TestInit : IDisposable
     public async Task<AuthenticationHeaderValue> CreateAuthorizationHeader(string email)
     {
         var tokenBuilder = CurrentServiceScope.ServiceProvider.GetRequiredService<BotAuthenticationTokenBuilder>();
-        return await tokenBuilder.CreateAuthenticationHeader(email);
+        return await tokenBuilder.CreateAuthenticationHeader(email, email);
     }
 
     public async Task<User> CreateUserAndAddToRole(string email, string roleName, string appId = "*")

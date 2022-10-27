@@ -28,7 +28,7 @@ public class UsersController : ControllerBase
     {
         if (createNew)
             await _simpleUserProvider.ResetAuthCodeByEmail(email);
-        var token = await _botAuthenticationTokenBuilder.CreateAuthenticationHeader(email);
+        var token = await _botAuthenticationTokenBuilder.CreateAuthenticationHeader(Guid.NewGuid().ToString(), email);
         return token.Parameter!;
     }
 
@@ -41,7 +41,7 @@ public class UsersController : ControllerBase
                     throw new UnauthorizedAccessException("You don't have email claim.");
 
         await _simpleUserProvider.ResetAuthCodeByEmail(email);
-        var token = await _botAuthenticationTokenBuilder.CreateAuthenticationHeader(email);
+        var token = await _botAuthenticationTokenBuilder.CreateAuthenticationHeader(email, email);
         return token.Parameter!;
     }
 }

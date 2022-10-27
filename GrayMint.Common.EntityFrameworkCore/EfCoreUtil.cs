@@ -1,4 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 
 // ReSharper disable UnusedMember.Global
 namespace GrayMint.Common.EntityFrameworkCore;
@@ -46,6 +49,19 @@ public static class EfCoreUtil
             var newDbItem = (T)Activator.CreateInstance(typeof(T), Enum.Parse(typeof(TEnum), item.Value!, true), item.Value)!;
             dbSet.Add(newDbItem);
         }
+    }
 
+    public static async Task EnsureTablesCreated(DbContext dbContext)
+    {
+        try
+        {
+            var databaseCreator = (RelationalDatabaseCreator)dbContext.Database.GetService <IDatabaseCreator>();
+            await databaseCreator.CreateTablesAsync();
+
+        }
+        catch (SqlException ex) when (ex.Number == 2714) // already exists exception
+        {
+            // ignore
+        }
     }
 }

@@ -160,7 +160,7 @@ public class ApiClientBase
 
         if (httpMethod != HttpMethod.Get)
         {
-            var content = new StringContent(JsonSerializer.Serialize(data, Settings.Value));
+            var content = new StringContent(JsonSerializer.Serialize(data, JsonSerializerSettings));
             content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
             request.Content = content;
         }
@@ -189,7 +189,7 @@ public class ApiClientBase
             {
                 urlBuilder
                     .Append(Uri.EscapeDataString(parameter.Key) + "=")
-                    .Append(Uri.EscapeDataString(ConvertToString(parameter.Key, CultureInfo.InvariantCulture)))
+                    .Append(Uri.EscapeDataString(ConvertToString(parameter.Value, CultureInfo.InvariantCulture)))
                     .Append('&');
             }
             urlBuilder.Length--;

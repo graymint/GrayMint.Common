@@ -11,7 +11,8 @@ public sealed class ApiException : Exception
     {
         // ReSharper disable once CollectionNeverUpdated.Local
         public Dictionary<string, string?> Data { get; set; } = new();
-        public string? Type { get; set; }
+        public string? TypeName { get; set; }
+        public string? TypeFullName { get; set; }
         public string? Message { get; set; }
 
         public static bool TryParse(string? value, [NotNullWhen(true)] out ServerException? serverException)
@@ -23,13 +24,14 @@ public sealed class ApiException : Exception
             try { serverException = JsonSerializer.Deserialize<ServerException>(value); }
             catch { /* ignored */}
 
-            return serverException?.Type != null;
+            return serverException?.TypeName != null;
         }
     }
 
     public int StatusCode { get; }
     public string? Response { get; }
-    public string? ExceptionType { get; }
+    public string? ExceptionTypeName { get; }
+    public string? ExceptionTypeFullName { get; }
     public IReadOnlyDictionary<string, IEnumerable<string>> Headers { get; }
 
     private static string? BuildMessage(string message, int statusCode, string? response)
@@ -53,7 +55,8 @@ public sealed class ApiException : Exception
                 Data.Add(item.Key, item.Value);
 
             Response = JsonSerializer.Serialize(serverException, new JsonSerializerOptions { WriteIndented = true });
-            ExceptionType = serverException.Type;
+            ExceptionTypeName = serverException.TypeName;
+            ExceptionTypeFullName = serverException.TypeFullName;
         }
     }
 
@@ -61,9 +64,5 @@ public sealed class ApiException : Exception
     {
         return $"HTTP Response: \n\n{Response}\n\n{base.ToString()}";
     }
-    public bool IsExceptionType<T>() => ExceptionType == typeof(T).FullName;
-    public bool IsAlreadyExistsException => ExceptionType?.Contains(nameof(AlreadyExistsException)) == true;
-    public bool IsNotExistsException => ExceptionType?.Contains(nameof(NotExistsException)) == true;
-    public bool IsInvalidOperationException => ExceptionType?.Contains(nameof(InvalidOperationException)) == true;
-
+    public bool Is<T>() => ExceptionTypeName == typeof(T).Name;
 }

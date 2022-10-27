@@ -13,7 +13,7 @@ public static class BotAuthenticationExtension
 {
     public static AuthenticationBuilder AddBotAuthentication(this AuthenticationBuilder authenticationBuilder, IConfiguration configuration, bool isProduction)
     {
-        var botAuthenticationOptions = configuration.Get<BotAuthenticationOptions>();
+        var botAuthenticationOptions = configuration.Get<BotAuthenticationOptions>() ?? throw new Exception($"Could not load {nameof(BotAuthenticationOptions)}.");
         botAuthenticationOptions.Validate(isProduction);
 
         var securityKey = new SymmetricSecurityKey(botAuthenticationOptions.BotKey);
@@ -63,21 +63,29 @@ public static class BotAuthenticationExtension
             _botAuthenticationOptions = botAuthenticationOptions;
         }
 
-        public async Task<string?> GetValidateError(TokenValidatedContext context)
+        private async Task<string?> GetValidateError(TokenValidatedContext context)
         {
-            if (context.Principal == null)
-                return "Principal has not been validated.";
+            try
+            {
+                if (context.Principal == null)
+                    return "Principal has not been validated.";
 
-            var authCode = await _botAuthenticationProvider.GetAuthCode(context.Principal);
-            if (string.IsNullOrEmpty(authCode))
-                return $"{BotAuthenticationDefaults.AuthenticationScheme} needs authCode.";
+                var authCode = await _botAuthenticationProvider.GetAuthCode(context.Principal);
+                if (string.IsNullOrEmpty(authCode))
+                    return $"{BotAuthenticationDefaults.AuthenticationScheme} needs {BotAuthenticationDefaults.AuthorizationCodeTypeName}.";
 
-            // deserialize access token
-            var tokenAuthCode = context.Principal.Claims.SingleOrDefault(x => x.Type == "AuthCode")?.Value;
-            if (string.IsNullOrEmpty(authCode))
-                return "Could not find AuthCode in the token.";
+                // deserialize access token
+                var tokenAuthCode = context.Principal.Claims.SingleOrDefault(x => x.Type == BotAuthenticationDefaults.AuthorizationCodeTypeName)?.Value;
+                if (string.IsNullOrEmpty(tokenAuthCode))
+                    return $"Could not find {BotAuthenticationDefaults.AuthorizationCodeTypeName} in the token.";
 
-            return authCode != tokenAuthCode ? "Invalid AuthCode." : null;
+                return authCode != tokenAuthCode ? $"Invalid {BotAuthenticationDefaults.AuthorizationCodeTypeName}." : null;
+
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
         }
 
         public async Task Validate(TokenValidatedContext context)

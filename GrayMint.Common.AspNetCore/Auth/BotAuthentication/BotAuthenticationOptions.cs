@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Options;
-
-namespace GrayMint.Common.AspNetCore.Auth.BotAuthentication;
+﻿namespace GrayMint.Common.AspNetCore.Auth.BotAuthentication;
 
 public class BotAuthenticationOptions
 {
@@ -15,9 +13,9 @@ public class BotAuthenticationOptions
             AppCommon.ThrowOptionsValidationException(nameof(BotIssuer), typeof(string));
 
         if (BotKey == null! || BotKey.Length == 0)
-            AppCommon.ThrowOptionsValidationException(nameof(BotIssuer), typeof(byte[]));
+            AppCommon.ThrowOptionsValidationException(nameof(BotKey), typeof(byte[]));
 
         if (isProduction && BotKey!.All(x => x == 0))
-            AppCommon.ThrowOptionsValidationException(nameof(BotKey), typeof(byte[]));
+            AppCommon.ThrowOptionsValidationException(nameof(BotKey), typeof(byte[]), "This Key is not valid for Production.");
     }
 }

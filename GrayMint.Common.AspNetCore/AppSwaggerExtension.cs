@@ -9,7 +9,7 @@ namespace GrayMint.Common.AspNetCore;
 
 public static class AppSwaggerExtension
 {
-    public static IServiceCollection AddAppSwagger(this IServiceCollection services, string title)
+    public static IServiceCollection AddAppSwagger(this IServiceCollection services, string title, bool addVersioning)
     {
         services.AddSwaggerDocument(configure =>
         {
@@ -33,20 +33,22 @@ public static class AppSwaggerExtension
         });
 
         // Version
-        services.AddApiVersioning(options =>
+        if (addVersioning)
         {
-            options.DefaultApiVersion = new ApiVersion(1, 0);
-            options.AssumeDefaultVersionWhenUnspecified = true;
-            options.ReportApiVersions = true;
-        });
+            services.AddApiVersioning(options =>
+            {
+                options.DefaultApiVersion = new ApiVersion(1, 0);
+                options.AssumeDefaultVersionWhenUnspecified = true;
+                options.ReportApiVersions = true;
+            });
 
-        services.AddVersionedApiExplorer(options =>
-        {
-            // ReSharper disable once StringLiteralTypo
-            options.GroupNameFormat = "'v'VVV";
-            options.SubstituteApiVersionInUrl = true;
-        });
-
+            services.AddVersionedApiExplorer(options =>
+            {
+                // ReSharper disable once StringLiteralTypo
+                options.GroupNameFormat = "'v'VVV";
+                options.SubstituteApiVersionInUrl = true;
+            });
+        }
 
         return services;
 

@@ -1,4 +1,6 @@
 using GrayMint.Common.AspNetCore;
+using GrayMint.Common.AspNetCore.Auth.BotAuthentication;
+using GrayMint.Common.AspNetCore.Auth.CognitoAuthentication;
 using GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 using GrayMint.Common.AspNetCore.SimpleUserManagement;
 using GrayMint.Common.Test.WebApiSample.Persistence;
@@ -11,9 +13,14 @@ public class Program
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        builder.RegisterAppCommonServices(builder.Configuration.GetSection("App"),  builder.Configuration.GetSection("Auth"),  new RegisterServicesOptions{AddCognitoAuthentication = true});
+        builder.AddGrayMintCommonServices(builder.Configuration.GetSection("App"), new RegisterServicesOptions());
+        builder.Services
+            .AddAuthentication()
+            .AddBotAuthentication(builder.Configuration.GetSection("Auth"), builder.Environment.IsProduction())
+            .AddCognitoAuthentication(builder.Configuration.GetSection("Auth"));
+
         builder.Services.AddSimpleRoleAuthorization(builder.Configuration.GetSection("Auth"), true, true);
-        builder.Services.RegisterSimpleUserProvider(options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
+        builder.Services.AddSimpleUserProvider(options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
         builder.Services.AddDbContext<WebApiSampleDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
 
         // Add services to the container.

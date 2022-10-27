@@ -11,7 +11,7 @@ namespace GrayMint.Common.Test.Tests;
 [TestClass]
 public class AwsCognitoTest : BaseControllerTest
 {
-    public async Task<string> GetCredsAsync()
+    public async Task<string> GetCredentialsAsync()
     {
         var cognitoArn = Arn.Parse(TestInit1.CognitoAuthenticationOptions.CognitoArn);
         var awsRegion = RegionEndpoint.GetBySystemName(cognitoArn.Region);
@@ -31,7 +31,7 @@ public class AwsCognitoTest : BaseControllerTest
     [TestMethod]
     public async Task CognitoTest()
     {
-        var idToken = await GetCredsAsync();
+        var idToken = await GetCredentialsAsync();
         TestInit1.HttpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, idToken);
 
