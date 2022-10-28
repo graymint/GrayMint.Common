@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using GrayMint.Common.Exceptions;
 
 // ReSharper disable UnusedMember.Global
 namespace GrayMint.Common.Client;
