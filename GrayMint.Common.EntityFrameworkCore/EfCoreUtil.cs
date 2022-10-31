@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 // ReSharper disable UnusedMember.Global
 namespace GrayMint.Common.EntityFrameworkCore;
+
 public static class EfCoreUtil
 {
     public static Task UpdateEnums<T, TEnum>(DbSet<T> dbSet)
@@ -64,4 +65,42 @@ public static class EfCoreUtil
             // ignore
         }
     }
+
+    public static async Task<bool> SqlFunctionExists(DatabaseFacade database, string schema, string functionName)
+    {
+        // ReSharper disable StringLiteralTypo
+        var sql = $"SELECT COUNT(1) FROM sys.objects WHERE object_id=OBJECT_ID(N'[{schema}].[{functionName}]') " +
+                  "AND type IN ( N'FN', N'IF', N'TF', N'FS', N'FT' )";
+        // ReSharper restore StringLiteralTypo
+
+        var res = await ExecuteScalar(database, sql);
+        return res > 0;
+    }
+
+    public static async Task<bool> SqlTableExists(DatabaseFacade database, string schema, string tableName)
+    {
+        // ReSharper disable StringLiteralTypo
+        var sql = $"SELECT COUNT(1) FROM sys.objects WHERE object_id=OBJECT_ID(N'[{schema}].[{tableName}]') " +
+                  "AND type IN ( N'U' )";
+        // ReSharper restore StringLiteralTypo
+
+        var res = await ExecuteScalar(database, sql);
+        return res > 0;
+    }
+
+    private static async Task<int> ExecuteScalar(DatabaseFacade database, string sql)
+    {
+        await using var cmd = (SqlCommand)database.GetDbConnection().CreateCommand();
+        if (database.CurrentTransaction != null) cmd.Transaction = (SqlTransaction)database.CurrentTransaction.GetDbTransaction();
+
+        var connection = cmd.Connection;
+        if (connection.State != System.Data.ConnectionState.Open)
+            await connection.OpenAsync();
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        var res = (int)(await command.ExecuteScalarAsync())!;
+        return res;
+    }
+
 }

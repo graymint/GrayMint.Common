@@ -4,5 +4,5 @@ namespace GrayMint.Common.AspNetCore.Auth.BotAuthentication;
 
 public interface IBotAuthenticationProvider
 {
-    public Task<string> GetAuthCode(ClaimsPrincipal principal);
+    public Task<string> GetAuthorizationCode(ClaimsPrincipal principal);
 }

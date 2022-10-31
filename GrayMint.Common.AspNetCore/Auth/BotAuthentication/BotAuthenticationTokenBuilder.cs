@@ -35,7 +35,7 @@ public class BotAuthenticationTokenBuilder
         var emailClaim = claimsIdentity.Claims.SingleOrDefault(x => x.Type == JwtRegisteredClaimNames.Email);
         if (emailClaim != null) claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, emailClaim.Value));
 
-        var authCode = await _botAuthenticationProvider.GetAuthCode(new ClaimsPrincipal(claimsIdentity));
+        var authCode = await _botAuthenticationProvider.GetAuthorizationCode(new ClaimsPrincipal(claimsIdentity));
         claimsIdentity.AddClaim(new Claim(BotAuthenticationDefaults.AuthorizationCodeTypeName, authCode));
 
         if (nameClaim != null) claimsIdentity.RemoveClaim(claimsIdentity.Claims.SingleOrDefault(x => x.Type == ClaimTypes.NameIdentifier));

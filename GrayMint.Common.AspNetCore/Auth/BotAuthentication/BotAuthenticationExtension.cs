@@ -70,7 +70,7 @@ public static class BotAuthenticationExtension
                 if (context.Principal == null)
                     return "Principal has not been validated.";
 
-                var authCode = await _botAuthenticationProvider.GetAuthCode(context.Principal);
+                var authCode = await _botAuthenticationProvider.GetAuthorizationCode(context.Principal);
                 if (string.IsNullOrEmpty(authCode))
                     return $"{BotAuthenticationDefaults.AuthenticationScheme} needs {BotAuthenticationDefaults.AuthorizationCodeTypeName}.";
 
