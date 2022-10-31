@@ -47,7 +47,7 @@ internal class SimpleUserResolver : IBotAuthenticationProvider
         return userAuthInfo;
     }
 
-    public async Task<string> GetAuthCode(ClaimsPrincipal principal)
+    public async Task<string> GetAuthorizationCode(ClaimsPrincipal principal)
     {
         var authUser = await GetSimpleAuthUser(principal);
         return authUser?.AuthCode ?? throw new KeyNotFoundException("User does not exist.");

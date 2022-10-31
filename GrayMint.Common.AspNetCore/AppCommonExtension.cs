@@ -1,5 +1,8 @@
 using System.Net;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.IdentityModel.Tokens;
 
 namespace GrayMint.Common.AspNetCore;
 
@@ -44,7 +47,6 @@ public static class AppCommonExtension
         }
 
         // Add authentications
-        //todo add legacy 
         //services.AddAuthentication().
         //AddJwtBearer(AppCommonSettings.LegacyAuthScheme, jwtBearerOptions =>
         //{
