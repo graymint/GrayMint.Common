@@ -1,8 +1,5 @@
 using System.Net;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.IdentityModel.Tokens;
 
 namespace GrayMint.Common.AspNetCore;
 
@@ -45,35 +42,6 @@ public static class AppCommonExtension
             services.AddEndpointsApiExplorer();
             services.AddAppSwagger(appCommonSettings.AppName, servicesOptions.AddSwaggerVersioning);
         }
-
-        // Add authentications
-        //services.AddAuthentication().
-        //AddJwtBearer(AppCommonSettings.LegacyAuthScheme, jwtBearerOptions =>
-        //{
-        //    jwtBearerOptions.TokenValidationParameters = new TokenValidationParameters
-        //    {
-        //        NameClaimType = "name",
-        //        RequireSignedTokens = true,
-        //        IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(appCommonSettings.AuthKey)),
-        //        ValidIssuer = appCommonSettings.AuthIssuer,
-        //        ValidAudience = appCommonSettings.AuthIssuer,
-        //        ValidateAudience = true,
-        //        ValidateIssuerSigningKey = true,
-        //        ValidateIssuer = true,
-        //        ValidateLifetime = true,
-        //        ClockSkew = TimeSpan.FromSeconds(TokenValidationParameters.DefaultClockSkew.TotalSeconds)
-        //    };
-        //    jwtBearerOptions.Events = new JwtBearerEvents()
-        //    {
-        //        OnTokenValidated = async context =>
-        //        {
-        //            await Task.Delay(0);
-        //            var claimsIdentity = new ClaimsIdentity();
-        //            foreach (var claim in context.Principal!.Claims.Where(x => x.Type == ClaimTypes.Role))
-        //                claimsIdentity.AddClaim(new Claim("app-role", $"{claim.Value}/apps/*"));
-        //        }
-        //    };
-        //});
 
         if (servicesOptions.AddMemoryCache)
             services.AddMemoryCache();
