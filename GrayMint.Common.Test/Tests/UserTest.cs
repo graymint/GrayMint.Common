@@ -62,11 +62,11 @@ public class UserTest : BaseControllerTest
             await testInit.UsersClient.GetAuthTokenByEmailAsync(user.Email));
 
         //reset token
-        var newToken = await testInit.UsersClient.ResetMyTokenAsync(Guid.NewGuid().ToString()); // make sure the current token is working
+        var newToken = await testInit.UsersClient.ResetMyTokenAsync(); // make sure the current token is working
         await Task.Delay(100);
         try
         {
-            await testInit.UsersClient.ResetMyTokenAsync(Guid.NewGuid().ToString()); // current token should not work anymore
+            await testInit.UsersClient.ResetMyTokenAsync(); // current token should not work anymore
             Assert.Fail("Unauthorized Exception was expected.");
         }
         catch (ApiException ex)

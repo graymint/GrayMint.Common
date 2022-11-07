@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Security.Cryptography;
+using System.Text.Json;
 
 namespace GrayMint.Common;
 
@@ -27,5 +28,13 @@ public static class GmUtil
     {
         return JsonSerializer.Deserialize<T>(json, options) ??
                throw new InvalidDataException($"{typeof(T)} could not be deserialized!");
+    }
+
+    public static byte[] GenerateKey(int keySize)
+    {
+        using var aes = Aes.Create();
+        aes.KeySize = keySize;
+        aes.GenerateKey();
+        return aes.Key;
     }
 }

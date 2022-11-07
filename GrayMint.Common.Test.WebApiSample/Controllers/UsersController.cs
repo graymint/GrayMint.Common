@@ -33,7 +33,7 @@ public class UsersController : ControllerBase
     }
 
     [Authorize(SimpleRoleAuth.Policy)]
-    [HttpPost("{appId}/reset-auth-token")]
+    [HttpPost("reset-auth-token")]
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<string> ResetMyToken()
     {
