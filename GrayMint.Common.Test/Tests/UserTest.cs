@@ -17,7 +17,7 @@ public class UserTest : BaseControllerTest
         var user = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), Roles.AppCreator);
         
         // call api buy retrieved token
-        TestInit1.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, await TestInit1.UsersClient.GetAuthTokenByEmailAsync(user.Email));
+        TestInit1.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, await TestInit1.UsersClient.GetAuthorizationTokenByEmailAsync(user.Email));
         await TestInit1.AppsClient.CreateAppAsync(Guid.NewGuid().ToString());
     }
 
@@ -31,11 +31,11 @@ public class UserTest : BaseControllerTest
         var user = await testInit.CreateUserAndAddToRole(TestInit.NewEmail(), Roles.AppCreator);
 
         // call api buy retrieved token
-        testInit.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, await testInit.UsersClient.GetAuthTokenByEmailAsync(user.Email));
+        testInit.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, await testInit.UsersClient.GetAuthorizationTokenByEmailAsync(user.Email));
         await testInit.AppsClient.CreateAppAsync(Guid.NewGuid().ToString()); // make sure the current token is working
 
         //reset token
-        await testInit.UsersClient.GetAuthTokenByEmailAsync(user.Email, true);
+        await testInit.UsersClient.GetAuthorizationTokenByEmailAsync(user.Email, true);
         await Task.Delay(200);
         try
         {
@@ -59,7 +59,7 @@ public class UserTest : BaseControllerTest
 
         // call api buy retrieved token
         testInit.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, 
-            await testInit.UsersClient.GetAuthTokenByEmailAsync(user.Email));
+            await testInit.UsersClient.GetAuthorizationTokenByEmailAsync(user.Email));
 
         //reset token
         var newToken = await testInit.UsersClient.ResetMyTokenAsync(); // make sure the current token is working

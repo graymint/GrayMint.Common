@@ -516,10 +516,10 @@ namespace GrayMint.Common.Test.Api
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="GrayMint.Common.Client.ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<string> GetAuthTokenByEmailAsync(string? email, bool? createNew = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<string> GetAuthorizationTokenByEmailAsync(string? email, bool? createNew = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var urlBuilder_ = new System.Text.StringBuilder();
-            urlBuilder_.Append("api/v1/users/{email}/auth-token?");
+            urlBuilder_.Append("api/v1/users/{email}/authorization-token?");
             urlBuilder_.Replace("{email}", System.Uri.EscapeDataString(ConvertToString(email, System.Globalization.CultureInfo.InvariantCulture)));
             if (createNew != null)
             {
@@ -591,7 +591,7 @@ namespace GrayMint.Common.Test.Api
         public virtual async System.Threading.Tasks.Task<string> ResetMyTokenAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var urlBuilder_ = new System.Text.StringBuilder();
-            urlBuilder_.Append("api/v1/users/reset-auth-token");
+            urlBuilder_.Append("api/v1/users/reset-authorization-token");
 
             var client_ = _httpClient;
             var disposeClient_ = false;

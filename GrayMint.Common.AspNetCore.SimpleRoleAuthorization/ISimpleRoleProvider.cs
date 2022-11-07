@@ -2,5 +2,5 @@
 
 public interface ISimpleRoleProvider
 {
-    Task<SimpleUser?> GetSimpleUserByEmail(string email);
+    Task<SimpleUser?> FindSimpleUserByEmail(string email);
 }

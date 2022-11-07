@@ -74,10 +74,17 @@ public class SimpleRoleProvider
         return userModel.ToDto();
     }
 
-    public async Task<Role?> GetByName(string roleName)
+    public async Task<Role?> FindByName(string roleName)
     {
         var roleModel = await _simpleUserDbContext.Roles.SingleOrDefaultAsync(x => x.RoleName == roleName);
         return roleModel?.ToDto();
+    }
+
+
+    public async Task<Role> GetByName(string roleName)
+    {
+        var roleModel = await _simpleUserDbContext.Roles.SingleAsync(x => x.RoleName == roleName);
+        return roleModel.ToDto();
     }
 
     public async Task Remove(string roleId)

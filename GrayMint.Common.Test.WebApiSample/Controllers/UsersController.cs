@@ -22,9 +22,9 @@ public class UsersController : ControllerBase
     }
 
     [Authorize(SimpleRoleAuth.Policy, Roles = Roles.AppCreator)]
-    [HttpGet("{email}/auth-token")]
+    [HttpGet("{email}/authorization-token")]
     [Produces(MediaTypeNames.Application.Json)]
-    public async Task<string> GetAuthTokenByEmail(string email, bool createNew)
+    public async Task<string> GetAuthorizationTokenByEmail(string email, bool createNew)
     {
         if (createNew)
         {
@@ -36,7 +36,7 @@ public class UsersController : ControllerBase
     }
 
     [Authorize(SimpleRoleAuth.Policy)]
-    [HttpPost("reset-auth-token")]
+    [HttpPost("reset-authorization-token")]
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<string> ResetMyToken()
     {

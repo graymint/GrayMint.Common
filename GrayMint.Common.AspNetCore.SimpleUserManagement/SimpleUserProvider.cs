@@ -15,7 +15,7 @@ public class SimpleUserProvider : ISimpleRoleProvider
         _simpleUserDbContext = simpleUserDbContext;
     }
 
-    public async Task<SimpleUser?> GetSimpleUserByEmail(string email)
+    public async Task<SimpleUser?> FindSimpleUserByEmail(string email)
     {
         var userModel = await _simpleUserDbContext.Users
             .Include(x => x.UserRoles)!
@@ -52,10 +52,16 @@ public class SimpleUserProvider : ISimpleRoleProvider
         return userModel.ToDto();
     }
 
-    public async Task<User?> GetByEmail(string email)
+    public async Task<User?> FindByEmail(string email)
     {
         var userModel = await _simpleUserDbContext.Users.SingleOrDefaultAsync(x => x.Email == email);
         return userModel?.ToDto();
+    }
+
+    public async Task<User> GetByEmail(string email)
+    {
+        var userModel = await _simpleUserDbContext.Users.SingleAsync(x => x.Email == email);
+        return userModel.ToDto();
     }
 
     public async Task Update(string userId, UserUpdateRequest request)

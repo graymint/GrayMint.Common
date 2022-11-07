@@ -34,8 +34,8 @@ public class SimpleRoleProviderTest : BaseControllerTest
         Assert.AreEqual(role.Description, role2.Description);
 
         var role3 = await roleProvider.GetByName(role.RoleName);
-        Assert.AreEqual(role.RoleId, role3?.RoleId);
-        Assert.AreEqual(role.RoleName, role3?.RoleName);
+        Assert.AreEqual(role.RoleId, role3.RoleId);
+        Assert.AreEqual(role.RoleName, role3.RoleName);
 
         // Update
         var updateRequest = new RoleUpdateRequest()
@@ -157,7 +157,7 @@ public class SimpleRoleProviderTest : BaseControllerTest
         await roleProvider.AddUser(role1.RoleId, user.UserId, "1");
         await roleProvider.AddUser(role2.RoleId, user.UserId, "1");
 
-        var authUser = await userProvider.GetSimpleUserByEmail(user.Email);
+        var authUser = await userProvider.FindSimpleUserByEmail(user.Email);
         Assert.IsNotNull(authUser);
         Assert.AreEqual(user.AuthCode, authUser.AuthorizationCode);
         Assert.AreEqual(3, authUser.UserRoles.Length);

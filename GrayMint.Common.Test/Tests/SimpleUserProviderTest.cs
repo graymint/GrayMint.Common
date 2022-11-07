@@ -43,8 +43,8 @@ public class SimpleUserProviderTest : BaseControllerTest
         Assert.AreEqual(user.UserId, user2.UserId);
 
         var user3 = await simpleUserProvider.GetByEmail(user.Email);
-        Assert.AreEqual(user.UserId, user3?.UserId);
-        Assert.AreEqual(user.FirstName, user3?.FirstName);
+        Assert.AreEqual(user.UserId, user3.UserId);
+        Assert.AreEqual(user.FirstName, user3.FirstName);
 
         // Update
         var updateRequest = new UserUpdateRequest()
