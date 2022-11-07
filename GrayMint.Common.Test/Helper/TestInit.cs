@@ -6,7 +6,6 @@ using GrayMint.Common.AspNetCore.Auth.BotAuthentication;
 using GrayMint.Common.AspNetCore.Auth.CognitoAuthentication;
 using GrayMint.Common.AspNetCore.SimpleUserManagement;
 using GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
-using GrayMint.Common.Exceptions;
 using GrayMint.Common.Test.Api;
 using GrayMint.Common.Test.WebApiSample;
 using Microsoft.Extensions.Options;

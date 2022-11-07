@@ -9,11 +9,11 @@ namespace GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 internal class SimpleUserResolver : IBotAuthenticationProvider
 {
     private readonly IMemoryCache _memoryCache;
-    private readonly ISimpleRoleAuthUserProvider _simpleUserProvider;
+    private readonly ISimpleRoleProvider _simpleUserProvider;
     private readonly SimpleRoleAuthOptions _simpleRoleAuthOptions;
 
     public SimpleUserResolver(IMemoryCache memoryCache,
-        ISimpleRoleAuthUserProvider simpleUserProvider,
+        ISimpleRoleProvider simpleUserProvider,
         IOptions<SimpleRoleAuthOptions> simpleRoleAuthOptions)
     {
         _memoryCache = memoryCache;
@@ -34,7 +34,7 @@ internal class SimpleUserResolver : IBotAuthenticationProvider
         var email = principal.FindFirst(ClaimTypes.Email)?.Value;
         try
         {
-            userAuthInfo = string.IsNullOrEmpty(email) ? null : await _simpleUserProvider.GetAuthUserByEmail(email);
+            userAuthInfo = string.IsNullOrEmpty(email) ? null : await _simpleUserProvider.GetSimpleUserByEmail(email);
         }
         catch (Exception ex) when (NotExistsException.Is(ex))
         {
@@ -50,6 +50,6 @@ internal class SimpleUserResolver : IBotAuthenticationProvider
     public async Task<string> GetAuthorizationCode(ClaimsPrincipal principal)
     {
         var authUser = await GetSimpleAuthUser(principal);
-        return authUser?.AuthCode ?? throw new KeyNotFoundException("User does not exist.");
+        return authUser?.AuthorizationCode ?? throw new KeyNotFoundException("User does not exist.");
     }
 }

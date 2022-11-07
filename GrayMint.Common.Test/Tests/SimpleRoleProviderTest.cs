@@ -157,9 +157,9 @@ public class SimpleRoleProviderTest : BaseControllerTest
         await roleProvider.AddUser(role1.RoleId, user.UserId, "1");
         await roleProvider.AddUser(role2.RoleId, user.UserId, "1");
 
-        var authUser = await userProvider.GetAuthUserByEmail(user.Email);
+        var authUser = await userProvider.GetSimpleUserByEmail(user.Email);
         Assert.IsNotNull(authUser);
-        Assert.AreEqual(user.AuthCode, authUser.AuthCode);
+        Assert.AreEqual(user.AuthCode, authUser.AuthorizationCode);
         Assert.AreEqual(3, authUser.UserRoles.Length);
         Assert.IsTrue(authUser.UserRoles.Any(x => x.AppId == "*" && x.RoleName == role1.RoleName));
         Assert.IsTrue(authUser.UserRoles.Any(x => x.AppId == "1" && x.RoleName == role1.RoleName));

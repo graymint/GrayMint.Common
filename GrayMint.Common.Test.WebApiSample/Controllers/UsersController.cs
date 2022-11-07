@@ -27,7 +27,10 @@ public class UsersController : ControllerBase
     public async Task<string> GetAuthTokenByEmail(string email, bool createNew)
     {
         if (createNew)
-            await _simpleUserProvider.ResetAuthCodeByEmail(email);
+        {
+            var user = await _simpleUserProvider.GetByEmail(email) ?? throw new KeyNotFoundException($"Could not find any user by email. email: {email}");
+            await _simpleUserProvider.ResetAuthorizationCode(user.UserId);
+        }
         var token = await _botAuthenticationTokenBuilder.CreateAuthenticationHeader(Guid.NewGuid().ToString(), email);
         return token.Parameter!;
     }
@@ -40,7 +43,10 @@ public class UsersController : ControllerBase
         var email = HttpContext.User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value ??
                     throw new UnauthorizedAccessException("You don't have email claim.");
 
-        await _simpleUserProvider.ResetAuthCodeByEmail(email);
+        var user = await _simpleUserProvider.GetByEmail(email) 
+                   ?? throw new KeyNotFoundException($"Could not find any user by email. email: {email}");
+
+        await _simpleUserProvider.ResetAuthorizationCode(user.UserId);
         var token = await _botAuthenticationTokenBuilder.CreateAuthenticationHeader(email, email);
         return token.Parameter!;
     }

@@ -1,8 +1,5 @@
 ﻿using GrayMint.Common.AspNetCore.SimpleUserManagement.Models;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace GrayMint.Common.AspNetCore.SimpleUserManagement.Persistence;
 

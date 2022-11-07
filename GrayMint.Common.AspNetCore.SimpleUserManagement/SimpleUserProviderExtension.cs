@@ -12,7 +12,7 @@ public static class SimpleUserProviderExtension
     public static void AddSimpleUserProvider(this IServiceCollection services, Action<DbContextOptionsBuilder>? optionsAction = null)
     {
         services.AddDbContext<SimpleUserDbContext>(optionsAction);
-        services.AddScoped<ISimpleRoleAuthUserProvider, SimpleUserProvider>();
+        services.AddScoped<ISimpleRoleProvider, SimpleUserProvider>();
         services.AddScoped<SimpleUserProvider>();
         services.AddScoped<SimpleRoleProvider>();
     }
