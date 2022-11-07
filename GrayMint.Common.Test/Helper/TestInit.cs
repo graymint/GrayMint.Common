@@ -71,15 +71,8 @@ public class TestInit : IDisposable
     {
         // create roles
         var roleProvider = CurrentServiceScope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
-        Role role;
-        try
-        {
-            role = await roleProvider.GetByName(roleName);
-        }
-        catch (Exception ex) when (NotExistsException.Is(ex))
-        {
-            role = await roleProvider.Create(new RoleCreateRequest(roleName));
-        }
+        var role = await roleProvider.GetByName(roleName);
+        role ??= await roleProvider.Create(new RoleCreateRequest(roleName));
 
         // create user
         var userProvider = CurrentServiceScope.ServiceProvider.GetRequiredService<SimpleUserProvider>();

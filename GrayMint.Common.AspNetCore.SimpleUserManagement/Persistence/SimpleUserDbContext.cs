@@ -24,20 +24,6 @@ public partial class SimpleUserDbContext : DbContext
     {
     }
 
-    public async Task EnsureTablesCreated()
-    {
-        try
-        {
-            var databaseCreator = (RelationalDatabaseCreator)Database.GetService<IDatabaseCreator>();
-            await databaseCreator.CreateTablesAsync();
-
-        }
-        catch (SqlException ex) when(ex.Number==2714) // already exists exception
-        { 
-            // ignore
-        }
-    }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

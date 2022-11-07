@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\GrayMint.Common.AspNetCore.SimpleRoleAuthorization\GrayMint.Common.AspNetCore.SimpleRoleAuthorization.csproj" />
+    <ProjectReference Include="..\GrayMint.Common.EntityFrameworkCore\GrayMint.Common.EntityFrameworkCore.csproj" />
   </ItemGroup>
 
 </Project>

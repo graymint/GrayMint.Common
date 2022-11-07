@@ -52,11 +52,17 @@ public static class EfCoreUtil
         }
     }
 
-    public static async Task EnsureTablesCreated(DbContext dbContext)
+    public static async Task EnsureTablesCreated(DatabaseFacade database, string checkSchema, string checkTableName)
+    {
+        if (!await SqlTableExists(database, checkSchema, checkTableName))
+            await EnsureTablesCreated(database);
+    }
+
+    public static async Task EnsureTablesCreated(DatabaseFacade database)
     {
         try
         {
-            var databaseCreator = (RelationalDatabaseCreator)dbContext.Database.GetService <IDatabaseCreator>();
+            var databaseCreator = (RelationalDatabaseCreator)database.GetService <IDatabaseCreator>();
             await databaseCreator.CreateTablesAsync();
 
         }

@@ -1,4 +1,5 @@
-﻿using GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
+﻿using GrayMint.Common.AspNetCore.SimpleUserManagement.DtoConveters;
+using GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
 using GrayMint.Common.AspNetCore.SimpleUserManagement.Persistence;
 using GrayMint.Common.Exceptions;
 using Microsoft.EntityFrameworkCore;
@@ -17,14 +18,14 @@ public class SimpleRoleProvider
     public async Task AddUser(string roleId, string userId, string appId)
     {
         _simpleUserDbContext.ChangeTracker.Clear();
-         await _simpleUserDbContext.UserRoles.AddAsync(
-            new Models.UserRole
-            {
-                RoleId = int.Parse(roleId),
-                UserId = int.Parse(userId),
-                AppId = appId,
-            });
-         await _simpleUserDbContext.SaveChangesAsync();
+        await _simpleUserDbContext.UserRoles.AddAsync(
+           new Models.UserRole
+           {
+               RoleId = int.Parse(roleId),
+               UserId = int.Parse(userId),
+               AppId = appId,
+           });
+        await _simpleUserDbContext.SaveChangesAsync();
     }
 
     public async Task RemoveUser(string roleId, string userId, string appId)
@@ -35,14 +36,14 @@ public class SimpleRoleProvider
             {
                 UserId = int.Parse(userId),
                 RoleId = int.Parse(roleId),
-                AppId = appId 
+                AppId = appId
             });
 
         try
         {
             await _simpleUserDbContext.SaveChangesAsync();
         }
-        catch (Exception ex) when(ex.Message.Contains("The database operation was expected to affect 1 row(s), but actually affected 0 row(s)"))
+        catch (Exception ex) when (ex.Message.Contains("The database operation was expected to affect 1 row(s), but actually affected 0 row(s)"))
         {
             throw new NotExistsException();
         }
@@ -51,35 +52,32 @@ public class SimpleRoleProvider
     public async Task<Role> Create(RoleCreateRequest request)
     {
         _simpleUserDbContext.ChangeTracker.Clear();
-        var res = await _simpleUserDbContext.Roles.AddAsync(new Models.Role()
+        var roleModel = await _simpleUserDbContext.Roles.AddAsync(new Models.Role()
         {
             RoleName = request.RoleName,
             Description = request.Description
         });
         await _simpleUserDbContext.SaveChangesAsync();
 
-        var role = RoleFromModel(res.Entity);
-        return role;
+        return roleModel.Entity.ToDto();
     }
 
     public async Task<Role[]> GetAll()
     {
         var roleModels = await _simpleUserDbContext.Roles.ToArrayAsync();
-        return roleModels.Select(RoleFromModel).ToArray();
+        return roleModels.Select(x => x.ToDto()).ToArray();
     }
 
     public async Task<Role> Get(string roleId)
     {
         var userModel = await _simpleUserDbContext.Roles.SingleAsync(x => x.RoleId == int.Parse(roleId));
-        var ret = RoleFromModel(userModel);
-        return ret;
+        return userModel.ToDto();
     }
 
-    public async Task<Role> GetByName(string roleName)
+    public async Task<Role?> GetByName(string roleName)
     {
-        var userModel = await _simpleUserDbContext.Roles.SingleAsync(x => x.RoleName == roleName);
-        var ret = RoleFromModel(userModel);
-        return ret;
+        var roleModel = await _simpleUserDbContext.Roles.SingleOrDefaultAsync(x => x.RoleName == roleName);
+        return roleModel?.ToDto();
     }
 
     public async Task Remove(string roleId)
@@ -98,39 +96,17 @@ public class SimpleRoleProvider
             .Where(x => x.RoleId == int.Parse(roleId))
             .ToArrayAsync();
 
-        return roleModels.Select(UserRoleFromModel).ToArray();
+        return roleModels.Select(x=>x.ToDto()).ToArray();
     }
 
     public async Task<UserRole[]> GetUserRolesByUser(string userId)
     {
         var roleModels = await _simpleUserDbContext.UserRoles
-            .Include(x=>x.Role)
-            .Where(x=>x.UserId==int.Parse(userId))
+            .Include(x => x.Role)
+            .Where(x => x.UserId == int.Parse(userId))
             .ToArrayAsync();
 
-        return roleModels.Select(UserRoleFromModel).ToArray();
-    }
-
-    internal static Role RoleFromModel(Models.Role roleModel)
-    {
-        var role = new Role(roleModel.RoleId.ToString(), roleModel.RoleName)
-        {
-            Description = roleModel.Description
-        };
-
-        return role;
-    }
-
-    internal UserRole UserRoleFromModel(Models.UserRole userRoleModel)
-    {
-        if (userRoleModel.Role == null)
-            throw new Exception("Role has not been fetched.");
-
-        var userRole = new UserRole(RoleFromModel(userRoleModel.Role))
-        {
-            AppId = userRoleModel.AppId
-        };
-        return userRole;
+        return roleModels.Select(x=>x.ToDto()).ToArray();
     }
 
     public async Task Update(string roleId, RoleUpdateRequest request)
@@ -141,3 +117,5 @@ public class SimpleRoleProvider
         await _simpleUserDbContext.SaveChangesAsync();
     }
 }
+
+

@@ -1,5 +1,6 @@
 ﻿using GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 using GrayMint.Common.AspNetCore.SimpleUserManagement.Persistence;
+using GrayMint.Common.EntityFrameworkCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,8 +21,6 @@ public static class SimpleUserProviderExtension
     {
         await using var scope = webApplication.Services.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<SimpleUserDbContext>();
-        await dbContext.EnsureTablesCreated();
-
-        await dbContext.SaveChangesAsync();
+        await EfCoreUtil.EnsureTablesCreated(dbContext.Database, SimpleUserDbContext.Schema, nameof(SimpleUserDbContext.Users));
     }
 }

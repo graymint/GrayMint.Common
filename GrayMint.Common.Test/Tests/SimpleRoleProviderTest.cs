@@ -34,8 +34,8 @@ public class SimpleRoleProviderTest : BaseControllerTest
         Assert.AreEqual(role.Description, role2.Description);
 
         var role3 = await roleProvider.GetByName(role.RoleName);
-        Assert.AreEqual(role.RoleId, role3.RoleId);
-        Assert.AreEqual(role.RoleName, role3.RoleName);
+        Assert.AreEqual(role.RoleId, role3?.RoleId);
+        Assert.AreEqual(role.RoleName, role3?.RoleName);
 
         // Update
         var updateRequest = new RoleUpdateRequest()
