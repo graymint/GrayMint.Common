@@ -83,20 +83,13 @@ public class TestInit : IDisposable
 
         // create user
         var userProvider = CurrentServiceScope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
-        User user;
-        try
+        var user = await userProvider.GetByEmail(email);
+        user ??= await userProvider.Create(new UserCreateRequest($"{Guid.NewGuid()}@local")
         {
-            user = await userProvider.GetByEmail(email);
-        }
-        catch (Exception ex) when (NotExistsException.Is(ex))
-        {
-            user = await userProvider.Create(new UserCreateRequest($"{Guid.NewGuid()}@local")
-            {
-                FirstName = Guid.NewGuid().ToString(),
-                LastName = Guid.NewGuid().ToString(),
-                Description = Guid.NewGuid().ToString()
-            });
-        }
+            FirstName = Guid.NewGuid().ToString(),
+            LastName = Guid.NewGuid().ToString(),
+            Description = Guid.NewGuid().ToString()
+        });
 
         await roleProvider.AddUser(role.RoleId, user.UserId, appId);
         return user;

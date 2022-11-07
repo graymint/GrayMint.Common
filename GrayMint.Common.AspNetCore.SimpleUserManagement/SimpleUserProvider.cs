@@ -1,4 +1,5 @@
 ﻿using GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
+using GrayMint.Common.AspNetCore.SimpleUserManagement.DtoConveters;
 using GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
 using GrayMint.Common.AspNetCore.SimpleUserManagement.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -49,35 +50,19 @@ public class SimpleUserProvider : ISimpleRoleAuthUserProvider
         });
         await _simpleUserDbContext.SaveChangesAsync();
 
-        var ret = UserFromModel(res.Entity);
-        return ret;
+        return res.Entity.ToDto();
     }
 
     public async Task<User> Get(string userId)
     {
         var userModel = await _simpleUserDbContext.Users.SingleAsync(x => x.UserId == int.Parse(userId));
-        var ret = UserFromModel(userModel);
-        return ret;
+        return userModel.ToDto();
     }
 
-    public async Task<User> GetByEmail(string email)
+    public async Task<User?> GetByEmail(string email)
     {
-        var userModel = await _simpleUserDbContext.Users.SingleAsync(x => x.Email == email);
-        var ret = UserFromModel(userModel);
-        return ret;
-    }
-
-    internal static User UserFromModel(Models.User userModel)
-    {
-        var user = new User(userModel.UserId.ToString(), email: userModel.Email, createdTime: userModel.CreatedTime)
-        {
-            AuthCode = userModel.AuthCode,
-            FirstName = userModel.FirstName,
-            LastName = userModel.LastName,
-            Description = userModel.Description,
-        };
-
-        return user;
+        var userModel = await _simpleUserDbContext.Users.SingleOrDefaultAsync(x => x.Email == email);
+        return userModel?.ToDto();
     }
 
     public async Task Update(string userId, UserUpdateRequest request)
