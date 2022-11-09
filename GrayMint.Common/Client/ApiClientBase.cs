@@ -40,6 +40,7 @@ public class ApiClientBase
 
     public Uri? DefaultBaseAddress { get; set; }
     public AuthenticationHeaderValue? DefaultAuthorization { get; set; }
+    public Dictionary<string, object>? HttpRequestHeaderItems { get; set; }
 
     protected virtual ValueTask PrepareRequestAsync(HttpClient client, HttpRequestMessage request, string url, CancellationToken ct)
     {
@@ -137,24 +138,21 @@ public class ApiClientBase
     }
 
     protected async Task<string> HttpSendAsync(HttpMethod httpMethod, string urlPart,
-        Dictionary<string, object?>? parameters = null, object? data = null, Dictionary<string, object?>? headerItems = null,
-        CancellationToken cancellationToken = default)
+        Dictionary<string, object?>? parameters = null, object? data = null, CancellationToken cancellationToken = default)
     {
-        var res = await HttpSendExAsync<HttpNoResult>(httpMethod, urlPart, parameters, data, headerItems, cancellationToken);
+        var res = await HttpSendExAsync<HttpNoResult>(httpMethod, urlPart, parameters, data, cancellationToken);
         return res.Text;
     }
 
     protected async Task<T> HttpSendAsync<T>(HttpMethod httpMethod, string urlPart,
-        Dictionary<string, object?>? parameters = null, object? data = null, Dictionary<string, object?>? headerItems = null,
-        CancellationToken cancellationToken = default)
+        Dictionary<string, object?>? parameters = null, object? data = null, CancellationToken cancellationToken = default)
     {
-        var res = await HttpSendExAsync<T>(httpMethod, urlPart, parameters, data, headerItems, cancellationToken);
+        var res = await HttpSendExAsync<T>(httpMethod, urlPart, parameters, data, cancellationToken);
         return res.Object;
     }
 
     protected async Task<HttpResult<T>> HttpSendExAsync<T>(HttpMethod httpMethod, string urlPart,
-        Dictionary<string, object?>? parameters = null, object? data = null, Dictionary<string, object?>? headerItems = null,
-        CancellationToken cancellationToken = default)
+        Dictionary<string, object?>? parameters = null, object? data = null, CancellationToken cancellationToken = default)
     {
 
         using var request = new HttpRequestMessage();
@@ -168,18 +166,18 @@ public class ApiClientBase
             request.Content = content;
         }
 
-        return await HttpSendAsync<T>(urlPart, parameters, request, headerItems, cancellationToken);
+        return await HttpSendAsync<T>(urlPart, parameters, request, cancellationToken);
     }
 
     protected async Task<string> HttpSendAsync(string urlPart, Dictionary<string, object?>? parameters,
-        HttpRequestMessage request, Dictionary<string, object?>? headerItems, CancellationToken cancellationToken)
+        HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var res = await HttpSendAsync<HttpNoResult>(urlPart, parameters, request, headerItems, cancellationToken);
+        var res = await HttpSendAsync<HttpNoResult>(urlPart, parameters, request, cancellationToken);
         return res.Text;
     }
 
     protected async Task<HttpResult<T>> HttpSendAsync<T>(string urlPart, Dictionary<string, object?>? parameters,
-        HttpRequestMessage request, Dictionary<string, object?>? headerItems, CancellationToken cancellationToken)
+        HttpRequestMessage request, CancellationToken cancellationToken)
     {
         parameters ??= new Dictionary<string, object?>();
 
@@ -203,10 +201,10 @@ public class ApiClientBase
         request.RequestUri = new Uri(url, UriKind.RelativeOrAbsolute);
         request.Headers.Authorization ??= DefaultAuthorization;
 
-        headerItems ??= new Dictionary<string, object?>();
-        if (headerItems.Any())
+        HttpRequestHeaderItems ??= new Dictionary<string, object>();
+        if (HttpRequestHeaderItems.Any())
         {
-            foreach (var (key, value) in headerItems.Where(x => x.Value != null))
+            foreach (var (key, value) in HttpRequestHeaderItems.Where(x => x.Value != null))
             {
                 request.Headers.Add(key, ConvertToString(value, CultureInfo.InvariantCulture));
             }
@@ -251,48 +249,48 @@ public class ApiClientBase
     protected Task<T> HttpGetAsync<T>(string urlPart,
         Dictionary<string, object?>? parameters = null, CancellationToken cancellationToken = default)
     {
-        return HttpSendAsync<T>(HttpMethod.Get, urlPart, parameters, null, null, cancellationToken);
+        return HttpSendAsync<T>(HttpMethod.Get, urlPart, parameters, null, cancellationToken);
     }
 
-    protected Task<T> HttpPostAsync<T>(string urlPart, Dictionary<string, object?>? parameters, object? data, Dictionary<string, object?>? headerItems,
+    protected Task<T> HttpPostAsync<T>(string urlPart, Dictionary<string, object?>? parameters, object? data,
         CancellationToken cancellationToken = default)
     {
-        return HttpSendAsync<T>(HttpMethod.Post, urlPart, parameters, data, headerItems, cancellationToken);
+        return HttpSendAsync<T>(HttpMethod.Post, urlPart, parameters, data, cancellationToken);
     }
 
-    protected Task HttpPostAsync(string urlPart, Dictionary<string, object?>? parameters, object? data, Dictionary<string, object?>? headerItems,
+    protected Task HttpPostAsync(string urlPart, Dictionary<string, object?>? parameters, object? data,
         CancellationToken cancellationToken = default)
     {
-        return HttpSendAsync(HttpMethod.Post, urlPart, parameters, data, headerItems, cancellationToken);
+        return HttpSendAsync(HttpMethod.Post, urlPart, parameters, data, cancellationToken);
     }
 
     protected Task<T> HttpPutAsync<T>(string urlPart, Dictionary<string, object?>? parameters, object? data,
         CancellationToken cancellationToken = default)
     {
-        return HttpSendAsync<T>(HttpMethod.Put, urlPart, parameters, data, null, cancellationToken);
+        return HttpSendAsync<T>(HttpMethod.Put, urlPart, parameters, data, cancellationToken);
     }
 
     protected Task HttpPutAsync(string urlPart, Dictionary<string, object?>? parameters, object? data,
         CancellationToken cancellationToken = default)
     {
-        return HttpSendAsync(HttpMethod.Put, urlPart, parameters, data, null, cancellationToken);
+        return HttpSendAsync(HttpMethod.Put, urlPart, parameters, data, cancellationToken);
     }
 
     protected Task<T> HttpPatchAsync<T>(string urlPart, Dictionary<string, object?>? parameters, object? data,
         CancellationToken cancellationToken = default)
     {
-        return HttpSendAsync<T>(HttpMethod.Put, urlPart, parameters, data, null, cancellationToken);
+        return HttpSendAsync<T>(HttpMethod.Put, urlPart, parameters, data, cancellationToken);
     }
 
     protected Task HttpPatchAsync(string urlPart, Dictionary<string, object?>? parameters, object? data,
         CancellationToken cancellationToken = default)
     {
-        return HttpSendAsync(HttpMethod.Patch, urlPart, parameters, data, null, cancellationToken);
+        return HttpSendAsync(HttpMethod.Patch, urlPart, parameters, data, cancellationToken);
     }
 
     protected async Task HttpDeleteAsync(string urlPart,
         Dictionary<string, object?>? parameters = null, CancellationToken cancellationToken = default)
     {
-        await HttpSendAsync(HttpMethod.Delete, urlPart, parameters, null, null, cancellationToken);
+        await HttpSendAsync(HttpMethod.Delete, urlPart, parameters, null, cancellationToken);
     }
 }
