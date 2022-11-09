@@ -23,7 +23,7 @@ public static class SimpleRoleAuthExtension
             var policyBuilder = new AuthorizationPolicyBuilder();
             if (requireBotAuthentication) policyBuilder.AddAuthenticationSchemes(BotAuthenticationDefaults.AuthenticationScheme);
             if (requireCognitoAuthentication) policyBuilder.AddAuthenticationSchemes(CognitoAuthenticationDefaults.AuthenticationScheme);
-            if (!string.IsNullOrEmpty(customAuthenticationScheme)) policyBuilder.AddAuthenticationSchemes(AppCommonSettings.LegacyAuthScheme);
+            if (!string.IsNullOrEmpty(customAuthenticationScheme)) policyBuilder.AddAuthenticationSchemes(customAuthenticationScheme);
             options.AddPolicy(SimpleRoleAuth.Policy,
                 policyBuilder
                 .AddRequirements(new SimpleRoleAuthRequirement())
