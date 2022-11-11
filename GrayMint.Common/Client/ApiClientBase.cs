@@ -186,7 +186,7 @@ public class ApiClientBase
         if (parameters.Any())
         {
             urlBuilder.Append("?");
-            foreach (var parameter in parameters.Where(x => x.Value != null))
+            foreach (var parameter in parameters)
             {
                 urlBuilder
                     .Append(Uri.EscapeDataString(parameter.Key) + "=")
@@ -201,14 +201,11 @@ public class ApiClientBase
         request.RequestUri = new Uri(url, UriKind.RelativeOrAbsolute);
         request.Headers.Authorization ??= DefaultAuthorization;
 
+        // Custom Headers
         HttpRequestHeaderItems ??= new Dictionary<string, object>();
         if (HttpRequestHeaderItems.Any())
-        {
-            foreach (var (key, value) in HttpRequestHeaderItems.Where(x => x.Value != null))
-            {
+            foreach (var (key, value) in HttpRequestHeaderItems)
                 request.Headers.Add(key, ConvertToString(value, CultureInfo.InvariantCulture));
-            }
-        }
 
         // build url
         await PrepareRequestAsync(client, request, url, cancellationToken).ConfigureAwait(false);
@@ -222,10 +219,8 @@ public class ApiClientBase
 
         // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
         if (response.Content?.Headers != null)
-        {
             foreach (var item in response.Content.Headers)
                 headers[item.Key] = item.Value;
-        }
 
         await ProcessResponseAsync(client, response, cancellationToken).ConfigureAwait(false);
 
