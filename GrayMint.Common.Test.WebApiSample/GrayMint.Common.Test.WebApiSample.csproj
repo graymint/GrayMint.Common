@@ -5,7 +5,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.0.63</Version>
+    <Version>1.0.64</Version>
     <IsPackable>false</IsPackable>
     <PackageProjectUrl>https://github.com/graymint/GrayMint.Common</PackageProjectUrl>
     <RepositoryUrl>https://github.com/graymint/GrayMint.Common</RepositoryUrl>
