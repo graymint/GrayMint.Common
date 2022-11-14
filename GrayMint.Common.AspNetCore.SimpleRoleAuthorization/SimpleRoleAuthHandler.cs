@@ -7,20 +7,7 @@ namespace GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 
 public class SimpleRoleAuthHandler : AuthorizationHandler<SimpleRoleAuthRequirement>
 {
-    protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context,
-        SimpleRoleAuthRequirement requirement)
-    {
-        try
-        {
-            await HandleRequirementImplAsync(context, requirement);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            context.Fail(new AuthorizationFailureReason(this, ex.Message));
-        }
-    }
-
-    private Task HandleRequirementImplAsync(AuthorizationHandlerContext context, SimpleRoleAuthRequirement requirement)
+    protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, SimpleRoleAuthRequirement requirement)
     {
         if (context.Resource is not HttpContext httpContext)
             return Task.CompletedTask;
@@ -42,8 +29,12 @@ public class SimpleRoleAuthHandler : AuthorizationHandler<SimpleRoleAuthRequirem
                                  x.Type == SimpleRoleAuth.RoleClaimType &&
                                  x.Value == SimpleRoleAuth.CreateAppRoleName(allowedRole, requestAppId));
             }
+
             if (!succeeded)
-                throw new UnauthorizedAccessException();
+            {
+                context.Fail(new AuthorizationFailureReason(this, "Access forbidden."));
+                return Task.CompletedTask;
+            }
         }
 
         context.Succeed(requirement);
