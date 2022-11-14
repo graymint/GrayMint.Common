@@ -145,33 +145,33 @@ public static class CognitoAuthenticationExtension
                 return;
             }
 
-            //// validate audience or client
-            //var jwtSecurityToken = (JwtSecurityToken)context.SecurityToken;
-            //var tokenUse = jwtSecurityToken.Claims.FirstOrDefault(x => x.Type == "token_use")?.Value
-            //               ?? throw new UnauthorizedAccessException("Could not find token_use.");
-            //if (tokenUse != "access" && tokenUse != "id") throw new UnauthorizedAccessException("Unknown token_use.");
+            // validate audience or client
+            var jwtSecurityToken = (JwtSecurityToken)context.SecurityToken;
+            var tokenUse = jwtSecurityToken.Claims.FirstOrDefault(x => x.Type == "token_use")?.Value
+                           ?? throw new UnauthorizedAccessException("Could not find token_use.");
+            if (tokenUse != "access" && tokenUse != "id") throw new UnauthorizedAccessException("Unknown token_use.");
 
-            //// validate aud for id token
-            //if (tokenUse == "id" && !context.Principal.HasClaim(x => x.Type == "aud" && x.Value == _cognitoOptions.Value.CognitoClientId))
-            //{
-            //    context.Fail("client_id does not match");
-            //    return;
-            //}
+            // validate aud for id token
+            if (tokenUse == "id" && !context.Principal.HasClaim(x => x.Type == "aud" && x.Value == _cognitoOptions.Value.CognitoClientId))
+            {
+                context.Fail("client_id does not match");
+                return;
+            }
 
-            //// validate client_id for access token
-            //if (tokenUse == "access" && !context.Principal.HasClaim(x => x.Type == "client_id" && x.Value == _cognitoOptions.Value.CognitoClientId))
-            //{
-            //    context.Fail("client_id does not match");
-            //    return;
-            //}
+            // validate client_id for access token
+            if (tokenUse == "access" && !context.Principal.HasClaim(x => x.Type == "client_id" && x.Value == _cognitoOptions.Value.CognitoClientId))
+            {
+                context.Fail("client_id does not match");
+                return;
+            }
 
-            //// get user_info from authority by AccessToken
+            // get user_info from authority by AccessToken
             var userInfo = await GetUserInfoFromAccessToken(context);
-            //if (userInfo.EmailVerified != "true")
-            //{
-            //    context.Fail("User's email is not verified.");
-            //    return;
-            //}
+            if (userInfo.EmailVerified != "true")
+            {
+                context.Fail("User's email is not verified.");
+                return;
+            }
 
             // add claims
             var claimsIdentity = new ClaimsIdentity();
