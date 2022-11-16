@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using System.Data;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -100,7 +101,7 @@ public static class EfCoreUtil
         if (database.CurrentTransaction != null) cmd.Transaction = (SqlTransaction)database.CurrentTransaction.GetDbTransaction();
 
         var connection = cmd.Connection;
-        if (connection.State != System.Data.ConnectionState.Open)
+        if (connection.State != ConnectionState.Open)
             await connection.OpenAsync();
 
         await using var command = connection.CreateCommand();

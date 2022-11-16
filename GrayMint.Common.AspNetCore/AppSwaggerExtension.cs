@@ -23,7 +23,7 @@ public static class AppSwaggerExtension
             };
 
             configure.OperationProcessors.Add(new OperationSecurityScopeProcessor("Bearer"));
-            configure.AddSecurity("Bearer", new OpenApiSecurityScheme()
+            configure.AddSecurity("Bearer", new OpenApiSecurityScheme
             {
                 Name = "Authorization",
                 Type = OpenApiSecuritySchemeType.ApiKey,

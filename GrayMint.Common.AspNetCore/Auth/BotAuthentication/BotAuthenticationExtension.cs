@@ -33,7 +33,7 @@ public static class BotAuthenticationExtension
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.FromSeconds(TokenValidationParameters.DefaultClockSkew.TotalSeconds)
                 };
-                options.Events = new JwtBearerEvents()
+                options.Events = new JwtBearerEvents
                 {
                     OnTokenValidated = async context =>
                     {

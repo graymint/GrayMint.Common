@@ -1,4 +1,4 @@
-﻿namespace GrayMint.Common.Client;
+﻿namespace GrayMint.Common;
 
 public class Patch<T>
 {

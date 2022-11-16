@@ -27,15 +27,15 @@ public class AwsArn
     {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.Append("arn:");
-        stringBuilder.Append(this.Partition);
+        stringBuilder.Append(Partition);
         stringBuilder.Append(":");
-        stringBuilder.Append(this.Service);
+        stringBuilder.Append(Service);
         stringBuilder.Append(":");
-        stringBuilder.Append(this.Region);
+        stringBuilder.Append(Region);
         stringBuilder.Append(":");
-        stringBuilder.Append(this.Account);
+        stringBuilder.Append(Account);
         stringBuilder.Append(":");
-        stringBuilder.Append(this.ResourceId);
+        stringBuilder.Append(ResourceId);
         return stringBuilder.ToString();
     }
 }

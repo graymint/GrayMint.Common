@@ -36,7 +36,7 @@ public static class CognitoAuthenticationExtension
 
                 options.SaveToken = true;
 
-                options.Events = new JwtBearerEvents()
+                options.Events = new JwtBearerEvents
                 {
                     OnTokenValidated = async context =>
                     {
@@ -111,7 +111,7 @@ public static class CognitoAuthenticationExtension
             OpenIdUserInfo openIdUserInfo;
             if (tokenUse == "id")
             {
-                openIdUserInfo = new OpenIdUserInfo()
+                openIdUserInfo = new OpenIdUserInfo
                 {
                     Sub = jwtSecurityToken.Claims.Single(x => x.Type == JwtRegisteredClaimNames.Sub).Value,
                     Email = jwtSecurityToken.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Email)?.Value,

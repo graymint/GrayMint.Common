@@ -9,7 +9,7 @@ public class JwtUtil
     public static string CreateSymmetricJwt(byte[] key, string issuer, string audience, string subject,
         string email, string[]? roles)
     {
-        return JwtUtil.CreateSymmetricJwt(key, issuer, audience, subject, email, null, roles);
+        return CreateSymmetricJwt(key, issuer, audience, subject, email, null, roles);
     }
 
     public static string CreateSymmetricJwt(byte[] key, string issuer, string audience, string? subject = null, string? email = null,
