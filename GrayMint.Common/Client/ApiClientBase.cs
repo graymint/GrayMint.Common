@@ -1,6 +1,5 @@
 ﻿using System.Globalization;
 using System.Net.Http.Headers;
-using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.Json;
@@ -41,7 +40,6 @@ public class ApiClientBase
 
     public Uri? DefaultBaseAddress { get; set; }
     public AuthenticationHeaderValue? DefaultAuthorization { get; set; }
-    public Dictionary<string, object>? HttpRequestHeaderItems { get; set; }
 
     protected virtual ValueTask PrepareRequestAsync(HttpClient client, HttpRequestMessage request, string url, CancellationToken ct)
     {
@@ -79,17 +77,19 @@ public class ApiClientBase
                 throw new ApiException(message, (int)response.StatusCode, responseText, headers, exception);
             }
         }
-
-        try
+        else
         {
-            await using var responseStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-            var typedBody = await JsonSerializer.DeserializeAsync<T>(responseStream, JsonSerializerSettings, cancellationToken).ConfigureAwait(false);
-            return new HttpResult<T?>(response, typedBody, string.Empty);
-        }
-        catch (JsonException exception)
-        {
-            var message = "Could not deserialize the response body stream as " + typeof(T).FullName + ".";
-            throw new ApiException(message, (int)response.StatusCode, string.Empty, headers, exception);
+            try
+            {
+                await using var responseStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                var typedBody = await JsonSerializer.DeserializeAsync<T>(responseStream, JsonSerializerSettings, cancellationToken).ConfigureAwait(false);
+                return new HttpResult<T?>(response, typedBody, string.Empty);
+            }
+            catch (JsonException exception)
+            {
+                var message = "Could not deserialize the response body stream as " + typeof(T).FullName + ".";
+                throw new ApiException(message, (int)response.StatusCode, string.Empty, headers, exception);
+            }
         }
     }
 
@@ -105,10 +105,10 @@ public class ApiClientBase
             var name = Enum.GetName(value.GetType(), value);
             if (name != null)
             {
-                var field = IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
+                var field = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                 if (field != null)
                 {
-                    if (CustomAttributeExtensions.GetCustomAttribute(field, typeof(EnumMemberAttribute)) is EnumMemberAttribute attribute)
+                    if (System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field, typeof(EnumMemberAttribute)) is EnumMemberAttribute attribute)
                     {
                         return attribute.Value ?? name;
                     }
@@ -175,7 +175,7 @@ public class ApiClientBase
         return res.Text;
     }
 
-    protected async Task<HttpResult<T>> HttpSendAsync<T>(string urlPart, Dictionary<string, object?>? parameters,
+    protected virtual async Task<HttpResult<T>> HttpSendAsync<T>(string urlPart, Dictionary<string, object?>? parameters,
         HttpRequestMessage request, CancellationToken cancellationToken)
     {
         parameters ??= new Dictionary<string, object?>();
@@ -185,7 +185,7 @@ public class ApiClientBase
         if (parameters.Any())
         {
             urlBuilder.Append("?");
-            foreach (var parameter in parameters)
+            foreach (var parameter in parameters.Where(x => x.Value != null))
             {
                 urlBuilder
                     .Append(Uri.EscapeDataString(parameter.Key) + "=")
@@ -200,12 +200,6 @@ public class ApiClientBase
         request.RequestUri = new Uri(url, UriKind.RelativeOrAbsolute);
         request.Headers.Authorization ??= DefaultAuthorization;
 
-        // Custom Headers
-        HttpRequestHeaderItems ??= new Dictionary<string, object>();
-        if (HttpRequestHeaderItems.Any())
-            foreach (var (key, value) in HttpRequestHeaderItems)
-                request.Headers.Add(key, ConvertToString(value, CultureInfo.InvariantCulture));
-
         // build url
         await PrepareRequestAsync(client, request, url, cancellationToken).ConfigureAwait(false);
 
@@ -213,13 +207,15 @@ public class ApiClientBase
         if (DefaultBaseAddress != null && !request.RequestUri.IsAbsoluteUri)
             request.RequestUri = new Uri(DefaultBaseAddress, request.RequestUri);
 
-        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+        using var response = await HttpClientSendAsync(client, request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         var headers = response.Headers.ToDictionary(h => h.Key, h => h.Value);
 
         // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
         if (response.Content?.Headers != null)
+        {
             foreach (var item in response.Content.Headers)
                 headers[item.Key] = item.Value;
+        }
 
         await ProcessResponseAsync(client, response, cancellationToken).ConfigureAwait(false);
 
@@ -227,7 +223,7 @@ public class ApiClientBase
         if (status is >= 200 and < 300)
         {
             if (typeof(T) == typeof(HttpNoResult))
-                return new HttpResult<T>(response, default(T)!, string.Empty);
+                return new HttpResult<T>(response, default!, string.Empty);
 
             var objectResponse = await ReadObjectResponseAsync<T>(response, headers, cancellationToken).ConfigureAwait(false);
             if (objectResponse.Object == null)
@@ -238,6 +234,11 @@ public class ApiClientBase
 
         var responseData = response.Content != null ? await response.Content.ReadAsStringAsync().ConfigureAwait(false) : null;
         throw new ApiException("The HTTP status code of the response was not expected (" + status + ").", status, responseData, headers, null);
+    }
+
+    protected virtual Task<HttpResponseMessage> HttpClientSendAsync(HttpClient client, HttpRequestMessage request, HttpCompletionOption responseHeadersRead, CancellationToken cancellationToken)
+    {
+        return client.SendAsync(request, responseHeadersRead, cancellationToken);
     }
 
     protected Task<T> HttpGetAsync<T>(string urlPart,
