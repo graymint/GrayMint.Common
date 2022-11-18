@@ -14,10 +14,10 @@ public class CognitoAuthenticationOptions
     {
         var optionName = nameof(CognitoArn);
         if (string.IsNullOrEmpty(CognitoArn))
-            throw new OptionsValidationException(optionName, typeof(string), new[] { string.Format(AppCommon.OptionsValidationMsgTemplate, optionName) });
+            throw new OptionsValidationException(optionName, typeof(string), new[] { string.Format(GrayMintApp.OptionsValidationMsgTemplate, optionName) });
 
         optionName = nameof(CognitoClientId);
         if (string.IsNullOrEmpty(CognitoClientId))
-            throw new OptionsValidationException(optionName, typeof(string), new[] { string.Format(AppCommon.OptionsValidationMsgTemplate, optionName) });
+            throw new OptionsValidationException(optionName, typeof(string), new[] { string.Format(GrayMintApp.OptionsValidationMsgTemplate, optionName) });
     }
 }

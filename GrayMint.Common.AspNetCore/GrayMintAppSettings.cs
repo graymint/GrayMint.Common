@@ -1,6 +1,6 @@
 namespace GrayMint.Common.AspNetCore;
 
-public class AppCommonSettings
+public class GrayMintAppSettings
 {
     public string AppName { get; set; } = default!;
 
@@ -8,6 +8,6 @@ public class AppCommonSettings
     {
         // Configure Settings
         if (string.IsNullOrWhiteSpace(AppName))
-            AppCommon.ThrowOptionsValidationException(nameof(AppName), typeof(string));
+            GrayMintApp.ThrowOptionsValidationException(nameof(AppName), typeof(string));
     }
 }

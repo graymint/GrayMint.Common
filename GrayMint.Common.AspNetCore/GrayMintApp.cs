@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 
 namespace GrayMint.Common.AspNetCore;
 
-public static class AppCommon
+public static class GrayMintApp
 {
     public const string CorsPolicyName = "AllowAllCorsPolicy";
     public const string OptionsValidationMsgTemplate = "The AppSettings must be initialized properly. OptionName: {0}";

@@ -7,22 +7,22 @@ using Microsoft.Extensions.Options;
 
 namespace GrayMint.Common.AspNetCore;
 
-public static class AppExceptionExtension
+public static class GrayMintExceptionHandlerExtension
 {
-    public class AppExceptionOptions
+    public class GrayMintExceptionOptions
     {
         public string? RootNamespace { get; set; }
     }
 
-    public class CustomExceptionMiddleware
+    public class GrayMintExceptionMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly AppExceptionOptions _appExceptionOptions;
+        private readonly GrayMintExceptionOptions _grayMintExceptionOptions;
 
-        public CustomExceptionMiddleware(RequestDelegate next, IOptions<AppExceptionOptions> appExceptionOptions)
+        public GrayMintExceptionMiddleware(RequestDelegate next, IOptions<GrayMintExceptionOptions> appExceptionOptions)
         {
             _next = next;
-            _appExceptionOptions = appExceptionOptions.Value;
+            _grayMintExceptionOptions = appExceptionOptions.Value;
         }
 
         private static Type GetExceptionType(Exception ex)
@@ -48,8 +48,8 @@ public static class AppExceptionExtension
 
                 // create typeFullName
                 var typeFullName = GetExceptionType(ex).FullName;
-                if (!string.IsNullOrEmpty(_appExceptionOptions.RootNamespace))
-                    typeFullName = typeFullName?.Replace(nameof(GrayMint), _appExceptionOptions.RootNamespace);
+                if (!string.IsNullOrEmpty(_grayMintExceptionOptions.RootNamespace))
+                    typeFullName = typeFullName?.Replace(nameof(GrayMint), _grayMintExceptionOptions.RootNamespace);
 
                 // set optional information
                 context.Response.ContentType = MediaTypeNames.Application.Json;
@@ -74,10 +74,10 @@ public static class AppExceptionExtension
         }
     }
 
-    public static IApplicationBuilder UseAppExceptionHandler(this IApplicationBuilder app, AppExceptionOptions? appExceptionOptions = null)
+    public static IApplicationBuilder UseGrayMintExceptionHandler(this IApplicationBuilder app, GrayMintExceptionOptions? appExceptionOptions = null)
     {
-        appExceptionOptions ??= new AppExceptionOptions();
-        app.UseMiddleware<CustomExceptionMiddleware>(Options.Create(appExceptionOptions));
+        appExceptionOptions ??= new GrayMintExceptionOptions();
+        app.UseMiddleware<GrayMintExceptionMiddleware>(Options.Create(appExceptionOptions));
         return app;
     }
 }

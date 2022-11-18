@@ -26,10 +26,10 @@ public class Program
         // Add services to the container.
         var webApp = builder.Build();
         webApp.UseAppCommonServices(new UseServicesOptions());
-        await AppCommon.CheckDatabaseCommand<WebApiSampleDbContext>(webApp, args);
+        await GrayMintApp.CheckDatabaseCommand<WebApiSampleDbContext>(webApp, args);
         await webApp.UseSimpleUserProvider();
 
-        await AppCommon.RunAsync(webApp, args);
+        await GrayMintApp.RunAsync(webApp, args);
 
     }
 }

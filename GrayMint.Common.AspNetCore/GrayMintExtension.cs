@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace GrayMint.Common.AspNetCore;
 
-public static class AppCommonExtension
+public static class GrayMintExtension
 {
     public static void AddGrayMintCommonServices(this WebApplicationBuilder builder,
         IConfiguration appConfiguration,
@@ -12,14 +12,14 @@ public static class AppCommonExtension
         var services = builder.Services;
 
         // configure settings
-        var appCommonSettings = appConfiguration.Get<AppCommonSettings>()
+        var appCommonSettings = appConfiguration.Get<GrayMintAppSettings>()
                                 ?? throw new Exception("Could not load App section in appsettings.json file.");
         appCommonSettings.Validate();
-        services.Configure<AppCommonSettings>(appConfiguration);
+        services.Configure<GrayMintAppSettings>(appConfiguration);
 
         // cors
         if (servicesOptions.AddCors)
-            services.AddCors(o => o.AddPolicy(AppCommon.CorsPolicyName, corsPolicyBuilder =>
+            services.AddCors(o => o.AddPolicy(GrayMintApp.CorsPolicyName, corsPolicyBuilder =>
             {
                 corsPolicyBuilder
                     .AllowAnyOrigin()
@@ -53,7 +53,7 @@ public static class AppCommonExtension
     public static void UseAppCommonServices(this WebApplication webApplication, UseServicesOptions options)
     {
         if (options.UseCors)
-            webApplication.UseCors(AppCommon.CorsPolicyName);
+            webApplication.UseCors(GrayMintApp.CorsPolicyName);
 
         // Configure the HTTP request pipeline.
         webApplication.UseHttpsRedirection();
@@ -71,7 +71,7 @@ public static class AppCommonExtension
             webApplication.UseAuthorization();
 
         if (options.UseAppExceptions)
-            webApplication.UseAppExceptionHandler();
+            webApplication.UseGrayMintExceptionHandler();
 
         if (options.MapControllers)
             webApplication.MapControllers();

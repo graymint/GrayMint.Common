@@ -7,7 +7,7 @@ using NSwag.Generation.Processors.Security;
 
 namespace GrayMint.Common.AspNetCore;
 
-public static class AppSwaggerExtension
+public static class GrayMintSwaggerExtension
 {
     public static IServiceCollection AddAppSwagger(this IServiceCollection services, string title, bool addVersioning)
     {
