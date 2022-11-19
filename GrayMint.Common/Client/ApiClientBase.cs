@@ -40,6 +40,7 @@ public class ApiClientBase
 
     public Uri? DefaultBaseAddress { get; set; }
     public AuthenticationHeaderValue? DefaultAuthorization { get; set; }
+    public Dictionary<string, object>? HttpRequestHeaderItems { get; set; }
 
     protected virtual ValueTask PrepareRequestAsync(HttpClient client, HttpRequestMessage request, string url, CancellationToken ct)
     {
@@ -50,8 +51,7 @@ public class ApiClientBase
     {
         return new ValueTask();
     }
-
-
+    
     protected virtual JsonSerializerOptions CreateSerializerSettings()
     {
         var settings = new JsonSerializerOptions();
@@ -200,8 +200,17 @@ public class ApiClientBase
         request.RequestUri = new Uri(url, UriKind.RelativeOrAbsolute);
         request.Headers.Authorization ??= DefaultAuthorization;
 
+        HttpRequestHeaderItems ??= new Dictionary<string, object>();
+        if (HttpRequestHeaderItems.Any())
+        {
+            foreach (var (key, value) in HttpRequestHeaderItems.Where(x => x.Value != null))
+            {
+                request.Headers.Add(key, ConvertToString(value, CultureInfo.InvariantCulture));
+            }
+        }
+
         // build url
-        await PrepareRequestAsync(client, request, url, cancellationToken).ConfigureAwait(false);
+            await PrepareRequestAsync(client, request, url, cancellationToken).ConfigureAwait(false);
 
         // add DefaultBaseAddress if exists and request uri is relative
         if (DefaultBaseAddress != null && !request.RequestUri.IsAbsoluteUri)
