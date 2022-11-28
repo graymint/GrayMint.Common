@@ -17,6 +17,8 @@ public static class CognitoAuthenticationExtension
     public static AuthenticationBuilder AddCognitoAuthentication(this AuthenticationBuilder authenticationBuilder, IConfiguration configuration)
     {
         var cognitoOptions = configuration.Get<CognitoAuthenticationOptions>();
+        if (cognitoOptions == null)
+            throw new Exception($"Could not load {nameof(CognitoAuthenticationOptions)}.");
         cognitoOptions.Validate();
 
         authenticationBuilder

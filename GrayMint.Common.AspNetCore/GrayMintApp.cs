@@ -8,12 +8,17 @@ public static class GrayMintApp
     public const string CorsPolicyName = "AllowAllCorsPolicy";
     public const string OptionsValidationMsgTemplate = "The AppSettings must be initialized properly. OptionName: {0}";
 
+    public static OptionsValidationException CreateOptionsValidationException(string optionsName, Type optionsType,
+        string? failureMessage = null)
+    {
+        var failureMessages = new[] { string.Format(OptionsValidationMsgTemplate, optionsName) };
+        if (failureMessage != null) failureMessages = failureMessages.Concat(new[] { failureMessage }).ToArray();
+        return new OptionsValidationException(optionsName, optionsType, failureMessages);
+    }
+
     public static void ThrowOptionsValidationException(string optionsName, Type optionsType, string? failureMessage = null)
     {
-        var failureMessages = new [] { string.Format(OptionsValidationMsgTemplate, optionsName) };
-        if (failureMessage != null) failureMessages = failureMessages.Concat(new []{failureMessage}).ToArray();
-
-        throw new OptionsValidationException(optionsName, optionsType, failureMessages);
+        throw CreateOptionsValidationException(optionsName, optionsType, failureMessage);
     }
 
     public static async Task CheckDatabaseCommand<T>(WebApplication webApplication, string[] args) where T : DbContext

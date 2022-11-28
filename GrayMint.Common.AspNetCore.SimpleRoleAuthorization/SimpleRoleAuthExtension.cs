@@ -16,7 +16,7 @@ public static class SimpleRoleAuthExtension
         string? customAuthenticationScheme = null)
     {
         var simpleRoleAuthOptions = configuration.Get<SimpleRoleAuthOptions>();
-        simpleRoleAuthOptions.Validate();
+        simpleRoleAuthOptions?.Validate();
 
         services.AddAuthorization(options =>
         {
