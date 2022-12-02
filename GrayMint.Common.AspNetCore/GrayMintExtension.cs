@@ -50,7 +50,7 @@ public static class GrayMintExtension
             services.AddHttpClient();
     }
 
-    public static void UseAppCommonServices(this WebApplication webApplication, UseServicesOptions options)
+    public static void UseGrayMintCommonServices(this WebApplication webApplication, UseServicesOptions options)
     {
         if (options.UseCors)
             webApplication.UseCors(GrayMintApp.CorsPolicyName);

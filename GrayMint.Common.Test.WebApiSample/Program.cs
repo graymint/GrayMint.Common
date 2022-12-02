@@ -25,7 +25,7 @@ public class Program
 
         // Add services to the container.
         var webApp = builder.Build();
-        webApp.UseAppCommonServices(new UseServicesOptions());
+        webApp.UseGrayMintCommonServices(new UseServicesOptions());
         await GrayMintApp.CheckDatabaseCommand<WebApiSampleDbContext>(webApp, args);
         await webApp.UseSimpleUserProvider();
 
