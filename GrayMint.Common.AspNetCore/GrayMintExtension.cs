@@ -40,7 +40,7 @@ public static class GrayMintExtension
         if (servicesOptions.AddSwagger)
         {
             services.AddEndpointsApiExplorer();
-            services.AddAppSwagger(appCommonSettings.AppName, servicesOptions.AddSwaggerVersioning);
+            services.AddGrayMintSwagger(appCommonSettings.AppName, servicesOptions.AddSwaggerVersioning);
         }
 
         if (servicesOptions.AddMemoryCache)

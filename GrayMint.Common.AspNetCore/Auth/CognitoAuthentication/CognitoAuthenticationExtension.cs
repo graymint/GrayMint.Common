@@ -99,7 +99,7 @@ public static class CognitoAuthenticationExtension
             // get from cache
             var accessTokenHash = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(accessToken));
             var cacheKey = "OpenIdUserInfo/" + Convert.ToBase64String(accessTokenHash);
-            if (_memoryCache.TryGetValue<OpenIdUserInfo>(cacheKey, out var userInfo))
+            if (_memoryCache.TryGetValue<OpenIdUserInfo>(cacheKey, out var userInfo) && userInfo!=null)
                 return userInfo;
 
             // get from authority

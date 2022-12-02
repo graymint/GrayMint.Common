@@ -9,7 +9,7 @@ namespace GrayMint.Common.AspNetCore;
 
 public static class GrayMintSwaggerExtension
 {
-    public static IServiceCollection AddAppSwagger(this IServiceCollection services, string title, bool addVersioning)
+    public static IServiceCollection AddGrayMintSwagger(this IServiceCollection services, string title, bool addVersioning)
     {
         services.AddSwaggerDocument(configure =>
         {

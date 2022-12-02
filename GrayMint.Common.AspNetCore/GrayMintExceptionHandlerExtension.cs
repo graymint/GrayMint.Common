@@ -9,17 +9,12 @@ namespace GrayMint.Common.AspNetCore;
 
 public static class GrayMintExceptionHandlerExtension
 {
-    public class GrayMintExceptionOptions
-    {
-        public string? RootNamespace { get; set; }
-    }
-
     public class GrayMintExceptionMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly GrayMintExceptionOptions _grayMintExceptionOptions;
+        private readonly GrayMintExceptionHandlerOptions _grayMintExceptionOptions;
 
-        public GrayMintExceptionMiddleware(RequestDelegate next, IOptions<GrayMintExceptionOptions> appExceptionOptions)
+        public GrayMintExceptionMiddleware(RequestDelegate next, IOptions<GrayMintExceptionHandlerOptions> appExceptionOptions)
         {
             _next = next;
             _grayMintExceptionOptions = appExceptionOptions.Value;
@@ -74,9 +69,9 @@ public static class GrayMintExceptionHandlerExtension
         }
     }
 
-    public static IApplicationBuilder UseGrayMintExceptionHandler(this IApplicationBuilder app, GrayMintExceptionOptions? appExceptionOptions = null)
+    public static IApplicationBuilder UseGrayMintExceptionHandler(this IApplicationBuilder app, GrayMintExceptionHandlerOptions? appExceptionOptions = null)
     {
-        appExceptionOptions ??= new GrayMintExceptionOptions();
+        appExceptionOptions ??= new GrayMintExceptionHandlerOptions();
         app.UseMiddleware<GrayMintExceptionMiddleware>(Options.Create(appExceptionOptions));
         return app;
     }
