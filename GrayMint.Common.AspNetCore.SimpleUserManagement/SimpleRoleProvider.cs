@@ -19,21 +19,14 @@ public class SimpleRoleProvider
     {
         _simpleUserDbContext.ChangeTracker.Clear();
 
-        if (await _simpleUserDbContext.UserRoles
-                .SingleOrDefaultAsync(x =>
-                    x.AppId == appId
-                    && x.RoleId == int.Parse(roleId)
-                    && x.UserId == int.Parse(userId)) == null)
-        {
-            await _simpleUserDbContext.UserRoles.AddAsync(
-               new Models.UserRole
-               {
-                   RoleId = int.Parse(roleId),
-                   UserId = int.Parse(userId),
-                   AppId = appId,
-               });
-            await _simpleUserDbContext.SaveChangesAsync();
-        }
+        await _simpleUserDbContext.UserRoles.AddAsync(
+           new Models.UserRole
+           {
+               RoleId = int.Parse(roleId),
+               UserId = int.Parse(userId),
+               AppId = appId,
+           });
+        await _simpleUserDbContext.SaveChangesAsync();
     }
 
     public async Task RemoveUser(string roleId, string userId, string appId)
