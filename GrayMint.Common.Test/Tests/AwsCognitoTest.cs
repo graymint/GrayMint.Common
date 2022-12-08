@@ -2,12 +2,10 @@ using System.Net.Http.Headers;
 using Amazon;
 using Amazon.CognitoIdentityProvider;
 using Amazon.Extensions.CognitoAuthentication;
-using GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
 using GrayMint.Common.Test.Helper;
 using GrayMint.Common.Test.WebApiSample;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Role = GrayMint.Common.AspNetCore.SimpleUserManagement.Models.Role;
 
 namespace GrayMint.Common.Test.Tests;
 
