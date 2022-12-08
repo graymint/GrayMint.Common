@@ -3,6 +3,8 @@ using System.Net.Http.Headers;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 // ReSharper disable UnusedMember.Global
 namespace GrayMint.Common.Client;
@@ -31,6 +33,8 @@ public class ApiClientBase
     protected JsonSerializerOptions JsonSerializerSettings => Settings.Value;
     protected HttpClient HttpClient;
     protected readonly Lazy<JsonSerializerOptions> Settings;
+    public ILogger Logger { get; set; } = NullLogger.Instance;
+    public EventId LoggerEventId { get; set; } = new();
 
     public ApiClientBase(HttpClient httpClient)
     {
@@ -40,7 +44,6 @@ public class ApiClientBase
 
     public Uri? DefaultBaseAddress { get; set; }
     public AuthenticationHeaderValue? DefaultAuthorization { get; set; }
-    public Dictionary<string, object>? HttpRequestHeaderItems { get; set; }
 
     protected virtual ValueTask PrepareRequestAsync(HttpClient client, HttpRequestMessage request, string url, CancellationToken ct)
     {
@@ -51,7 +54,8 @@ public class ApiClientBase
     {
         return new ValueTask();
     }
-    
+
+
     protected virtual JsonSerializerOptions CreateSerializerSettings()
     {
         var settings = new JsonSerializerOptions();
@@ -178,6 +182,31 @@ public class ApiClientBase
     protected virtual async Task<HttpResult<T>> HttpSendAsync<T>(string urlPart, Dictionary<string, object?>? parameters,
         HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        try
+        {
+            var ret = await HttpSendAsyncImpl<T>(urlPart, parameters, request, cancellationToken);
+
+            // report the log
+            Logger.LogInformation(LoggerEventId, "API Called. Method: {Method}, Uri: {RequestUri} => StatusCode: {StatusCode}.",
+                request.Method, request.RequestUri, ret.ResponseMessage.StatusCode);
+
+            return ret;
+        }
+        catch (ApiException ex)
+        {
+            Logger.LogError(LoggerEventId, ex, "API Called. Method: {Method}, Uri: {RequestUri} => StatusCode: {StatusCode}.", request.Method, request.RequestUri, ex.StatusCode);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(LoggerEventId, ex, "API Called. Method: {Method}, Uri: {RequestUri}, Failed.", request.Method, request.RequestUri);
+            throw;
+        }
+    }
+
+    private async Task<HttpResult<T>> HttpSendAsyncImpl<T>(string urlPart, Dictionary<string, object?>? parameters,
+    HttpRequestMessage request, CancellationToken cancellationToken)
+    {
         parameters ??= new Dictionary<string, object?>();
 
         var urlBuilder = new StringBuilder();
@@ -200,17 +229,8 @@ public class ApiClientBase
         request.RequestUri = new Uri(url, UriKind.RelativeOrAbsolute);
         request.Headers.Authorization ??= DefaultAuthorization;
 
-        HttpRequestHeaderItems ??= new Dictionary<string, object>();
-        if (HttpRequestHeaderItems.Any())
-        {
-            foreach (var (key, value) in HttpRequestHeaderItems.Where(x => x.Value != null))
-            {
-                request.Headers.Add(key, ConvertToString(value, CultureInfo.InvariantCulture));
-            }
-        }
-
         // build url
-            await PrepareRequestAsync(client, request, url, cancellationToken).ConfigureAwait(false);
+        await PrepareRequestAsync(client, request, url, cancellationToken).ConfigureAwait(false);
 
         // add DefaultBaseAddress if exists and request uri is relative
         if (DefaultBaseAddress != null && !request.RequestUri.IsAbsoluteUri)
