@@ -70,18 +70,18 @@ public class TestInit : IDisposable
     {
         // create roles
         var roleProvider = CurrentServiceScope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
-        var role = await roleProvider.FindByName(roleName) ?? 
+        var role = await roleProvider.FindByName(roleName) ??
                    await roleProvider.Create(new RoleCreateRequest(roleName));
 
         // create user
         var userProvider = CurrentServiceScope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
-        var user = await userProvider.FindByEmail(email) ?? 
-                   await userProvider.Create(new UserCreateRequest($"{Guid.NewGuid()}@local")
-        {
-            FirstName = Guid.NewGuid().ToString(),
-            LastName = Guid.NewGuid().ToString(),
-            Description = Guid.NewGuid().ToString()
-        });
+        var user = await userProvider.FindByEmail(email) ??
+                   await userProvider.Create(new UserCreateRequest(email)
+                   {
+                       FirstName = Guid.NewGuid().ToString(),
+                       LastName = Guid.NewGuid().ToString(),
+                       Description = Guid.NewGuid().ToString()
+                   });
 
         await roleProvider.AddUser(role.RoleId, user.UserId, appId);
         return user;

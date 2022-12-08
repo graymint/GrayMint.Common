@@ -18,14 +18,22 @@ public class SimpleRoleProvider
     public async Task AddUser(string roleId, string userId, string appId)
     {
         _simpleUserDbContext.ChangeTracker.Clear();
-        await _simpleUserDbContext.UserRoles.AddAsync(
-           new Models.UserRole
-           {
-               RoleId = int.Parse(roleId),
-               UserId = int.Parse(userId),
-               AppId = appId,
-           });
-        await _simpleUserDbContext.SaveChangesAsync();
+
+        if (await _simpleUserDbContext.UserRoles
+                .SingleOrDefaultAsync(x =>
+                    x.AppId == appId
+                    && x.RoleId == int.Parse(roleId)
+                    && x.UserId == int.Parse(userId)) == null)
+        {
+            await _simpleUserDbContext.UserRoles.AddAsync(
+               new Models.UserRole
+               {
+                   RoleId = int.Parse(roleId),
+                   UserId = int.Parse(userId),
+                   AppId = appId,
+               });
+            await _simpleUserDbContext.SaveChangesAsync();
+        }
     }
 
     public async Task RemoveUser(string roleId, string userId, string appId)
@@ -103,7 +111,7 @@ public class SimpleRoleProvider
             .Where(x => x.RoleId == int.Parse(roleId))
             .ToArrayAsync();
 
-        return roleModels.Select(x=>x.ToDto()).ToArray();
+        return roleModels.Select(x => x.ToDto()).ToArray();
     }
 
     public async Task<UserRole[]> GetUserRolesByUser(string userId)
@@ -113,7 +121,7 @@ public class SimpleRoleProvider
             .Where(x => x.UserId == int.Parse(userId))
             .ToArrayAsync();
 
-        return roleModels.Select(x=>x.ToDto()).ToArray();
+        return roleModels.Select(x => x.ToDto()).ToArray();
     }
 
     public async Task Update(string roleId, RoleUpdateRequest request)
