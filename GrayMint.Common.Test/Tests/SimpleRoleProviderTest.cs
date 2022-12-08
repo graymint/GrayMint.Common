@@ -92,15 +92,6 @@ public class SimpleRoleProviderTest : BaseControllerTest
         // Add the user to roles
         await roleProvider.AddUser(role.RoleId, user.UserId, "*");
         await roleProvider.AddUser(role.RoleId, user.UserId, "1");
-        try
-        {
-            await roleProvider.AddUser(role.RoleId, user.UserId, "*");
-            Assert.Fail("AlreadyExistsException was expected.");
-        }
-        catch (Exception ex)
-        {
-            Assert.IsTrue(AlreadyExistsException.Is(ex));
-        }
 
         // Check user Roles
         var userRoles = await roleProvider.GetUserRolesByUser(user.UserId);
