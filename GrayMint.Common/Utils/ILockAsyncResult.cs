@@ -1,4 +1,4 @@
-﻿namespace GrayMint.Common;
+﻿namespace GrayMint.Common.Utils;
 
 public interface ILockAsyncResult : IDisposable
 {

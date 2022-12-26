@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text.Json;
 
-namespace GrayMint.Common;
+namespace GrayMint.Common.Utils;
 
 public static class GmUtil
 {

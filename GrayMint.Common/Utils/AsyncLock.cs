@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 
-namespace GrayMint.Common;
+namespace GrayMint.Common.Utils;
 
 public class AsyncLock
 {
@@ -13,7 +13,7 @@ public class AsyncLock
         private readonly string? _name;
         private bool _disposed;
         public bool Succeeded { get; }
-        
+
         public Semaphore(SemaphoreSlim semaphoreSlim, bool succeeded, string? name)
         {
             _semaphoreSlim = semaphoreSlim;
@@ -50,9 +50,9 @@ public class AsyncLock
     public static async Task<ILockAsyncResult> LockAsync(string name)
     {
         SemaphoreSlim semaphoreSlim;
-        lock(SemaphoreSlims)
+        lock (SemaphoreSlims)
             semaphoreSlim = SemaphoreSlims.GetOrAdd(name, new SemaphoreSlim(1, 1));
-        
+
         await semaphoreSlim.WaitAsync();
         return new Semaphore(semaphoreSlim, true, name);
     }
@@ -62,7 +62,7 @@ public class AsyncLock
         SemaphoreSlim semaphoreSlim;
         lock (SemaphoreSlims)
             semaphoreSlim = SemaphoreSlims.GetOrAdd(name, new SemaphoreSlim(1, 1));
-        
+
         var succeeded = await semaphoreSlim.WaitAsync(timeout, cancellationToken);
         return new Semaphore(semaphoreSlim, succeeded, name);
     }
