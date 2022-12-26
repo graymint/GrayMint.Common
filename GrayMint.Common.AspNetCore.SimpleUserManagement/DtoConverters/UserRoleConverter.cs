@@ -2,7 +2,7 @@
 
 namespace GrayMint.Common.AspNetCore.SimpleUserManagement.DtoConverters;
 
-public static class UserRoleConveter
+public static class UserRoleConverter
 {
     public static UserRole ToDto(this Models.UserRole userRoleModel)
     {

@@ -1,5 +1,4 @@
-﻿using GrayMint.Common.Client;
-using GrayMint.Common.Utils;
+﻿using GrayMint.Common.Utils;
 
 namespace GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
 
