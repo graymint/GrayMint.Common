@@ -1,4 +1,4 @@
-﻿using GrayMint.Common.AspNetCore.SimpleUserManagement.DtoConveters;
+﻿using GrayMint.Common.AspNetCore.SimpleUserManagement.DtoConverters;
 using GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
 using GrayMint.Common.AspNetCore.SimpleUserManagement.Persistence;
 using GrayMint.Common.Exceptions;

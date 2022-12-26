@@ -1,6 +1,6 @@
 ﻿using GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
 
-namespace GrayMint.Common.AspNetCore.SimpleUserManagement.DtoConveters;
+namespace GrayMint.Common.AspNetCore.SimpleUserManagement.DtoConverters;
 
 public static class UserConverter
 {

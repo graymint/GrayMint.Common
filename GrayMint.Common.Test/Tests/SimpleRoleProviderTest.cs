@@ -150,7 +150,7 @@ public class SimpleRoleProviderTest : BaseControllerTest
 
         var authUser = await userProvider.FindSimpleUserByEmail(user.Email);
         Assert.IsNotNull(authUser);
-        Assert.AreEqual(user.AuthCode, authUser.AuthorizationCode);
+        Assert.AreEqual(user.AuthCode, authUser!.AuthorizationCode);
         Assert.AreEqual(3, authUser.UserRoles.Length);
         Assert.IsTrue(authUser.UserRoles.Any(x => x.AppId == "*" && x.RoleName == role1.RoleName));
         Assert.IsTrue(authUser.UserRoles.Any(x => x.AppId == "1" && x.RoleName == role1.RoleName));
