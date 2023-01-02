@@ -55,9 +55,6 @@ public static class GrayMintExtension
         if (options.UseCors)
             webApplication.UseCors(GrayMintApp.CorsPolicyName);
 
-        // Configure the HTTP request pipeline.
-        webApplication.UseHttpsRedirection();
-
         if (options.UseSwagger)
         {
             webApplication.UseOpenApi();
