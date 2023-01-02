@@ -56,8 +56,6 @@ public static class GrayMintExceptionHandlerExtension
                     ex.Message
                 };
 
-
-
                 foreach (DictionaryEntry item in ex.Data)
                 {
                     var key = item.Key.ToString();
