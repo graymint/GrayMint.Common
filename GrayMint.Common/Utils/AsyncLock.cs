@@ -66,6 +66,4 @@ public class AsyncLock
         var succeeded = await semaphoreSlim.WaitAsync(timeout, cancellationToken);
         return new Semaphore(semaphoreSlim, succeeded, name);
     }
-
-
 }

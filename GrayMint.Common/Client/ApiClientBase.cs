@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.Json;
@@ -45,14 +46,14 @@ public class ApiClientBase
     public Uri? DefaultBaseAddress { get; set; }
     public AuthenticationHeaderValue? DefaultAuthorization { get; set; }
 
-    protected virtual ValueTask PrepareRequestAsync(HttpClient client, HttpRequestMessage request, string url, CancellationToken ct)
+    protected virtual Task PrepareRequestAsync(HttpClient client, HttpRequestMessage request, string url, CancellationToken ct)
     {
-        return new ValueTask();
+        return Task.CompletedTask;
     }
 
-    protected virtual ValueTask ProcessResponseAsync(HttpClient client, HttpResponseMessage response, CancellationToken ct)
+    protected virtual Task ProcessResponseAsync(HttpClient client, HttpResponseMessage response, CancellationToken ct)
     {
-        return new ValueTask();
+        return Task.CompletedTask;
     }
 
 
@@ -81,19 +82,17 @@ public class ApiClientBase
                 throw new ApiException(message, (int)response.StatusCode, responseText, headers, exception);
             }
         }
-        else
+
+        try
         {
-            try
-            {
-                await using var responseStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-                var typedBody = await JsonSerializer.DeserializeAsync<T>(responseStream, JsonSerializerSettings, cancellationToken).ConfigureAwait(false);
-                return new HttpResult<T?>(response, typedBody, string.Empty);
-            }
-            catch (JsonException exception)
-            {
-                var message = "Could not deserialize the response body stream as " + typeof(T).FullName + ".";
-                throw new ApiException(message, (int)response.StatusCode, string.Empty, headers, exception);
-            }
+            await using var responseStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+            var typedBody = await JsonSerializer.DeserializeAsync<T>(responseStream, JsonSerializerSettings, cancellationToken).ConfigureAwait(false);
+            return new HttpResult<T?>(response, typedBody, string.Empty);
+        }
+        catch (JsonException exception)
+        {
+            var message = "Could not deserialize the response body stream as " + typeof(T).FullName + ".";
+            throw new ApiException(message, (int)response.StatusCode, string.Empty, headers, exception);
         }
     }
 
@@ -109,10 +108,10 @@ public class ApiClientBase
             var name = Enum.GetName(value.GetType(), value);
             if (name != null)
             {
-                var field = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
+                var field = IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                 if (field != null)
                 {
-                    if (System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field, typeof(EnumMemberAttribute)) is EnumMemberAttribute attribute)
+                    if (CustomAttributeExtensions.GetCustomAttribute(field, typeof(EnumMemberAttribute)) is EnumMemberAttribute attribute)
                     {
                         return attribute.Value ?? name;
                     }
