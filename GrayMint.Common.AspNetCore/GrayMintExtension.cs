@@ -1,5 +1,9 @@
+using System.ComponentModel;
 using System.Net;
+using GrayMint.Common.AspNetCore.Services;
+using GrayMint.Common.JobController;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.EntityFrameworkCore;
 
 namespace GrayMint.Common.AspNetCore;
 
@@ -48,6 +52,8 @@ public static class GrayMintExtension
 
         if (servicesOptions.AddHttpClient)
             services.AddHttpClient();
+
+        services.AddHostedService<MaintenanceService>();
     }
 
     public static void UseGrayMintCommonServices(this WebApplication webApplication, UseServicesOptions options)
@@ -73,5 +79,15 @@ public static class GrayMintExtension
         if (options.MapControllers)
             webApplication.MapControllers();
     }
+
+    public static void ScheduleGrayMintSqlMaintenance<TContext>(this WebApplication webApplication, TimeSpan interval) where TContext : DbContext
+    {
+        var maintenanceService = (MaintenanceService)webApplication.Services
+            .GetRequiredService<IEnumerable<IHostedService>>()
+            .Single(x=>x is MaintenanceService);
+
+        maintenanceService.SqlMaintenanceJobs.Add(Tuple.Create(typeof(TContext), new JobSection(interval)));
+    }
+
 
 }

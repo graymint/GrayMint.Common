@@ -29,4 +29,20 @@
     <ProjectReference Include="..\GrayMint.Common\GrayMint.Common.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="GrayMintResource.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>GrayMintResource.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="GrayMintResource.resx">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>GrayMintResource.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>
