@@ -31,16 +31,14 @@ public class ApiClientBase
         public string Text { get; }
     }
 
-    protected JsonSerializerOptions JsonSerializerSettings => Settings.Value;
+    protected JsonSerializerOptions JsonSerializerSettings => new();
     protected HttpClient HttpClient;
-    protected readonly Lazy<JsonSerializerOptions> Settings;
     public ILogger Logger { get; set; } = NullLogger.Instance;
     public EventId LoggerEventId { get; set; } = new();
 
     public ApiClientBase(HttpClient httpClient)
     {
         HttpClient = httpClient;
-        Settings = new Lazy<JsonSerializerOptions>(CreateSerializerSettings);
     }
 
     public Uri? DefaultBaseAddress { get; set; }
@@ -54,13 +52,6 @@ public class ApiClientBase
     protected virtual Task ProcessResponseAsync(HttpClient client, HttpResponseMessage response, CancellationToken ct)
     {
         return Task.CompletedTask;
-    }
-
-
-    protected virtual JsonSerializerOptions CreateSerializerSettings()
-    {
-        var settings = new JsonSerializerOptions();
-        return settings;
     }
 
     public bool ReadResponseAsString { get; set; }
