@@ -31,7 +31,7 @@ public class ApiClientBase
         public string Text { get; }
     }
 
-    protected JsonSerializerOptions JsonSerializerSettings => new();
+    protected JsonSerializerOptions JsonSerializerSettings { get; set; } = new();
     protected HttpClient HttpClient;
     public ILogger Logger { get; set; } = NullLogger.Instance;
     public EventId LoggerEventId { get; set; } = new();
