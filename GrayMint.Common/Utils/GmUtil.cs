@@ -49,4 +49,11 @@ public static class GmUtil
 
         return json;
     }
+
+    public static bool SequenceEqualsOrNull<T>(IEnumerable<T>? left, IEnumerable<T>? right)
+    {
+        return
+            (left == null && right == null) ||
+            (left != null && right != null && left.SequenceEqual(right));
+    }
 }
