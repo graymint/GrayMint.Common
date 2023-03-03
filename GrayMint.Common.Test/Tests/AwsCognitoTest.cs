@@ -33,7 +33,13 @@ public class AwsCognitoTest : BaseControllerTest
     public async Task CognitoTest()
     {
         // add user to appCreator role
-        await TestInit1.CreateUserAndAddToRole("unit-tester@local", Roles.AppCreator);
+        try
+        {
+            await TestInit1.CreateUserAndAddToRole("unit-tester@local", Roles.AppCreator);
+        }
+        catch (Exception ex) when (ex.InnerException != null && ex.InnerException!.Message.Contains("Cannot insert duplicate key in object"))
+        {
+        }
 
         var idToken = await GetCredentialsAsync("unit-tester", "Password1@");
         TestInit1.HttpClient.DefaultRequestHeaders.Authorization =

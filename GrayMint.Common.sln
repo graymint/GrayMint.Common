@@ -20,7 +20,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GrayMint.Common.Test.WebApi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GrayMint.Common.AspNetCore.SimpleUserManagement", "GrayMint.Common.AspNetCore.SimpleUserManagement\GrayMint.Common.AspNetCore.SimpleUserManagement.csproj", "{79D1EBE4-6D07-4329-8B95-AACF5DB29E74}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrayMint.Common.AspNetCore.SimpleRoleAuthorization", "GrayMint.Common.AspNetCore.SimpleRoleAuthorization\GrayMint.Common.AspNetCore.SimpleRoleAuthorization.csproj", "{41BD5B80-0FCD-4876-A957-1CC50CC0DBB2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GrayMint.Common.AspNetCore.SimpleRoleAuthorization", "GrayMint.Common.AspNetCore.SimpleRoleAuthorization\GrayMint.Common.AspNetCore.SimpleRoleAuthorization.csproj", "{41BD5B80-0FCD-4876-A957-1CC50CC0DBB2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

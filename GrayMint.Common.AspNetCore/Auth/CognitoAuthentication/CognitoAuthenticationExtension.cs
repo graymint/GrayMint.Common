@@ -29,6 +29,7 @@ public static class CognitoAuthenticationExtension
                 options.RequireHttpsMetadata = true;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
+                    NameClaimType = JwtRegisteredClaimNames.Email,
                     ValidIssuer = cognitoOptions.CognitoArn,
                     ValidateIssuerSigningKey = true,
                     ValidateIssuer = true,
@@ -100,7 +101,7 @@ public static class CognitoAuthenticationExtension
             // get from cache
             var accessTokenHash = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(accessToken));
             var cacheKey = "OpenIdUserInfo/" + Convert.ToBase64String(accessTokenHash);
-            if (_memoryCache.TryGetValue<OpenIdUserInfo>(cacheKey, out var userInfo) && userInfo!=null)
+            if (_memoryCache.TryGetValue<OpenIdUserInfo>(cacheKey, out var userInfo) && userInfo != null)
                 return userInfo;
 
             // get from authority
@@ -128,8 +129,7 @@ public static class CognitoAuthenticationExtension
                     throw new UnauthorizedAccessException("openid scope was expected.");
 
                 var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, configuration.UserInfoEndpoint);
-                httpRequestMessage.Headers.Authorization =
-                    new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, accessToken);
+                httpRequestMessage.Headers.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, accessToken);
                 var httpResponseMessage = await _httpClient.SendAsync(httpRequestMessage);
                 httpResponseMessage.EnsureSuccessStatusCode();
                 var json = await httpResponseMessage.Content.ReadAsStringAsync();
@@ -180,8 +180,18 @@ public static class CognitoAuthenticationExtension
             var claimsIdentity = new ClaimsIdentity();
 
             // add email claim
-            if (!context.Principal.HasClaim(x => x.Type == JwtRegisteredClaimNames.Email) && !string.IsNullOrEmpty(userInfo.Email))
-                claimsIdentity.AddClaim(new Claim(JwtRegisteredClaimNames.Email, userInfo.Email));
+            var email = context.Principal.FindFirstValue(JwtRegisteredClaimNames.Email);
+            if (string.IsNullOrEmpty(email)) email = userInfo.Email;
+            if (!string.IsNullOrEmpty(email))
+            {
+                claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, email));
+                claimsIdentity.AddClaim(new Claim(JwtRegisteredClaimNames.Email, email));
+                claimsIdentity.AddClaim(new Claim(ClaimTypes.NameIdentifier, email)); // we work with email as unique identifier
+            }
+
+            var name = context.Principal.FindFirstValue(JwtRegisteredClaimNames.Name);
+            if (!string.IsNullOrEmpty(name))
+                claimsIdentity.AddClaim(new Claim(JwtRegisteredClaimNames.Name, name));
 
             // Convert cognito roles to standard roles
             foreach (var claim in context.Principal.Claims.Where(x => x.Type == "cognito:groups"))
