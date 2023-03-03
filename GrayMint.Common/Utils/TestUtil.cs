@@ -37,21 +37,17 @@ public static  class TestUtil
             throw new Exception($"{message}. Expected: {expected}, Actual: {actual}");
     }
 
-    public static async Task AssertEqualsWait<T, TValue>(T obj, TValue? expectedValue, Func<T, TValue> valueFactory, string? message = null, int timeout = 5000)
-    {
-        await WaitForValue(expectedValue, () => valueFactory(obj), timeout);
-        AssertEquals(expectedValue, valueFactory(obj), message);
-    }
-
-    public static async Task AssertEqualsWait<TValue>(object? expectedValue, Func<TValue?> valueFactory, string? message = null, int timeout = 5000)
+    public static async Task AssertEqualsWait<TValue>(object? expectedValue, Func<TValue?> valueFactory, 
+        string? message = null, int timeout = 5000)
     {
         await WaitForValue(expectedValue, valueFactory, timeout);
-        AssertEquals(expectedValue, valueFactory, message);
+        AssertEquals(expectedValue, valueFactory(), message);
     }
 
-    public static async Task AssertEqualsWait<TValue>(object? expectedValue, Func<Task<TValue?>> valueFactory, string? message = null, int timeout = 5000)
+    public static async Task AssertEqualsWait<TValue>(object? expectedValue, Func<Task<TValue?>> valueFactory, 
+        string? message = null, int timeout = 5000)
     {
         await WaitForValue(expectedValue, valueFactory, timeout);
-        AssertEquals(expectedValue, valueFactory, message);
+        AssertEquals(expectedValue, await valueFactory(), message);
     }
 }
