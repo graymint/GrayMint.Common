@@ -61,29 +61,27 @@ namespace GrayMint.Common.AspNetCore {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to /* Azure SQL Maintenance - Maintenance script for Azure SQL Database */
-        ////* This script provided AS IS, Please review the code before executing this on production environment */
-        ////* For any issue or suggestion please email to: yocr@microsoft.com */
-        ////* 
-        ///***********************************************
-        ///	Current Version Date: 2022-11-08
-        ///***********************************************
-        ///
-        ///Change Log: 
-        ///	2022-11-08 - Ignore table value functions for index maintenance Thanks to https://github.com/Mitch-Wheat fo [rest of string was truncated]&quot;;.
+        ///   Looks up a localized string similar to /*Perform a &apos;USE &lt;database name&gt;&apos; to select the database in which to run the script.*/  
+        ///-- Declare variables  
+        ///SET NOCOUNT ON;  
+        ///DECLARE @tablename VARCHAR(255);  
+        ///DECLARE @execstr   VARCHAR(400);  
+        ///DECLARE @objectid  INT;  
+        ///DECLARE @indexid   INT;  
+        ///DECLARE @frag      DECIMAL;  
+        ///DECLARE @maxfrag   DECIMAL;  
+        ///  
+        ///-- Decide on the maximum fragmentation to allow for.  
+        ///SELECT @maxfrag = 30.0;  
+        ///  
+        ///-- Declare a cursor.  
+        ///DECLARE tables CURSOR FOR  
+        ///   SELECT TABLE_SCHEMA + &apos;.&apos; + TABLE_NAME  
+        ///   [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string SqlMaintenance {
             get {
                 return ResourceManager.GetString("SqlMaintenance", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to sfsf.
-        /// </summary>
-        internal static string String1 {
-            get {
-                return ResourceManager.GetString("String1", resourceCulture);
             }
         }
     }
