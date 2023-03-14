@@ -15,8 +15,7 @@ public static class GrayMintExtension
         var services = builder.Services;
 
         // configure settings
-        var appCommonSettings = appConfiguration.Get<GrayMintAppSettings>()
-                                ?? throw new Exception("Could not load App section in appsettings.json file.");
+        var appCommonSettings = appConfiguration.Get<GrayMintAppSettings>() ?? throw new Exception("Could not load App section in appsettings.json file.");
         appCommonSettings.Validate();
         services.Configure<GrayMintAppSettings>(appConfiguration);
 

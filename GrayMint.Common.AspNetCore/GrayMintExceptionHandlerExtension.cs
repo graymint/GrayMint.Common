@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Mime;
 using System.Text.Json;
+using GrayMint.Common.Client;
 using GrayMint.Common.Exceptions;
 using Microsoft.Extensions.Options;
 
@@ -46,14 +47,18 @@ public static class GrayMintExceptionHandlerExtension
                 if (!string.IsNullOrEmpty(_grayMintExceptionOptions.RootNamespace))
                     typeFullName = typeFullName?.Replace(nameof(GrayMint), _grayMintExceptionOptions.RootNamespace);
 
+                var message = ex.Message;
+                if (!string.IsNullOrEmpty(ex.InnerException?.Message))
+                    message += $" InnerMessage: {ex.InnerException?.Message}";
+
                 // set optional information
                 context.Response.ContentType = MediaTypeNames.Application.Json;
-                var error = new
+                var error = new ApiException.ServerException
                 {
                     Data = new Dictionary<string, string?>(),
                     TypeName = GetExceptionType(ex).Name,
                     TypeFullName = typeFullName,
-                    ex.Message
+                    Message = message
                 };
 
                 foreach (DictionaryEntry item in ex.Data)
