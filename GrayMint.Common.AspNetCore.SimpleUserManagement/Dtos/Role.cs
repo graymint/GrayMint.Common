@@ -3,11 +3,11 @@ namespace GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
 
 public class Role
 {
-    public string RoleId { get; set; } 
+    public Guid RoleId { get; set; } 
     public string RoleName { get; set; }
     public string? Description { get; set; }
 
-    public Role(string roleId, string roleName)
+    public Role(Guid roleId, string roleName)
     {
         RoleId = roleId;
         RoleName = roleName;

@@ -6,7 +6,7 @@ public static class RoleConverter
 {
     public static Role ToDto(this Models.Role roleModel)
     {
-        var role = new Role(roleModel.RoleId.ToString(), roleModel.RoleName)
+        var role = new Role(roleModel.RoleId, roleModel.RoleName)
         {
             Description = roleModel.Description
         };

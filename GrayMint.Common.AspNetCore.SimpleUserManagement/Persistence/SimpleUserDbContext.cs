@@ -21,6 +21,13 @@ public partial class SimpleUserDbContext : DbContext
     {
     }
 
+    protected override void ConfigureConventions(
+        ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Properties<string>()
+            .HaveMaxLength(400);
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

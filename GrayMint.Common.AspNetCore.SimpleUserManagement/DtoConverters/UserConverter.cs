@@ -6,7 +6,7 @@ public static class UserConverter
 {
     public static User ToDto(this Models.User userModel)
     {
-        var user = new User(userModel.UserId.ToString(), email: userModel.Email, createdTime: userModel.CreatedTime)
+        var user = new User(userModel.UserId, email: userModel.Email, createdTime: userModel.CreatedTime)
         {
             AuthCode = userModel.AuthCode,
             FirstName = userModel.FirstName,

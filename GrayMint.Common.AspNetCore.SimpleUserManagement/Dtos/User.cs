@@ -2,7 +2,7 @@
 
 public class User
 {
-    public string UserId { get; set; }
+    public Guid UserId { get; set; }
     public string Email { get; set; }
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
@@ -10,7 +10,7 @@ public class User
     public DateTime CreatedTime { get; set; }
     public string? AuthCode { get; set; }
 
-    public User(string userId, string email, DateTime createdTime)
+    public User(Guid userId, string email, DateTime createdTime)
     {
         UserId = userId;
         Email = email;

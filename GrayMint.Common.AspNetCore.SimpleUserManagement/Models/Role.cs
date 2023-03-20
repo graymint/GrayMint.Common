@@ -2,7 +2,7 @@
 
 public class Role
 {
-    public int RoleId { get; set; }
+    public Guid RoleId { get; set; }
     public string RoleName { get; set; } = default!;
 
     public virtual ICollection<UserRole>? UserRoles { get; set; }

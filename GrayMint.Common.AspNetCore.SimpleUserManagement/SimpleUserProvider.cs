@@ -46,9 +46,9 @@ public class SimpleUserProvider : ISimpleRoleProvider
         return res.Entity.ToDto();
     }
 
-    public async Task<User> Get(string userId)
+    public async Task<User> Get(Guid userId)
     {
-        var userModel = await _simpleUserDbContext.Users.SingleAsync(x => x.UserId == int.Parse(userId));
+        var userModel = await _simpleUserDbContext.Users.SingleAsync(x => x.UserId == userId);
         return userModel.ToDto();
     }
 
@@ -64,27 +64,27 @@ public class SimpleUserProvider : ISimpleRoleProvider
         return userModel.ToDto();
     }
 
-    public async Task Update(string userId, UserUpdateRequest request)
+    public async Task Update(Guid userId, UserUpdateRequest request)
     {
-        var userModel = await _simpleUserDbContext.Users.SingleAsync(x => x.UserId == int.Parse(userId));
+        var userModel = await _simpleUserDbContext.Users.SingleAsync(x => x.UserId == userId);
         if (request.FirstName != null) userModel.FirstName = request.FirstName;
         if (request.LastName != null) userModel.LastName = request.LastName;
         if (request.Description != null) userModel.Description = request.Description;
         if (request.Email != null) userModel.Email = request.Email;
         await _simpleUserDbContext.SaveChangesAsync();
     }
-    public async Task Remove(string userId)
+    public async Task Remove(Guid userId)
     {
         _simpleUserDbContext.ChangeTracker.Clear();
 
-        var userModel = new Models.User { UserId = int.Parse(userId) };
+        var userModel = new Models.User { UserId = userId };
         _simpleUserDbContext.Users.Remove(userModel);
         await _simpleUserDbContext.SaveChangesAsync();
     }
 
-    public async Task ResetAuthorizationCode(string userId)
+    public async Task ResetAuthorizationCode(Guid userId)
     {
-        var userModel = await _simpleUserDbContext.Users.SingleAsync(x => x.UserId == int.Parse(userId));
+        var userModel = await _simpleUserDbContext.Users.SingleAsync(x => x.UserId == userId);
         userModel.AuthCode = Guid.NewGuid().ToString();
         await _simpleUserDbContext.SaveChangesAsync();
     }
