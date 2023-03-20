@@ -38,6 +38,9 @@ public partial class SimpleUserDbContext : DbContext
             entity.Property(e => e.UserId)
                 .HasMaxLength(50);
 
+            entity.Property(e => e.IsEnabled)
+                .HasDefaultValue(true);
+
             entity.HasKey(e => e.UserId);
 
             entity.HasIndex(e => e.Email)

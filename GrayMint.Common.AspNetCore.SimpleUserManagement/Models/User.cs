@@ -3,6 +3,7 @@
 public class User
 {
     public Guid UserId { get; set; } = default!;
+    public bool IsEnabled { get; set; } = true;
     public string Email { get; set; } = default!;
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
