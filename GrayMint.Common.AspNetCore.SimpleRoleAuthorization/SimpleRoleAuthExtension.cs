@@ -24,12 +24,12 @@ public static class SimpleRoleAuthExtension
             if (requireBotAuthentication) policyBuilder.AddAuthenticationSchemes(BotAuthenticationDefaults.AuthenticationScheme);
             if (requireCognitoAuthentication) policyBuilder.AddAuthenticationSchemes(CognitoAuthenticationDefaults.AuthenticationScheme);
             if (!string.IsNullOrEmpty(customAuthenticationScheme)) policyBuilder.AddAuthenticationSchemes(customAuthenticationScheme);
-            var policy = options.AddPolicy(SimpleRoleAuth.Policy,
-                policyBuilder
+            var policy = policyBuilder
                 .AddRequirements(new SimpleRoleAuthRequirement())
                 .RequireAuthenticatedUser()
-                .Build());
-
+                .Build();
+            
+            options.AddPolicy(SimpleRoleAuth.Policy, policy);
             options.DefaultPolicy = policy;
         });
 
