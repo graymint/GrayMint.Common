@@ -19,15 +19,15 @@ public class Program
             .AddBotAuthentication(builder.Configuration.GetSection("Auth"), builder.Environment.IsProduction())
             .AddCognitoAuthentication(builder.Configuration.GetSection("Auth"));
 
-        builder.Services.AddSimpleRoleAuthorization(builder.Configuration.GetSection("Auth"), true, true);
-        builder.Services.AddSimpleUserProvider(options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
+        builder.Services.AddGrayMintSimpleRoleAuthorization(builder.Configuration.GetSection("Auth"), true, true);
+        builder.Services.AddGrayMintSimpleUserProvider(options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
         builder.Services.AddDbContext<WebApiSampleDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
 
         // Add services to the container.
         var webApp = builder.Build();
         webApp.UseGrayMintCommonServices(new UseServicesOptions());
         await GrayMintApp.CheckDatabaseCommand<WebApiSampleDbContext>(webApp, args);
-        await webApp.UseSimpleUserProvider();
+        await webApp.UseGrayMintSimpleUserProvider();
 
         await GrayMintApp.RunAsync(webApp, args);
 

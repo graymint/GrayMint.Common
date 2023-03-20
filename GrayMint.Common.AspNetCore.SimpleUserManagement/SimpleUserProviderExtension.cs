@@ -9,7 +9,7 @@ namespace GrayMint.Common.AspNetCore.SimpleUserManagement;
 
 public static class SimpleUserProviderExtension
 {
-    public static void AddSimpleUserProvider(this IServiceCollection services, Action<DbContextOptionsBuilder>? optionsAction = null)
+    public static void AddGrayMintSimpleUserProvider(this IServiceCollection services, Action<DbContextOptionsBuilder>? optionsAction = null)
     {
         services.AddDbContext<SimpleUserDbContext>(optionsAction);
         services.AddScoped<ISimpleRoleProvider, SimpleUserProvider>();
@@ -17,7 +17,7 @@ public static class SimpleUserProviderExtension
         services.AddScoped<SimpleRoleProvider>();
     }
 
-    public static async Task UseSimpleUserProvider(this WebApplication webApplication)
+    public static async Task UseGrayMintSimpleUserProvider(this WebApplication webApplication)
     {
         await using var scope = webApplication.Services.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<SimpleUserDbContext>();
