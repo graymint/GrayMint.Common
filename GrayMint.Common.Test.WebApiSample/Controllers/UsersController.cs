@@ -24,7 +24,7 @@ public class UsersController : ControllerBase
         _botAuthenticationTokenBuilder = botAuthenticationTokenBuilder;
     }
 
-    [Authorize(SimpleRoleAuth.Policy, Roles = RoleName.SystemAdmin)]
+    [AuthorizePermission(Permission.SystemRead)]
     [HttpGet("{email}/authorization-token")]
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<string> GetAuthorizationTokenByEmail(string email, bool createNew)

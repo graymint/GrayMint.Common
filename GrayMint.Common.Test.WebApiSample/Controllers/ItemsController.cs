@@ -20,7 +20,7 @@ public class ItemsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(SimpleRoleAuth.Policy, Roles = RoleName.AppUser)]
+    [Authorize(SimpleRoleAuth.Policy, Roles = "AppUser")]
     public async Task<Item> Create(int appId, string itemName)
     {
         var ret = await _dbContext.Items.AddAsync(new Item { AppId = appId, ItemName = itemName });
@@ -29,7 +29,7 @@ public class ItemsController : ControllerBase
     }
 
     [HttpPost("by-permission")]
-    [AuthorizePermission(Permission.CreateItem)]
+    [AuthorizePermission(Permission.ItemWrite)]
     public async Task<Item> CreateByPermission(int appId, string itemName)
     {
         var ret = await _dbContext.Items.AddAsync(new Item { AppId = appId, ItemName = itemName });
@@ -38,7 +38,7 @@ public class ItemsController : ControllerBase
     }
 
     [HttpGet("itemId")]
-    [Authorize(SimpleRoleAuth.Policy, Roles = $"{RoleName.SystemAdmin},{RoleName.AppUser},{RoleName.AppReader}")]
+    [AuthorizePermission(Permission.ItemRead)]
     public async Task<Item> Get(int appId, int itemId)
     {
         var ret = await _dbContext.Items.SingleAsync(x => x.AppId == appId && x.ItemId == itemId);
@@ -46,7 +46,7 @@ public class ItemsController : ControllerBase
     }
 
     [HttpGet("itemId/by-permission")]
-    [AuthorizePermission(Permission.ReadItem)]
+    [AuthorizePermission(Permission.ItemRead)]
     public async Task<Item> GetByPermission(int appId, int itemId)
     {
         var ret = await _dbContext.Items.SingleAsync(x => x.AppId == appId && x.ItemId == itemId);
@@ -55,7 +55,7 @@ public class ItemsController : ControllerBase
 
 
     [HttpDelete]
-    [AuthorizePermission(Permission.DeleteItem)]
+    [AuthorizePermission(Permission.ItemWrite)]
     public async Task DeleteByPermission(int appId, string itemName)
     {
         var item = await _dbContext.Items.SingleAsync(x => x.AppId == appId && x.ItemName == itemName);

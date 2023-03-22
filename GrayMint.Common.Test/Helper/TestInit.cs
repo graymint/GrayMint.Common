@@ -54,7 +54,7 @@ public class TestInit : IDisposable
 
     private async Task Init()
     {
-        var appCreatorUser = await CreateUserAndAddToRole(NewEmail(), RoleName.SystemAdmin);
+        var appCreatorUser = await CreateUserAndAddToRole(NewEmail(), RolePermission.SystemAdmin.RoleName);
         AppCreatorAuthenticationHeader = await CreateAuthorizationHeader(appCreatorUser.Email);
         HttpClient.DefaultRequestHeaders.Authorization = AppCreatorAuthenticationHeader;
         App = await AppsClient.CreateAppAsync(Guid.NewGuid().ToString());

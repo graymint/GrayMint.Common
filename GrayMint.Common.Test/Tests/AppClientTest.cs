@@ -14,7 +14,7 @@ public class AccessTest : BaseControllerTest
     public async Task AppCreator_access()
     {
         // Create an AppCreator
-        var appCreatorUser1 = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.SystemAdmin);
+        var appCreatorUser1 = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RolePermission.SystemAdmin.RoleName);
 
         // **** Check: accept All apps permission
         TestInit1.HttpClient.DefaultRequestHeaders.Authorization =
@@ -24,7 +24,7 @@ public class AccessTest : BaseControllerTest
         // **** Check: refuse if caller does not have all app permission
         try
         {
-            var appCreatorUser2 = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.SystemAdmin, "123");
+            var appCreatorUser2 = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RolePermission.SystemAdmin.RoleName, "123");
             TestInit1.HttpClient.DefaultRequestHeaders.Authorization =
                 await TestInit1.CreateAuthorizationHeader(appCreatorUser2.Email);
             await TestInit1.AppsClient.CreateAppAsync(Guid.NewGuid().ToString());
@@ -43,19 +43,19 @@ public class AccessTest : BaseControllerTest
         // Create an AppCreator
 
         // **** Check: accept create item by AllApps access
-        var appUser = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.AppUser);
+        var appUser = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RolePermission.AppUser.RoleName);
         TestInit1.HttpClient.DefaultRequestHeaders.Authorization = await TestInit1.CreateAuthorizationHeader(appUser.Email);
         await TestInit1.ItemsClient.CreateAsync(TestInit1.App.AppId, Guid.NewGuid().ToString());
 
         // **** Check: accept create item by the App permission
-        appUser = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.AppUser, TestInit1.App.AppId.ToString());
+        appUser = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RolePermission.AppUser.RoleName, TestInit1.App.AppId.ToString());
         TestInit1.HttpClient.DefaultRequestHeaders.Authorization = await TestInit1.CreateAuthorizationHeader(appUser.Email);
         await TestInit1.ItemsClient.CreateAsync(TestInit1.App.AppId, Guid.NewGuid().ToString());
 
         // **** Check: refuse if caller does not have all the app permission
         try
         {
-            appUser = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.AppUser, (TestInit1.App.AppId - 1).ToString());
+            appUser = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RolePermission.AppUser.RoleName, (TestInit1.App.AppId - 1).ToString());
             TestInit1.HttpClient.DefaultRequestHeaders.Authorization = await TestInit1.CreateAuthorizationHeader(appUser.Email);
             await TestInit1.ItemsClient.CreateAsync(TestInit1.App.AppId, Guid.NewGuid().ToString());
             Assert.Fail("Forbidden Exception was expected.");
@@ -74,19 +74,19 @@ public class AccessTest : BaseControllerTest
         // Create an AppCreator
 
         // **** Check: accept create item by Create Permission
-        var appUser = await testInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.SystemAdmin);
+        var appUser = await testInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RolePermission.SystemAdmin.RoleName);
         testInit1.HttpClient.DefaultRequestHeaders.Authorization = await testInit1.CreateAuthorizationHeader(appUser.Email);
         await testInit1.ItemsClient.CreateByPermissionAsync(testInit1.App.AppId, Guid.NewGuid().ToString());
 
         // **** Check: accept create item by the App permission
-        appUser = await testInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.AppUser, testInit1.App.AppId.ToString());
+        appUser = await testInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RolePermission.AppUser.RoleName, testInit1.App.AppId.ToString());
         testInit1.HttpClient.DefaultRequestHeaders.Authorization = await testInit1.CreateAuthorizationHeader(appUser.Email);
         await testInit1.ItemsClient.CreateByPermissionAsync(testInit1.App.AppId, Guid.NewGuid().ToString());
 
         // **** Check: refuse if caller belong to other app and does not have all the app permission
         try
         {
-            appUser = await testInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.AppUser, testInit2.App.AppId.ToString());
+            appUser = await testInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RolePermission.AppUser.RoleName, testInit2.App.AppId.ToString());
             testInit1.HttpClient.DefaultRequestHeaders.Authorization = await testInit1.CreateAuthorizationHeader(appUser.Email);
             await testInit1.ItemsClient.CreateByPermissionAsync(testInit1.App.AppId, Guid.NewGuid().ToString());
             Assert.Fail("Forbidden Exception was expected.");
@@ -99,7 +99,7 @@ public class AccessTest : BaseControllerTest
         // **** Check: refuse if caller does not have write permission
         try
         {
-            appUser = await testInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.AppReader, testInit1.App.AppId.ToString());
+            appUser = await testInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RolePermission.AppReader.RoleName, testInit1.App.AppId.ToString());
             testInit1.HttpClient.DefaultRequestHeaders.Authorization = await testInit1.CreateAuthorizationHeader(appUser.Email);
             await testInit1.ItemsClient.CreateByPermissionAsync(testInit1.App.AppId, Guid.NewGuid().ToString());
             Assert.Fail("Forbidden Exception was expected.");

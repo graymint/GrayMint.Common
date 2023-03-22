@@ -20,7 +20,7 @@ public class AppsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(SimpleRoleAuth.Policy, Roles = RoleName.SystemAdmin)]
+    [AuthorizePermission(Permission.SystemWrite)]
     public async Task<App> CreateApp(string appName)
     {
         var ret = await _dbContext.Apps.AddAsync(new App { AppName = appName });
@@ -29,7 +29,7 @@ public class AppsController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(SimpleRoleAuth.Policy, Roles = $"{RoleName.EnterpriseAdmin},{RoleName.SystemAdmin}")]
+    [AuthorizePermission(Permission.SystemRead)]
     public async Task<App[]> List()
     {
         var ret = await _dbContext.Apps.ToArrayAsync();
