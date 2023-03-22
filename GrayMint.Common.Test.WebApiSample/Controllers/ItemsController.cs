@@ -20,7 +20,7 @@ public class ItemsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(SimpleRoleAuth.Policy, Roles = $"{nameof(Roles.AppUser)},{nameof(Roles.AppReader)}")]
+    [Authorize(SimpleRoleAuth.Policy, Roles = nameof(Roles.AppUser))]
     public async Task<Item> Create(int appId, string itemName)
     {
         var ret = await _dbContext.Items.AddAsync(new Item { AppId = appId, ItemName = itemName });
