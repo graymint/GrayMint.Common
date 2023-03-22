@@ -2,8 +2,9 @@
 
 public class SimpleRoleAuthOptions
 {
+    public string AppIdParamName { get; set; } = "appId";
     public TimeSpan CacheTimeout { get; set; } = TimeSpan.FromMinutes(10);
-    public void Validate()
-    {
-    }
+    public string? CustomAuthenticationScheme { get; set; }
+    public SimpleRolePermissions[]? RolePermissions { get; set; }
+   
 }

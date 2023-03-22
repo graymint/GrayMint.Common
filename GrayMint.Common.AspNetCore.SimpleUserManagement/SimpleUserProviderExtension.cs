@@ -12,7 +12,7 @@ public static class SimpleUserProviderExtension
     public static void AddGrayMintSimpleUserProvider(this IServiceCollection services, Action<DbContextOptionsBuilder>? optionsAction = null)
     {
         services.AddDbContext<SimpleUserDbContext>(optionsAction);
-        services.AddScoped<ISimpleRoleProvider, SimpleUserProvider>();
+        services.AddScoped<ISimpleUserProvider, SimpleUserProvider>();
         services.AddScoped<SimpleUserProvider>();
         services.AddScoped<SimpleRoleProvider>();
     }

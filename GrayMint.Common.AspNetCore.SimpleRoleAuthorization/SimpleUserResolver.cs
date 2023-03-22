@@ -1,55 +1,53 @@
 ﻿using System.Security.Claims;
 using GrayMint.Common.AspNetCore.Auth.BotAuthentication;
 using GrayMint.Common.Exceptions;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Options;
 
 namespace GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 
-internal class SimpleUserResolver : IBotAuthenticationProvider
+public class SimpleUserResolver : IBotAuthenticationProvider
 {
-    private readonly IMemoryCache _memoryCache;
-    private readonly ISimpleRoleProvider _simpleUserProvider;
-    private readonly SimpleRoleAuthOptions _simpleRoleAuthOptions;
+    private readonly SimpleRoleAuthCache _simpleRoleAuthCache;
+    private readonly ISimpleUserProvider _simpleUserProvider;
 
-    public SimpleUserResolver(IMemoryCache memoryCache,
-        ISimpleRoleProvider simpleUserProvider,
-        IOptions<SimpleRoleAuthOptions> simpleRoleAuthOptions)
+    public SimpleUserResolver(
+        ISimpleUserProvider simpleUserProvider,
+        SimpleRoleAuthCache simpleRoleAuthCache)
     {
-        _memoryCache = memoryCache;
         _simpleUserProvider = simpleUserProvider;
-        _simpleRoleAuthOptions = simpleRoleAuthOptions.Value;
+        _simpleRoleAuthCache = simpleRoleAuthCache;
     }
 
     public async Task<SimpleUser?> GetSimpleAuthUser(ClaimsPrincipal principal)
     {
-        var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var email = principal.FindFirst(ClaimTypes.Email)?.Value;
+        if (email == null) return null;
 
         // try to find from cache
-        var cacheKey = userId != null ? $"SimpleAuthUser:{userId}" : null;
-        if (cacheKey != null && _memoryCache.TryGetValue(cacheKey, out SimpleUser? userAuthInfo))
-            return userAuthInfo;
+        if (_simpleRoleAuthCache.TryGetSimpleUserByEmail(email, out var simpleUser))
+            return simpleUser;
 
         // add to cache
-        var email = principal.FindFirst(ClaimTypes.Email)?.Value;
         try
         {
-            userAuthInfo = string.IsNullOrEmpty(email) ? null : await _simpleUserProvider.FindSimpleUserByEmail(email);
+            simpleUser = await _simpleUserProvider.FindSimpleUserByEmail(email);
         }
         catch (Exception ex) when (NotExistsException.Is(ex))
         {
-            userAuthInfo = null;
         }
 
-        if (cacheKey != null)
-            _memoryCache.Set(cacheKey, userAuthInfo, _simpleRoleAuthOptions.CacheTimeout);
-
-        return userAuthInfo;
+        _simpleRoleAuthCache.Set(email, simpleUser);
+        return simpleUser;
     }
 
     public async Task<string> GetAuthorizationCode(ClaimsPrincipal principal)
     {
         var authUser = await GetSimpleAuthUser(principal);
         return authUser?.AuthorizationCode ?? throw new KeyNotFoundException("User does not exist.");
+    }
+
+    public Task ClearUserCache(string email)
+    {
+        _simpleRoleAuthCache.ClearUserCache(email);
+        return Task.CompletedTask;
     }
 }

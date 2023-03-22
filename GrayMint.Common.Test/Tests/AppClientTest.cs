@@ -1,7 +1,7 @@
 using System.Net;
 using GrayMint.Common.Client;
 using GrayMint.Common.Test.Helper;
-using GrayMint.Common.Test.WebApiSample;
+using GrayMint.Common.Test.WebApiSample.Security;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace GrayMint.Common.Test.Tests;
@@ -14,7 +14,7 @@ public class AccessTest : BaseControllerTest
     public async Task AppCreator_access()
     {
         // Create an AppCreator
-        var appCreatorUser1 = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), Roles.AppCreator);
+        var appCreatorUser1 = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.SystemAdmin);
 
         // **** Check: accept All apps permission
         TestInit1.HttpClient.DefaultRequestHeaders.Authorization =
@@ -24,7 +24,7 @@ public class AccessTest : BaseControllerTest
         // **** Check: refuse if caller does not have all app permission
         try
         {
-            var appCreatorUser2 = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), Roles.AppCreator, "123");
+            var appCreatorUser2 = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.SystemAdmin, "123");
             TestInit1.HttpClient.DefaultRequestHeaders.Authorization =
                 await TestInit1.CreateAuthorizationHeader(appCreatorUser2.Email);
             await TestInit1.AppsClient.CreateAppAsync(Guid.NewGuid().ToString());
@@ -43,25 +43,20 @@ public class AccessTest : BaseControllerTest
         // Create an AppCreator
 
         // **** Check: accept create item by AllApps access
-        var appUser = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), Roles.AppUser);
-        TestInit1.HttpClient.DefaultRequestHeaders.Authorization =
-            await TestInit1.CreateAuthorizationHeader(appUser.Email);
+        var appUser = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.AppUser);
+        TestInit1.HttpClient.DefaultRequestHeaders.Authorization = await TestInit1.CreateAuthorizationHeader(appUser.Email);
         await TestInit1.ItemsClient.CreateAsync(TestInit1.App.AppId, Guid.NewGuid().ToString());
 
         // **** Check: accept create item by the App permission
-        appUser = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), Roles.AppUser,
-            TestInit1.App.AppId.ToString());
-        TestInit1.HttpClient.DefaultRequestHeaders.Authorization =
-            await TestInit1.CreateAuthorizationHeader(appUser.Email);
+        appUser = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.AppUser, TestInit1.App.AppId.ToString());
+        TestInit1.HttpClient.DefaultRequestHeaders.Authorization = await TestInit1.CreateAuthorizationHeader(appUser.Email);
         await TestInit1.ItemsClient.CreateAsync(TestInit1.App.AppId, Guid.NewGuid().ToString());
 
         // **** Check: refuse if caller does not have all the app permission
         try
         {
-            appUser = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), Roles.AppUser,
-                (TestInit1.App.AppId - 1).ToString());
-            TestInit1.HttpClient.DefaultRequestHeaders.Authorization =
-                await TestInit1.CreateAuthorizationHeader(appUser.Email);
+            appUser = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.AppUser, (TestInit1.App.AppId - 1).ToString());
+            TestInit1.HttpClient.DefaultRequestHeaders.Authorization = await TestInit1.CreateAuthorizationHeader(appUser.Email);
             await TestInit1.ItemsClient.CreateAsync(TestInit1.App.AppId, Guid.NewGuid().ToString());
             Assert.Fail("Forbidden Exception was expected.");
         }
@@ -69,5 +64,50 @@ public class AccessTest : BaseControllerTest
         {
             Assert.AreEqual((int)HttpStatusCode.Forbidden, ex.StatusCode);
         }
+    }
+
+    [TestMethod]
+    public async Task AppUser_access_by_permission()
+    {
+        var testInit1 = await TestInit.Create();
+        var testInit2 = await TestInit.Create();
+        // Create an AppCreator
+
+        // **** Check: accept create item by Create Permission
+        var appUser = await testInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.SystemAdmin);
+        testInit1.HttpClient.DefaultRequestHeaders.Authorization = await testInit1.CreateAuthorizationHeader(appUser.Email);
+        await testInit1.ItemsClient.CreateByPermissionAsync(testInit1.App.AppId, Guid.NewGuid().ToString());
+
+        // **** Check: accept create item by the App permission
+        appUser = await testInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.AppUser, testInit1.App.AppId.ToString());
+        testInit1.HttpClient.DefaultRequestHeaders.Authorization = await testInit1.CreateAuthorizationHeader(appUser.Email);
+        await testInit1.ItemsClient.CreateByPermissionAsync(testInit1.App.AppId, Guid.NewGuid().ToString());
+
+        // **** Check: refuse if caller belong to other app and does not have all the app permission
+        try
+        {
+            appUser = await testInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.AppUser, testInit2.App.AppId.ToString());
+            testInit1.HttpClient.DefaultRequestHeaders.Authorization = await testInit1.CreateAuthorizationHeader(appUser.Email);
+            await testInit1.ItemsClient.CreateByPermissionAsync(testInit1.App.AppId, Guid.NewGuid().ToString());
+            Assert.Fail("Forbidden Exception was expected.");
+        }
+        catch (ApiException ex)
+        {
+            Assert.AreEqual((int)HttpStatusCode.Forbidden, ex.StatusCode);
+        }
+
+        // **** Check: refuse if caller does not have write permission
+        try
+        {
+            appUser = await testInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.AppReader, testInit1.App.AppId.ToString());
+            testInit1.HttpClient.DefaultRequestHeaders.Authorization = await testInit1.CreateAuthorizationHeader(appUser.Email);
+            await testInit1.ItemsClient.CreateByPermissionAsync(testInit1.App.AppId, Guid.NewGuid().ToString());
+            Assert.Fail("Forbidden Exception was expected.");
+        }
+        catch (ApiException ex)
+        {
+            Assert.AreEqual((int)HttpStatusCode.Forbidden, ex.StatusCode);
+        }
+
     }
 }

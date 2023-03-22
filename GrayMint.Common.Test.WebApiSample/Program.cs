@@ -4,6 +4,7 @@ using GrayMint.Common.AspNetCore.Auth.CognitoAuthentication;
 using GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 using GrayMint.Common.AspNetCore.SimpleUserManagement;
 using GrayMint.Common.Test.WebApiSample.Persistence;
+using GrayMint.Common.Test.WebApiSample.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace GrayMint.Common.Test.WebApiSample;
@@ -19,7 +20,7 @@ public class Program
             .AddBotAuthentication(builder.Configuration.GetSection("Auth"), builder.Environment.IsProduction())
             .AddCognitoAuthentication(builder.Configuration.GetSection("Auth"));
 
-        builder.Services.AddGrayMintSimpleRoleAuthorization(builder.Configuration.GetSection("Auth"), true, true);
+        builder.Services.AddGrayMintSimpleRoleAuthorization(new SimpleRoleAuthOptions { RolePermissions = RolePermission.All });
         builder.Services.AddGrayMintSimpleUserProvider(options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
         builder.Services.AddDbContext<WebApiSampleDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
 

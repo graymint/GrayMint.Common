@@ -5,39 +5,33 @@ using Microsoft.AspNetCore.Routing;
 
 namespace GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 
-public class SimpleRoleAuthHandler : AuthorizationHandler<SimpleRoleAuthRequirement>
+public class SimpleRoleAuthHandler : AuthorizationHandler<RolesAuthorizationRequirement>
 {
-    protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, SimpleRoleAuthRequirement requirement)
+    protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, RolesAuthorizationRequirement requirement)
     {
         if (context.Resource is not HttpContext httpContext)
             return Task.CompletedTask;
 
         var requestAppId = httpContext.GetRouteValue("appId")?.ToString();
-        var requiredRoles = context.Requirements.OfType<RolesAuthorizationRequirement>().ToArray();
 
-        foreach (var requiredRole in requiredRoles)
+        var succeeded = false;
+        foreach (var allowedRole in requirement.AllowedRoles)
         {
-            var succeeded = false;
-            foreach (var allowedRole in requiredRole.AllowedRoles)
-            {
-                succeeded |= context.User.HasClaim(x =>
-                        x.Type == SimpleRoleAuth.RoleClaimType &&
-                        x.Value == SimpleRoleAuth.CreateAppRoleName(allowedRole, "*"));
+            succeeded |= context.User.HasClaim(x =>
+                    x.Type == SimpleRoleAuth.RoleClaimType &&
+                    x.Value == SimpleRoleAuth.CreateAppRoleName("*", allowedRole));
 
-                succeeded |= requestAppId != null &&
-                             context.User.HasClaim(x =>
-                                 x.Type == SimpleRoleAuth.RoleClaimType &&
-                                 x.Value == SimpleRoleAuth.CreateAppRoleName(allowedRole, requestAppId));
-            }
-
-            if (!succeeded)
-            {
-                context.Fail(new AuthorizationFailureReason(this, "Access forbidden."));
-                return Task.CompletedTask;
-            }
+            succeeded |= requestAppId != null &&
+                         context.User.HasClaim(x =>
+                             x.Type == SimpleRoleAuth.RoleClaimType &&
+                             x.Value == SimpleRoleAuth.CreateAppRoleName(requestAppId, allowedRole));
         }
 
-        context.Succeed(requirement);
+        if (succeeded)
+            context.Succeed(requirement);
+        else
+            context.Fail(new AuthorizationFailureReason(this, "Access forbidden."));
+
         return Task.CompletedTask;
     }
 }

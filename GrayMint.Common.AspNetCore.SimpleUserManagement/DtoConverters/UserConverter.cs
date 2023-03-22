@@ -11,7 +11,7 @@ public static class UserConverter
             AuthCode = userModel.AuthCode,
             FirstName = userModel.FirstName,
             LastName = userModel.LastName,
-            Description = userModel.Description,
+            Description = userModel.Description
         };
 
         return user;

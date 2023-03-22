@@ -3,7 +3,7 @@ using Amazon;
 using Amazon.CognitoIdentityProvider;
 using Amazon.Extensions.CognitoAuthentication;
 using GrayMint.Common.Test.Helper;
-using GrayMint.Common.Test.WebApiSample;
+using GrayMint.Common.Test.WebApiSample.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -35,7 +35,7 @@ public class AwsCognitoTest : BaseControllerTest
         // add user to appCreator role
         try
         {
-            await TestInit1.CreateUserAndAddToRole("unit-tester@local", Roles.AppCreator);
+            await TestInit1.CreateUserAndAddToRole("unit-tester@local", RoleName.SystemAdmin);
         }
         catch (Exception ex) when (ex.InnerException != null && ex.InnerException!.Message.Contains("Cannot insert duplicate key in object"))
         {

@@ -1,10 +1,6 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace GrayMint.Common.AspNetCore.Auth.BotAuthentication;
@@ -22,7 +18,7 @@ public static class BotAuthenticationExtension
             {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    NameClaimType = "name",
+                    NameClaimType = JwtRegisteredClaimNames.Email,
                     RequireSignedTokens = true,
                     IssuerSigningKey = securityKey,
                     ValidIssuer = botAuthenticationOptions.BotIssuer,
@@ -48,60 +44,5 @@ public static class BotAuthenticationExtension
         authenticationBuilder.Services.AddScoped<BotTokenValidator>();
         authenticationBuilder.Services.AddScoped<BotAuthenticationTokenBuilder>();
         return authenticationBuilder;
-    }
-
-    private class BotTokenValidator
-    {
-        private readonly IBotAuthenticationProvider _botAuthenticationProvider;
-        private readonly IMemoryCache _memoryCache;
-        private readonly IOptions<BotAuthenticationOptions> _botAuthenticationOptions;
-
-        public BotTokenValidator(IBotAuthenticationProvider botAuthenticationProvider, IMemoryCache memoryCache, IOptions<BotAuthenticationOptions> botAuthenticationOptions)
-        {
-            _botAuthenticationProvider = botAuthenticationProvider;
-            _memoryCache = memoryCache;
-            _botAuthenticationOptions = botAuthenticationOptions;
-        }
-
-        private async Task<string?> GetValidateError(TokenValidatedContext context)
-        {
-            try
-            {
-                if (context.Principal == null)
-                    return "Principal has not been validated.";
-
-                var authCode = await _botAuthenticationProvider.GetAuthorizationCode(context.Principal);
-                if (string.IsNullOrEmpty(authCode))
-                    return $"{BotAuthenticationDefaults.AuthenticationScheme} needs {BotAuthenticationDefaults.AuthorizationCodeTypeName}.";
-
-                // deserialize access token
-                var tokenAuthCode = context.Principal.Claims.SingleOrDefault(x => x.Type == BotAuthenticationDefaults.AuthorizationCodeTypeName)?.Value;
-                if (string.IsNullOrEmpty(tokenAuthCode))
-                    return $"Could not find {BotAuthenticationDefaults.AuthorizationCodeTypeName} in the token.";
-
-                return authCode != tokenAuthCode ? $"Invalid {BotAuthenticationDefaults.AuthorizationCodeTypeName}." : null;
-
-            }
-            catch (Exception ex)
-            {
-                return ex.Message;
-            }
-        }
-
-        public async Task Validate(TokenValidatedContext context)
-        {
-            var jwtSecurityToken = (JwtSecurityToken)context.SecurityToken;
-            var accessToken = jwtSecurityToken.RawData;
-            var accessTokenHash = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(accessToken));
-            var cacheKey = "BotAuthentication/" + Convert.ToBase64String(accessTokenHash);
-            if (!_memoryCache.TryGetValue<string?>(cacheKey, out var error))
-            {
-                error = await GetValidateError(context);
-                _memoryCache.Set(cacheKey, error, _botAuthenticationOptions.Value.CacheTimeout);
-            }
-
-            if (error != null)
-                context.Fail(error);
-        }
     }
 }

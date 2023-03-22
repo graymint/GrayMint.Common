@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using GrayMint.Common.Client;
 using GrayMint.Common.Test.Helper;
-using GrayMint.Common.Test.WebApiSample;
+using GrayMint.Common.Test.WebApiSample.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -14,7 +14,7 @@ public class UserTest : BaseControllerTest
     [TestMethod]
     public async Task GetUserToken()
     {
-        var user = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), Roles.AppCreator);
+        var user = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.SystemAdmin);
         
         // call api buy retrieved token
         TestInit1.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, await TestInit1.UsersClient.GetAuthorizationTokenByEmailAsync(user.Email));
@@ -24,11 +24,8 @@ public class UserTest : BaseControllerTest
     [TestMethod]
     public async Task ResetAuthUserToken()
     {
-        var testInit = await TestInit.Create(new Dictionary<string, string?>()
-        {
-            {"Auth:CacheTimeout", "00:00:00.001"}
-        });
-        var user = await testInit.CreateUserAndAddToRole(TestInit.NewEmail(), Roles.AppCreator);
+        var testInit = await TestInit.Create();
+        var user = await testInit.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.SystemAdmin);
 
         // call api buy retrieved token
         testInit.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, await testInit.UsersClient.GetAuthorizationTokenByEmailAsync(user.Email));
@@ -51,11 +48,8 @@ public class UserTest : BaseControllerTest
     [TestMethod]
     public async Task ResetMyAuthToken()
     {
-        var testInit = await TestInit.Create(new Dictionary<string, string?>()
-        {
-            {"Auth:CacheTimeout", "00:00:00.001"}
-        });
-        var user = await testInit.CreateUserAndAddToRole(TestInit.NewEmail(), Roles.AppUser);
+        var testInit = await TestInit.Create();
+        var user = await testInit.CreateUserAndAddToRole(TestInit.NewEmail(), RoleName.AppUser);
 
         // call api buy retrieved token
         testInit.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, 

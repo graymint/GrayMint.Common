@@ -2,6 +2,6 @@
 
 namespace GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 
-public class SimpleRoleAuthRequirement : IAuthorizationRequirement
+internal class SimpleRoleAuthRequirement : IAuthorizationRequirement
 {
 }

@@ -9,6 +9,7 @@ using GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
 using GrayMint.Common.Test.Api;
 using GrayMint.Common.Test.WebApiSample;
 using Microsoft.Extensions.Options;
+using GrayMint.Common.Test.WebApiSample.Security;
 
 namespace GrayMint.Common.Test.Helper;
 
@@ -18,7 +19,6 @@ public class TestInit : IDisposable
     public HttpClient HttpClient { get; set; }
     public IServiceScope CurrentServiceScope { get; }
     public AuthenticationHeaderValue AppCreatorAuthenticationHeader { get; private set; } = default!;
-
     public App App { get; private set; } = default!;
     public CognitoAuthenticationOptions CognitoAuthenticationOptions => WebApp.Services.GetRequiredService<IOptions<CognitoAuthenticationOptions>>().Value;
     public AppsClient AppsClient => new(HttpClient);
@@ -54,7 +54,7 @@ public class TestInit : IDisposable
 
     private async Task Init()
     {
-        var appCreatorUser = await CreateUserAndAddToRole(NewEmail(), Roles.AppCreator);
+        var appCreatorUser = await CreateUserAndAddToRole(NewEmail(), RoleName.SystemAdmin);
         AppCreatorAuthenticationHeader = await CreateAuthorizationHeader(appCreatorUser.Email);
         HttpClient.DefaultRequestHeaders.Authorization = AppCreatorAuthenticationHeader;
         App = await AppsClient.CreateAppAsync(Guid.NewGuid().ToString());
@@ -95,15 +95,15 @@ public class TestInit : IDisposable
         return testInit;
     }
 
+    public static string NewEmail()
+    {
+        return $"{Guid.NewGuid()}@local";
+    }
+
     public void Dispose()
     {
         CurrentServiceScope.Dispose();
         HttpClient.Dispose();
         WebApp.Dispose();
-    }
-
-    public static string NewEmail()
-    {
-        return $"{Guid.NewGuid()}@local";
     }
 }

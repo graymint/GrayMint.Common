@@ -3,6 +3,7 @@ using System.Security.Claims;
 using GrayMint.Common.AspNetCore.Auth.BotAuthentication;
 using GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 using GrayMint.Common.AspNetCore.SimpleUserManagement;
+using GrayMint.Common.Test.WebApiSample.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,13 +16,15 @@ public class UsersController : ControllerBase
     private readonly SimpleUserProvider _simpleUserProvider;
     private readonly BotAuthenticationTokenBuilder _botAuthenticationTokenBuilder;
 
-    public UsersController(SimpleUserProvider simpleUserProvider, BotAuthenticationTokenBuilder botAuthenticationTokenBuilder)
+    public UsersController(
+        SimpleUserProvider simpleUserProvider, 
+        BotAuthenticationTokenBuilder botAuthenticationTokenBuilder)
     {
         _simpleUserProvider = simpleUserProvider;
         _botAuthenticationTokenBuilder = botAuthenticationTokenBuilder;
     }
 
-    [Authorize(SimpleRoleAuth.Policy, Roles = Roles.AppCreator)]
+    [Authorize(SimpleRoleAuth.Policy, Roles = RoleName.SystemAdmin)]
     [HttpGet("{email}/authorization-token")]
     [Produces(MediaTypeNames.Application.Json)]
     public async Task<string> GetAuthorizationTokenByEmail(string email, bool createNew)

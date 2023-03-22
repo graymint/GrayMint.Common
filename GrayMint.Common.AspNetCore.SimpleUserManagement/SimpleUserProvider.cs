@@ -6,13 +6,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GrayMint.Common.AspNetCore.SimpleUserManagement;
 
-public class SimpleUserProvider : ISimpleRoleProvider
+public class SimpleUserProvider : ISimpleUserProvider
 {
     private readonly SimpleUserDbContext _simpleUserDbContext;
+    private readonly SimpleRoleAuthCache _simpleRoleAuthCache;
 
-    public SimpleUserProvider(SimpleUserDbContext simpleUserDbContext)
+    public SimpleUserProvider(
+        SimpleUserDbContext simpleUserDbContext, 
+        SimpleRoleAuthCache simpleRoleAuthCache)
     {
         _simpleUserDbContext = simpleUserDbContext;
+        _simpleRoleAuthCache = simpleRoleAuthCache;
     }
 
     public async Task<SimpleUser?> FindSimpleUserByEmail(string email)
@@ -25,7 +29,7 @@ public class SimpleUserProvider : ISimpleRoleProvider
         var authUser = new SimpleUser
         {
             AuthorizationCode = userModel.AuthCode,
-            UserRoles = userModel.UserRoles!.Select(x => new SimpleUserRole(x.Role!.RoleName, x.AppId)).ToArray()
+            UserRoles = userModel.UserRoles!.Select(x => new SimpleUserRole(x.Role!.RoleName, x.AppId)).ToArray() //not user RoleName as Id
         };
         return authUser;
     }
@@ -84,8 +88,9 @@ public class SimpleUserProvider : ISimpleRoleProvider
 
     public async Task ResetAuthorizationCode(Guid userId)
     {
-        var userModel = await _simpleUserDbContext.Users.SingleAsync(x => x.UserId == userId);
-        userModel.AuthCode = Guid.NewGuid().ToString();
+        var user = await _simpleUserDbContext.Users.SingleAsync(x => x.UserId == userId);
+        user.AuthCode = Guid.NewGuid().ToString();
         await _simpleUserDbContext.SaveChangesAsync();
+        await _simpleRoleAuthCache.ClearUserCache(user.Email);
     }
 }
