@@ -3,6 +3,7 @@ using GrayMint.Common.AspNetCore.SimpleUserManagement.DtoConverters;
 using GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
 using GrayMint.Common.AspNetCore.SimpleUserManagement.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration.UserSecrets;
 
 namespace GrayMint.Common.AspNetCore.SimpleUserManagement;
 
@@ -26,12 +27,13 @@ public class SimpleUserProvider : ISimpleUserProvider
             .ThenInclude(x => x.Role)
             .SingleAsync(x => x.Email == email);
 
-        var authUser = new SimpleUser
+        var simpleUser = new SimpleUser
         {
+            UserId = userModel.UserId.ToString(),
             AuthorizationCode = userModel.AuthCode,
             UserRoles = userModel.UserRoles!.Select(x => new SimpleUserRole(x.Role!.RoleName, x.AppId)).ToArray() //not user RoleName as Id
         };
-        return authUser;
+        return simpleUser;
     }
 
     public async Task<User> Create(UserCreateRequest request)

@@ -30,14 +30,14 @@ internal class SimpleRoleAuthClaimsTransformation : IClaimsTransformation
         }
 
         // add simple roles to app-role claims
-        var authUser = await _simpleUserResolver.GetSimpleAuthUser(principal);
-        if (authUser?.UserRoles != null)
+        var simpleUser = await _simpleUserResolver.GetSimpleAuthUser(principal);
+        if (simpleUser?.UserRoles != null)
         {
 
             // Add the following claims
             // /apps/*/RoleName
             // /apps/appId/RoleName
-            foreach (var userRole in authUser.UserRoles)
+            foreach (var userRole in simpleUser.UserRoles)
             {
                 claimsIdentity.AddClaim(SimpleRoleAuth.CreateAppRoleClaim(userRole.AppId, userRole.RoleName));
                 AddPermissionClaims(claimsIdentity, userRole.AppId, userRole.RoleName, simpleRolePermissions);
@@ -48,7 +48,22 @@ internal class SimpleRoleAuthClaimsTransformation : IClaimsTransformation
             }
         }
 
+        // update nameIdentifier to userId
+        if (simpleUser != null)
+        {
+            //remove old claim identity
+            if (principal.Identity != null)
+            {
+                var identity = (ClaimsIdentity)principal.Identity;
+                identity.RemoveClaim(identity.FindFirst(ClaimTypes.NameIdentifier));
+                identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, simpleUser.UserId));
+            }
+            else
+                claimsIdentity.AddClaim(new Claim(ClaimTypes.NameIdentifier, simpleUser.UserId));
+        }
+
         principal.AddIdentity(claimsIdentity);
+        var a = principal.FindFirstValue(ClaimTypes.NameIdentifier);
         return principal;
     }
 

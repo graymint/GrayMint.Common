@@ -2,6 +2,7 @@
 
 public class SimpleUser
 {
-    public string? AuthorizationCode { get; set; }
-    public SimpleUserRole[] UserRoles { get; set; } = Array.Empty<SimpleUserRole>();
+    public required string UserId { get; init; }
+    public required SimpleUserRole[] UserRoles { get; init; }
+    public required string? AuthorizationCode { get; init; }
 }
