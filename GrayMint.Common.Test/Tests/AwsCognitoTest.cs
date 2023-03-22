@@ -35,7 +35,7 @@ public class AwsCognitoTest : BaseControllerTest
         // add user to appCreator role
         try
         {
-            await TestInit1.CreateUserAndAddToRole("unit-tester@local", RolePermission.SystemAdmin.RoleName);
+            await TestInit1.CreateUserAndAddToRole("unit-tester@local", Roles.SystemAdmin);
         }
         catch (Exception ex) when (ex.InnerException != null && ex.InnerException!.Message.Contains("Cannot insert duplicate key in object"))
         {

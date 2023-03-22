@@ -2,9 +2,9 @@ using GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 
 namespace GrayMint.Common.Test.WebApiSample.Security;
 
-public static class RolePermission
+public static class Roles
 {
-    public static SimpleRolePermissions AppReader = new(
+    public static SimpleRole AppReader = new(
         nameof(AppReader),
         new[]
         {
@@ -12,7 +12,7 @@ public static class RolePermission
         }
     );
 
-    public static SimpleRolePermissions AppUser = new(
+    public static SimpleRole AppUser = new(
         nameof(AppUser),
         new[]
         {
@@ -21,7 +21,7 @@ public static class RolePermission
 
     );
 
-    public static SimpleRolePermissions SystemAdmin = new(
+    public static SimpleRole SystemAdmin = new(
         nameof(SystemAdmin),
         new[]
         {
@@ -30,11 +30,11 @@ public static class RolePermission
         }.Concat(AppUser.PermissionIds)
     );
 
-    public static SimpleRolePermissions EnterpriseAdmin = new(
+    public static SimpleRole EnterpriseAdmin = new(
         "cognito:Enterprise_Admin", SystemAdmin.PermissionIds
     );
 
-    public static SimpleRolePermissions[] All =
+    public static SimpleRole[] All =
     {
         SystemAdmin,
         EnterpriseAdmin,

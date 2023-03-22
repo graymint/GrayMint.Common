@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http.Headers;
 using GrayMint.Common.AspNetCore.Auth.BotAuthentication;
 using GrayMint.Common.AspNetCore.Auth.CognitoAuthentication;
+using GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 using GrayMint.Common.AspNetCore.SimpleUserManagement;
 using GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
 using GrayMint.Common.Test.Api;
@@ -54,7 +55,7 @@ public class TestInit : IDisposable
 
     private async Task Init()
     {
-        var appCreatorUser = await CreateUserAndAddToRole(NewEmail(), RolePermission.SystemAdmin.RoleName);
+        var appCreatorUser = await CreateUserAndAddToRole(NewEmail(), Roles.SystemAdmin);
         AppCreatorAuthenticationHeader = await CreateAuthorizationHeader(appCreatorUser.Email);
         HttpClient.DefaultRequestHeaders.Authorization = AppCreatorAuthenticationHeader;
         App = await AppsClient.CreateAppAsync(Guid.NewGuid().ToString());
@@ -64,6 +65,11 @@ public class TestInit : IDisposable
     {
         var tokenBuilder = CurrentServiceScope.ServiceProvider.GetRequiredService<BotAuthenticationTokenBuilder>();
         return await tokenBuilder.CreateAuthenticationHeader(email, email);
+    }
+
+    public Task<User> CreateUserAndAddToRole(string email, SimpleRole simpleRole, string appId = "*")
+    {
+        return CreateUserAndAddToRole(email, simpleRole.RoleName, appId);
     }
 
     public async Task<User> CreateUserAndAddToRole(string email, string roleName, string appId = "*")

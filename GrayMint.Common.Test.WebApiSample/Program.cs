@@ -20,7 +20,7 @@ public class Program
             .AddBotAuthentication(builder.Configuration.GetSection("Auth"), builder.Environment.IsProduction())
             .AddCognitoAuthentication(builder.Configuration.GetSection("Auth"));
 
-        builder.Services.AddGrayMintSimpleRoleAuthorization(new SimpleRoleAuthOptions { RolePermissions = RolePermission.All });
+        builder.Services.AddGrayMintSimpleRoleAuthorization(new SimpleRoleAuthOptions { RolePermissions = Roles.All });
         builder.Services.AddGrayMintSimpleUserProvider(options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
         builder.Services.AddDbContext<WebApiSampleDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
 

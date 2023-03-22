@@ -14,7 +14,7 @@ public class UserTest : BaseControllerTest
     [TestMethod]
     public async Task GetUserToken()
     {
-        var user = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), RolePermission.SystemAdmin.RoleName);
+        var user = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), Roles.SystemAdmin);
         
         // call api buy retrieved token
         TestInit1.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, await TestInit1.UsersClient.GetAuthorizationTokenByEmailAsync(user.Email));
@@ -25,7 +25,7 @@ public class UserTest : BaseControllerTest
     public async Task ResetAuthUserToken()
     {
         var testInit = await TestInit.Create();
-        var user = await testInit.CreateUserAndAddToRole(TestInit.NewEmail(), RolePermission.SystemAdmin.RoleName);
+        var user = await testInit.CreateUserAndAddToRole(TestInit.NewEmail(), Roles.SystemAdmin);
 
         // call api buy retrieved token
         testInit.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, await testInit.UsersClient.GetAuthorizationTokenByEmailAsync(user.Email));
@@ -49,7 +49,7 @@ public class UserTest : BaseControllerTest
     public async Task ResetMyAuthToken()
     {
         var testInit = await TestInit.Create();
-        var user = await testInit.CreateUserAndAddToRole(TestInit.NewEmail(), RolePermission.AppUser.RoleName);
+        var user = await testInit.CreateUserAndAddToRole(TestInit.NewEmail(), Roles.AppUser);
 
         // call api buy retrieved token
         testInit.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, 
