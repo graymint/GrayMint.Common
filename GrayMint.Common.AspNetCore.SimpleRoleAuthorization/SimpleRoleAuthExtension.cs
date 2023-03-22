@@ -12,15 +12,20 @@ public static class SimpleRoleAuthExtension
     public static IServiceCollection AddGrayMintSimpleRoleAuthorization(this IServiceCollection services,
         SimpleRoleAuthOptions roleAuthOptions)
     {
+        // check duplicate roles
+        var roles = roleAuthOptions.Roles ?? Array.Empty<SimpleRole>();
+        var duplicateRole = roles.GroupBy(x => x.RoleName).Where(g => g.Count() > 1).Select(g=>g.Key).FirstOrDefault();
+        if (duplicateRole != null)
+            throw new ArgumentException($"Duplicate role detected. RoleName: {duplicateRole}");
+
         services.AddAuthorization(options =>
         {
             // add permission policies
-            if (roleAuthOptions.RolePermissions != null)
-                foreach (var permissionId in roleAuthOptions.RolePermissions.SelectMany(x => x.PermissionIds).Distinct())
-                    options.AddPolicy(SimpleRoleAuth.CreatePolicyNameForPermission(permissionId),
-                        CreatePolicy(services, roleAuthOptions)
-                            .AddRequirements(new SimplePermissionAuthRequirement(permissionId))
-                            .Build());
+            foreach (var permissionId in roles.SelectMany(x => x.PermissionIds).Distinct())
+                options.AddPolicy(SimpleRoleAuth.CreatePolicyNameForPermission(permissionId),
+                    CreatePolicy(services, roleAuthOptions)
+                        .AddRequirements(new SimplePermissionAuthRequirement(permissionId))
+                        .Build());
 
             // add RolePolicy
             var rolePolicy = CreatePolicy(services, roleAuthOptions).Build();
@@ -47,10 +52,10 @@ public static class SimpleRoleAuthExtension
         if (addBotAuthenticationSchemes)
             policyBuilder.AddAuthenticationSchemes(BotAuthenticationDefaults.AuthenticationScheme);
 
-        if (addCognitoAuthenticationSchemes) 
+        if (addCognitoAuthenticationSchemes)
             policyBuilder.AddAuthenticationSchemes(CognitoAuthenticationDefaults.AuthenticationScheme);
 
-        if (!string.IsNullOrEmpty(roleAuthOptions.CustomAuthenticationScheme)) 
+        if (!string.IsNullOrEmpty(roleAuthOptions.CustomAuthenticationScheme))
             policyBuilder.AddAuthenticationSchemes(roleAuthOptions.CustomAuthenticationScheme);
 
         policyBuilder.RequireAuthenticatedUser();

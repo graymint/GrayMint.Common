@@ -4,7 +4,7 @@ namespace GrayMint.Common.Test.WebApiSample.Security;
 
 public static class Roles
 {
-    public static SimpleRole AppReader = new(
+    public static SimpleRole AppReader { get; } = new(
         nameof(AppReader),
         new[]
         {
@@ -12,16 +12,15 @@ public static class Roles
         }
     );
 
-    public static SimpleRole AppUser = new(
+    public static SimpleRole AppUser { get; } = new(
         nameof(AppUser),
         new[]
         {
             nameof(Permission.ItemWrite),
         }.Concat(AppReader.PermissionIds)
-
     );
 
-    public static SimpleRole SystemAdmin = new(
+    public static SimpleRole SystemAdmin { get; } = new(
         nameof(SystemAdmin),
         new[]
         {
@@ -30,11 +29,11 @@ public static class Roles
         }.Concat(AppUser.PermissionIds)
     );
 
-    public static SimpleRole EnterpriseAdmin = new(
+    public static SimpleRole EnterpriseAdmin { get; } = new(
         "cognito:Enterprise_Admin", SystemAdmin.PermissionIds
     );
 
-    public static SimpleRole[] All =
+    public static SimpleRole[] All { get; } =
     {
         SystemAdmin,
         EnterpriseAdmin,

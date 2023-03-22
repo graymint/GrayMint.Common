@@ -19,7 +19,7 @@ internal class SimpleRoleAuthClaimsTransformation : IClaimsTransformation
 
     public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
     {
-        var simpleRolePermissions = _roleAuthOptions.RolePermissions ?? Array.Empty<SimpleRole>();
+        var simpleRolePermissions = _roleAuthOptions.Roles ?? Array.Empty<SimpleRole>();
 
         // convert standard role claims to app-role claims
         var claimsIdentity = new ClaimsIdentity();
