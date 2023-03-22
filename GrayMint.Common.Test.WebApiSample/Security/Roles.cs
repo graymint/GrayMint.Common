@@ -17,7 +17,7 @@ public static class Roles
         new[]
         {
             nameof(Permission.ItemWrite),
-        }.Concat(AppReader.PermissionIds)
+        }.Concat(AppReader.Permissions)
     );
 
     public static SimpleRole SystemAdmin { get; } = new(
@@ -26,11 +26,11 @@ public static class Roles
         {
             nameof(Permission.SystemWrite),
             nameof(Permission.SystemRead),
-        }.Concat(AppUser.PermissionIds)
+        }.Concat(AppUser.Permissions)
     );
 
     public static SimpleRole EnterpriseAdmin { get; } = new(
-        "cognito:Enterprise_Admin", SystemAdmin.PermissionIds
+        "cognito:Enterprise_Admin", SystemAdmin.Permissions
     );
 
     public static SimpleRole[] All { get; } =

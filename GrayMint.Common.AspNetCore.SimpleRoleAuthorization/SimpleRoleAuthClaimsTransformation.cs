@@ -59,7 +59,7 @@ internal class SimpleRoleAuthClaimsTransformation : IClaimsTransformation
         if (rolePermission == null)
             return;
 
-        foreach (var permissionId in rolePermission.PermissionIds)
+        foreach (var permissionId in rolePermission.Permissions)
         {
             var claim = SimpleRoleAuth.CreateAppPermissionClaim(appId, permissionId);
             if (!claimsIdentity.HasClaim(claim.Type, claim.Value))

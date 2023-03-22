@@ -21,7 +21,7 @@ public static class SimpleRoleAuthExtension
         services.AddAuthorization(options =>
         {
             // add permission policies
-            foreach (var permissionId in roles.SelectMany(x => x.PermissionIds).Distinct())
+            foreach (var permissionId in roles.SelectMany(x => x.Permissions).Distinct())
                 options.AddPolicy(SimpleRoleAuth.CreatePolicyNameForPermission(permissionId),
                     CreatePolicy(services, roleAuthOptions)
                         .AddRequirements(new SimplePermissionAuthRequirement(permissionId))

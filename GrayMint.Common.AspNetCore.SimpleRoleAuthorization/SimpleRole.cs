@@ -3,10 +3,10 @@
 public class SimpleRole
 {
     public string RoleName { get; }
-    public string[] PermissionIds { get; }
-    public SimpleRole(string roleName, IEnumerable<string> permissionIds)
+    public string[] Permissions { get; }
+    public SimpleRole(string roleName, IEnumerable<string> permissions)
     {
         RoleName = roleName;
-        PermissionIds = permissionIds.ToArray();
+        Permissions = permissions.ToArray();
     }
 }
