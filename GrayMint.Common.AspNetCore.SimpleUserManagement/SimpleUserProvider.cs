@@ -3,7 +3,6 @@ using GrayMint.Common.AspNetCore.SimpleUserManagement.DtoConverters;
 using GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
 using GrayMint.Common.AspNetCore.SimpleUserManagement.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration.UserSecrets;
 
 namespace GrayMint.Common.AspNetCore.SimpleUserManagement;
 
@@ -38,7 +37,7 @@ public class SimpleUserProvider : ISimpleUserProvider
 
     public async Task<User> Create(UserCreateRequest request)
     {
-        var res = await _simpleUserDbContext.Users.AddAsync(new Models.User()
+        var res = await _simpleUserDbContext.Users.AddAsync(new Models.UserModel()
         {
             Email = request.Email,
             FirstName = request.FirstName,
@@ -83,7 +82,7 @@ public class SimpleUserProvider : ISimpleUserProvider
     {
         _simpleUserDbContext.ChangeTracker.Clear();
 
-        var userModel = new Models.User { UserId = userId };
+        var userModel = new Models.UserModel { UserId = userId };
         _simpleUserDbContext.Users.Remove(userModel);
         await _simpleUserDbContext.SaveChangesAsync();
     }

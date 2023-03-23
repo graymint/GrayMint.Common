@@ -1,10 +1,10 @@
 ﻿namespace GrayMint.Common.AspNetCore.SimpleUserManagement.Models;
 
-public class Role
+internal class RoleModel
 {
     public Guid RoleId { get; set; }
     public string RoleName { get; set; } = default!;
 
-    public virtual ICollection<UserRole>? UserRoles { get; set; }
+    public virtual ICollection<UserRoleModel>? UserRoles { get; set; }
     public string? Description { get; set; }
 }

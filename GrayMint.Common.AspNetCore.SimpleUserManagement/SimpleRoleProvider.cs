@@ -20,7 +20,7 @@ public class SimpleRoleProvider
         _simpleUserDbContext.ChangeTracker.Clear();
 
         await _simpleUserDbContext.UserRoles.AddAsync(
-           new Models.UserRole
+           new Models.UserRoleModel
            {
                RoleId = roleId,
                UserId = userId,
@@ -33,7 +33,7 @@ public class SimpleRoleProvider
     {
         _simpleUserDbContext.ChangeTracker.Clear();
         _simpleUserDbContext.UserRoles.Remove(
-            new Models.UserRole
+            new Models.UserRoleModel
             {
                 UserId = userId,
                 RoleId = roleId,
@@ -53,7 +53,7 @@ public class SimpleRoleProvider
     public async Task<Role> Create(RoleCreateRequest request)
     {
         _simpleUserDbContext.ChangeTracker.Clear();
-        var roleModel = await _simpleUserDbContext.Roles.AddAsync(new Models.Role()
+        var roleModel = await _simpleUserDbContext.Roles.AddAsync(new Models.RoleModel()
         {
             RoleName = request.RoleName,
             Description = request.Description
@@ -63,7 +63,7 @@ public class SimpleRoleProvider
         return roleModel.Entity.ToDto();
     }
 
-    public async Task<Role[]> GetAll()
+    public async Task<Role[]> List()
     {
         var roleModels = await _simpleUserDbContext.Roles.ToArrayAsync();
         return roleModels.Select(x => x.ToDto()).ToArray();
@@ -92,7 +92,7 @@ public class SimpleRoleProvider
     {
         _simpleUserDbContext.ChangeTracker.Clear();
 
-        var roleModel = new Models.Role { RoleId = roleId };
+        var roleModel = new Models.RoleModel { RoleId = roleId };
         _simpleUserDbContext.Roles.Remove(roleModel);
         await _simpleUserDbContext.SaveChangesAsync();
     }

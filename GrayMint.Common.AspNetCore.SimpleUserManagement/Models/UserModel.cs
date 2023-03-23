@@ -1,6 +1,6 @@
 ﻿namespace GrayMint.Common.AspNetCore.SimpleUserManagement.Models;
 
-public class User
+internal class UserModel
 {
     public Guid UserId { get; set; } = default!;
     public bool IsDisabled { get; set; }
@@ -11,5 +11,5 @@ public class User
     public string? AuthCode { get; set; }
     public string? Description { get; set; }
 
-    public virtual ICollection<UserRole>? UserRoles { get; set; }
+    public virtual ICollection<UserRoleModel>? UserRoles { get; set; }
 }

@@ -8,9 +8,9 @@ public partial class SimpleUserDbContext : DbContext
 {
     public const string Schema = "smuser";
 
-    public virtual DbSet<User> Users { get; set; } = default!;
-    public virtual DbSet<Role> Roles { get; set; } = default!;
-    public virtual DbSet<UserRole> UserRoles { get; set; } = default!;
+    internal virtual DbSet<UserModel> Users { get; set; } = default!;
+    internal virtual DbSet<RoleModel> Roles { get; set; } = default!;
+    internal virtual DbSet<UserRoleModel> UserRoles { get; set; } = default!;
 
     public SimpleUserDbContext()
     {
@@ -33,8 +33,10 @@ public partial class SimpleUserDbContext : DbContext
         base.OnModelCreating(modelBuilder);
         modelBuilder.HasDefaultSchema(Schema);
 
-        modelBuilder.Entity<User>(entity =>
+        modelBuilder.Entity<UserModel>(entity =>
         {
+            entity.HasKey(x => x.UserId);
+
             entity.Property(e => e.UserId)
                 .HasMaxLength(50);
 
@@ -47,18 +49,18 @@ public partial class SimpleUserDbContext : DbContext
                 .IsUnique();
         });
 
-        modelBuilder.Entity<Role>(entity =>
+        modelBuilder.Entity<RoleModel>(entity =>
         {
-            entity.Property(e => e.RoleId)
-                .HasMaxLength(50);
-
             entity.HasKey(e => e.RoleId);
 
             entity.HasIndex(e => e.RoleName)
                 .IsUnique();
+
+            entity.Property(e => e.RoleId)
+                .HasMaxLength(50);
         });
 
-        modelBuilder.Entity<UserRole>(entity =>
+        modelBuilder.Entity<UserRoleModel>(entity =>
         {
             entity.HasKey(e => new { e.UserId, e.RoleId, e.AppId });
 
