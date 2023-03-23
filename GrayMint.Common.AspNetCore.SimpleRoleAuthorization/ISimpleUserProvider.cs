@@ -1,6 +1,8 @@
-﻿namespace GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
+﻿using System.Security.Claims;
+
+namespace GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 
 public interface ISimpleUserProvider
 {
-    Task<SimpleUser?> FindSimpleUserByEmail(string email);
+    Task<SimpleUser?> FindSimpleUser(ClaimsPrincipal claimsPrincipal);
 }

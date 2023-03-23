@@ -3,35 +3,56 @@ using GrayMint.Common.AspNetCore.SimpleUserManagement.DtoConverters;
 using GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
 using GrayMint.Common.AspNetCore.SimpleUserManagement.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using System.Security.Claims;
 
 namespace GrayMint.Common.AspNetCore.SimpleUserManagement;
 
 public class SimpleUserProvider : ISimpleUserProvider
 {
     private readonly SimpleUserDbContext _simpleUserDbContext;
-    private readonly SimpleRoleAuthCache _simpleRoleAuthCache;
+    private readonly IMemoryCache _memoryCache;
 
     public SimpleUserProvider(
-        SimpleUserDbContext simpleUserDbContext, 
-        SimpleRoleAuthCache simpleRoleAuthCache)
+        SimpleUserDbContext simpleUserDbContext,
+        IMemoryCache memoryCache)
     {
         _simpleUserDbContext = simpleUserDbContext;
-        _simpleRoleAuthCache = simpleRoleAuthCache;
+        _memoryCache = memoryCache;
     }
 
-    public async Task<SimpleUser?> FindSimpleUserByEmail(string email)
+    private static string GetUserCacheKey(string email) => $"SimpleAuthUser:{email}";
+
+    public async Task<SimpleUser?> FindSimpleUser(ClaimsPrincipal claimsPrincipal)
     {
-        var userModel = await _simpleUserDbContext.Users
+        var email = claimsPrincipal.FindFirstValue(ClaimTypes.Email);
+        if (email == null) return null;
+
+        // check cache
+        if (_memoryCache.TryGetValue(GetUserCacheKey(email), out SimpleUser? simpleUser))
+            return simpleUser;
+
+        var user = await _simpleUserDbContext.Users
             .Include(x => x.UserRoles)!
             .ThenInclude(x => x.Role)
             .SingleAsync(x => x.Email == email);
 
-        var simpleUser = new SimpleUser
+        // update info by claims
+        var givenName = claimsPrincipal.FindFirstValue(ClaimTypes.GivenName);
+        var surnameName = claimsPrincipal.FindFirstValue(ClaimTypes.Surname);
+        if (givenName != null) user.FirstName = givenName;
+        if (surnameName != null) user.LastName = surnameName;
+        await _simpleUserDbContext.SaveChangesAsync();
+
+        // convert to simple user
+        simpleUser = new SimpleUser
         {
-            UserId = userModel.UserId.ToString(),
-            AuthorizationCode = userModel.AuthCode,
-            UserRoles = userModel.UserRoles!.Select(x => new SimpleUserRole(x.Role!.RoleName, x.AppId)).ToArray() //not user RoleName as Id
+            UserId = user.UserId.ToString(),
+            AuthorizationCode = user.AuthCode,
+            UserRoles = user.UserRoles!.Select(x => new SimpleUserRole(x.Role!.RoleName, x.AppId)).ToArray() //not user RoleName as Id
         };
+
+        _memoryCache.Set(email, simpleUser);
         return simpleUser;
     }
 
@@ -92,6 +113,6 @@ public class SimpleUserProvider : ISimpleUserProvider
         var user = await _simpleUserDbContext.Users.SingleAsync(x => x.UserId == userId);
         user.AuthCode = Guid.NewGuid().ToString();
         await _simpleUserDbContext.SaveChangesAsync();
-        await _simpleRoleAuthCache.ClearUserCache(user.Email);
+        _memoryCache.Remove(GetUserCacheKey(user.Email));
     }
 }

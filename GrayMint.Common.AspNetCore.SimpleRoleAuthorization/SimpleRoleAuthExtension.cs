@@ -34,12 +34,10 @@ public static class SimpleRoleAuthExtension
         });
 
         services.AddSingleton(Options.Create(roleAuthOptions));
-        services.AddSingleton<SimpleRoleAuthCache>();
-        services.AddScoped<IBotAuthenticationProvider, SimpleUserResolver>();
+        services.AddScoped<IBotAuthenticationProvider, BotAuthenticationProvider>();
         services.AddScoped<IAuthorizationHandler, SimpleRoleAuthHandler>();
         services.AddScoped<IAuthorizationHandler, SimplePermissionAuthHandler>();
         services.AddTransient<IClaimsTransformation, SimpleRoleAuthClaimsTransformation>();
-        services.AddScoped<SimpleUserResolver>();
         return services;
     }
 

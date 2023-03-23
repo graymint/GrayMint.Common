@@ -6,14 +6,14 @@ namespace GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 
 internal class SimpleRoleAuthClaimsTransformation : IClaimsTransformation
 {
-    private readonly SimpleUserResolver _simpleUserResolver;
     private readonly SimpleRoleAuthOptions _roleAuthOptions;
+    private readonly ISimpleUserProvider _simpleUserProvider;
 
     public SimpleRoleAuthClaimsTransformation(
-        SimpleUserResolver simpleUserResolver,
-        IOptions<SimpleRoleAuthOptions> roleAuthOptions)
+        IOptions<SimpleRoleAuthOptions> roleAuthOptions, 
+        ISimpleUserProvider simpleUserProvider)
     {
-        _simpleUserResolver = simpleUserResolver;
+        _simpleUserProvider = simpleUserProvider;
         _roleAuthOptions = roleAuthOptions.Value;
     }
 
@@ -30,7 +30,7 @@ internal class SimpleRoleAuthClaimsTransformation : IClaimsTransformation
         }
 
         // add simple roles to app-role claims
-        var simpleUser = await _simpleUserResolver.GetSimpleAuthUser(principal);
+        var simpleUser = await _simpleUserProvider.FindSimpleUser(principal);
         if (simpleUser?.UserRoles != null)
         {
 
@@ -63,7 +63,6 @@ internal class SimpleRoleAuthClaimsTransformation : IClaimsTransformation
         }
 
         principal.AddIdentity(claimsIdentity);
-        var a = principal.FindFirstValue(ClaimTypes.NameIdentifier);
         return principal;
     }
 
