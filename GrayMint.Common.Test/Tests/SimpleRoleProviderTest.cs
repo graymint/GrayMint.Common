@@ -94,13 +94,13 @@ public class SimpleRoleProviderTest : BaseControllerTest
         await roleProvider.AddUser(role.RoleId, user.UserId, "1");
 
         // Check user Roles
-        var userRoles = await roleProvider.GetUserRolesByUser(user.UserId);
+        var userRoles = await roleProvider.GetUserRoles(userId: user.UserId);
         Assert.AreEqual(2, userRoles.Length);
         Assert.IsTrue(userRoles.Any(x => x.AppId == "*" && x.Role.RoleName == role.RoleName));
         Assert.IsTrue(userRoles.Any(x => x.AppId == "1" && x.Role.RoleName == role.RoleName));
 
         // Check user Roles
-        userRoles = await roleProvider.GetUserRoles(role.RoleId);
+        userRoles = await roleProvider.GetUserRoles(roleId: role.RoleId);
         Assert.AreEqual(2, userRoles.Length);
         Assert.IsTrue(userRoles.Any(x => x.AppId == "*" && x.Role.RoleName == role.RoleName));
         Assert.IsTrue(userRoles.Any(x => x.AppId == "1" && x.Role.RoleName == role.RoleName));

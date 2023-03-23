@@ -73,8 +73,6 @@ public partial class SimpleUserDbContext : DbContext
                 .HasForeignKey(e => e.UserId);
         });
 
-
-
         // ReSharper disable once InvocationIsSkipped
         OnModelCreatingPartial(modelBuilder);
     }
