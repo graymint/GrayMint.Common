@@ -14,14 +14,16 @@ public class Program
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        builder.AddGrayMintCommonServices(builder.Configuration.GetSection("App"), new RegisterServicesOptions());
+        var authConfiguration = builder.Configuration.GetSection("Auth");
+
+        builder.AddGrayMintCommonServices(new GrayMintCommonOptions { AppName = "Web App Sample" }, new RegisterServicesOptions());
         builder.Services
             .AddAuthentication()
-            .AddBotAuthentication(builder.Configuration.GetSection("Auth"), builder.Environment.IsProduction())
-            .AddCognitoAuthentication(builder.Configuration.GetSection("Auth"));
+            .AddBotAuthentication(authConfiguration.Get<BotAuthenticationOptions>(), builder.Environment.IsProduction())
+            .AddCognitoAuthentication(authConfiguration.Get<CognitoAuthenticationOptions>());
 
         builder.Services.AddGrayMintSimpleRoleAuthorization(new SimpleRoleAuthOptions { Roles = Roles.All });
-        builder.Services.AddGrayMintSimpleUserProvider(options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
+        builder.Services.AddGrayMintSimpleUserProvider(authConfiguration.Get<SimpleUserOptions>(), options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
         builder.Services.AddDbContext<WebApiSampleDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
 
         // Add services to the container.

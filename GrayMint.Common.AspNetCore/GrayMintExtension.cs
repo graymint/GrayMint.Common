@@ -3,21 +3,21 @@ using GrayMint.Common.AspNetCore.Services;
 using GrayMint.Common.JobController;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace GrayMint.Common.AspNetCore;
 
 public static class GrayMintExtension
 {
     public static void AddGrayMintCommonServices(this WebApplicationBuilder builder,
-        IConfiguration appConfiguration,
+        GrayMintCommonOptions commonOptions,
         RegisterServicesOptions servicesOptions)
     {
         var services = builder.Services;
 
         // configure settings
-        var appCommonSettings = appConfiguration.Get<GrayMintAppSettings>() ?? throw new Exception("Could not load App section in appsettings.json file.");
-        appCommonSettings.Validate();
-        services.Configure<GrayMintAppSettings>(appConfiguration);
+        commonOptions.Validate();
+        services.AddSingleton(Options.Create(commonOptions));
 
         // cors
         if (servicesOptions.AddCors)
@@ -42,7 +42,7 @@ public static class GrayMintExtension
         if (servicesOptions.AddSwagger)
         {
             services.AddEndpointsApiExplorer();
-            services.AddGrayMintSwagger(appCommonSettings.AppName, servicesOptions.AddSwaggerVersioning);
+            services.AddGrayMintSwagger(commonOptions.AppName, servicesOptions.AddSwaggerVersioning);
         }
 
         if (servicesOptions.AddMemoryCache)

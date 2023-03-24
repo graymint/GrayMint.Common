@@ -1,17 +1,22 @@
 ﻿using GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
+using GrayMint.Common.AspNetCore.SimpleUserManagement.Models;
 
 namespace GrayMint.Common.AspNetCore.SimpleUserManagement.DtoConverters;
 
 internal static class UserConverter
 {
-    public static User ToDto(this Models.UserModel userModelModel)
+    public static User ToDto(this UserModel model)
     {
-        var user = new User(userModelModel.UserId, email: userModelModel.Email, createdTime: userModelModel.CreatedTime)
+        var user = new User
         {
-            AuthCode = userModelModel.AuthCode,
-            FirstName = userModelModel.FirstName,
-            LastName = userModelModel.LastName,
-            Description = userModelModel.Description
+            UserId = model.UserId,
+            Email = model.Email,
+            CreatedTime = model.CreatedTime,
+            AuthCode = model.AuthCode,
+            FirstName = model.FirstName,
+            LastName = model.LastName,
+            AccessedTime = model.AccessedTime,
+            Description = model.Description
         };
 
         return user;

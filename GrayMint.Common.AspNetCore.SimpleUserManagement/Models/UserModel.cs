@@ -8,6 +8,7 @@ internal class UserModel
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public DateTime CreatedTime { get; set; }
+    public DateTime? AccessedTime { get; set; }
     public string? AuthCode { get; set; }
     public string? Description { get; set; }
 

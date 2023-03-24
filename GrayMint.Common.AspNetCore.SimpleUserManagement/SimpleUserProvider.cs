@@ -5,20 +5,24 @@ using GrayMint.Common.AspNetCore.SimpleUserManagement.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System.Security.Claims;
+using Microsoft.Extensions.Options;
 
 namespace GrayMint.Common.AspNetCore.SimpleUserManagement;
 
 public class SimpleUserProvider : ISimpleUserProvider
 {
+    private readonly SimpleUserOptions _simpleUserOptions;
     private readonly SimpleUserDbContext _simpleUserDbContext;
     private readonly IMemoryCache _memoryCache;
 
     public SimpleUserProvider(
         SimpleUserDbContext simpleUserDbContext,
-        IMemoryCache memoryCache)
+        IMemoryCache memoryCache, 
+        IOptions<SimpleUserOptions> simpleUserOptions)
     {
         _simpleUserDbContext = simpleUserDbContext;
         _memoryCache = memoryCache;
+        _simpleUserOptions = simpleUserOptions.Value;
     }
 
     private static string GetUserCacheKey(string email) => $"SimpleAuthUser:{email}";
@@ -46,6 +50,7 @@ public class SimpleUserProvider : ISimpleUserProvider
         var surnameName = claimsPrincipal.FindFirstValue(ClaimTypes.Surname);
         if (givenName != null) user.FirstName = givenName;
         if (surnameName != null) user.LastName = surnameName;
+        if (user.AccessedTime < DateTime.UtcNow - TimeSpan.FromMinutes(60)) user.AccessedTime = DateTime.UtcNow;
         await _simpleUserDbContext.SaveChangesAsync();
 
         // convert to simple user
@@ -56,7 +61,7 @@ public class SimpleUserProvider : ISimpleUserProvider
             UserRoles = user.UserRoles!.Select(x => new SimpleUserRole(x.Role!.RoleName, x.AppId)).ToArray() //not user RoleName as Id
         };
 
-        _memoryCache.Set(email, simpleUser);
+        _memoryCache.Set(email, simpleUser, _simpleUserOptions.CacheTimeout);
         return simpleUser;
     }
 

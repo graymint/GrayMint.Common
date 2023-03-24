@@ -2,18 +2,12 @@
 
 public class User
 {
-    public Guid UserId { get; set; }
-    public string Email { get; set; }
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
-    public string? Description { get; set; }
-    public DateTime CreatedTime { get; set; }
-    public string? AuthCode { get; set; }
-
-    public User(Guid userId, string email, DateTime createdTime)
-    {
-        UserId = userId;
-        Email = email;
-        CreatedTime = createdTime;
-    }
+    public required Guid UserId { get; set; }
+    public required string Email { get; set; }
+    public required string? FirstName { get; set; }
+    public required string? LastName { get; set; }
+    public required string? Description { get; set; }
+    public required DateTime CreatedTime { get; set; }
+    public required DateTime? AccessedTime { get; set; }
+    public required string? AuthCode { get; set; }
 }

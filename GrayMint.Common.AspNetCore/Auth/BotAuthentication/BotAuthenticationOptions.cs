@@ -2,9 +2,9 @@
 
 public class BotAuthenticationOptions
 {
-    public string BotIssuer { get; set; } = default!;
+    public required string BotIssuer { get; set; }
     public string? BotAudience { get; set; }
-    public byte[] BotKey { get; set; } = default!;
+    public required byte[] BotKey { get; set; }
     public TimeSpan CacheTimeout { get; set; } = TimeSpan.FromMinutes(10);
 
     public void Validate(bool isProduction)

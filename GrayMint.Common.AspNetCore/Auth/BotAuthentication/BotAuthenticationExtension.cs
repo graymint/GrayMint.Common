@@ -1,15 +1,18 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace GrayMint.Common.AspNetCore.Auth.BotAuthentication;
 
 public static class BotAuthenticationExtension
 {
-    public static AuthenticationBuilder AddBotAuthentication(this AuthenticationBuilder authenticationBuilder, IConfiguration configuration, bool isProduction)
+    public static AuthenticationBuilder AddBotAuthentication(this AuthenticationBuilder authenticationBuilder, 
+        BotAuthenticationOptions? botAuthenticationOptions, 
+        bool isProduction)
     {
-        var botAuthenticationOptions = configuration.Get<BotAuthenticationOptions>() ?? throw new Exception($"Could not load {nameof(BotAuthenticationOptions)}.");
+        if (botAuthenticationOptions is null) throw new ArgumentNullException(nameof(botAuthenticationOptions));
         botAuthenticationOptions.Validate(isProduction);
 
         var securityKey = new SymmetricSecurityKey(botAuthenticationOptions.BotKey);
@@ -40,7 +43,7 @@ public static class BotAuthenticationExtension
                 };
             });
 
-        authenticationBuilder.Services.Configure<BotAuthenticationOptions>(configuration);
+        authenticationBuilder.Services.AddSingleton(Options.Create(botAuthenticationOptions));
         authenticationBuilder.Services.AddScoped<BotTokenValidator>();
         authenticationBuilder.Services.AddScoped<BotAuthenticationTokenBuilder>();
         return authenticationBuilder;

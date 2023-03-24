@@ -1,17 +1,16 @@
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace GrayMint.Common.AspNetCore.Auth.CognitoAuthentication;
 
 public static class CognitoAuthenticationExtension
 {
-    public static AuthenticationBuilder AddCognitoAuthentication(this AuthenticationBuilder authenticationBuilder, IConfiguration configuration)
+    public static AuthenticationBuilder AddCognitoAuthentication(this AuthenticationBuilder authenticationBuilder, CognitoAuthenticationOptions? cognitoOptions)
     {
-        var cognitoOptions = configuration.Get<CognitoAuthenticationOptions>();
-        if (cognitoOptions == null)
-            throw new Exception($"Could not load {nameof(CognitoAuthenticationOptions)}.");
+        if (cognitoOptions==null) throw new ArgumentNullException(nameof(cognitoOptions));
         cognitoOptions.Validate();
 
         authenticationBuilder
@@ -44,7 +43,7 @@ public static class CognitoAuthenticationExtension
             });
 
         authenticationBuilder.Services.AddSingleton<CognitoTokenValidator>();
-        authenticationBuilder.Services.Configure<CognitoAuthenticationOptions>(configuration);
+        authenticationBuilder.Services.AddSingleton(Options.Create(cognitoOptions));
         return authenticationBuilder;
     }
 }

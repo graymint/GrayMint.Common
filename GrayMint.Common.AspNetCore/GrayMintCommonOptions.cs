@@ -1,6 +1,6 @@
 namespace GrayMint.Common.AspNetCore;
 
-public class GrayMintAppSettings
+public class GrayMintCommonOptions
 {
     public string AppName { get; set; } = default!;
 

@@ -5,15 +5,18 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using NJsonSchema.Validation;
 
 namespace GrayMint.Common.AspNetCore.SimpleUserManagement;
 
 public static class SimpleUserProviderExtension
 {
-    public static void AddGrayMintSimpleUserProvider(this IServiceCollection services, Action<DbContextOptionsBuilder>? optionsAction = null)
+    public static void AddGrayMintSimpleUserProvider(this IServiceCollection services,
+        SimpleUserOptions? userOptions,
+        Action<DbContextOptionsBuilder>? dbOptionsAction = null)
     {
-        services.AddDbContext<SimpleUserDbContext>(optionsAction);
+        userOptions ??= new SimpleUserOptions();
+        services.AddDbContext<SimpleUserDbContext>(dbOptionsAction);
+        services.AddSingleton(Options.Create(userOptions));
         services.AddScoped<ISimpleUserProvider, SimpleUserProvider>();
         services.AddScoped<SimpleUserProvider>();
         services.AddScoped<SimpleRoleProvider>();
