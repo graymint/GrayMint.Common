@@ -10,16 +10,23 @@ namespace GrayMint.Common.Test.Tests;
 [TestClass]
 public class SimpleUserProviderTest : BaseControllerTest
 {
+    public class UserExData
+    {
+        public string? FatherName { get; set; }
+    }
+
     [TestMethod]
     public async Task Crud()
     {
         // Create
         var simpleUserProvider = TestInit1.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
-        var request = new UserCreateRequest($"{Guid.NewGuid()}@local")
+        var request = new UserCreateRequest<UserExData>
         {
+            Email = $"{Guid.NewGuid()}@local",
             FirstName = Guid.NewGuid().ToString(),
             LastName = Guid.NewGuid().ToString(),
-            Description = Guid.NewGuid().ToString()
+            Description = Guid.NewGuid().ToString(),
+            ExData = new UserExData{FatherName = "dad"}
         };
 
         var user = await simpleUserProvider.Create(request);
@@ -27,6 +34,7 @@ public class SimpleUserProviderTest : BaseControllerTest
         Assert.AreEqual(request.FirstName, user.FirstName);
         Assert.AreEqual(request.LastName, user.LastName);
         Assert.AreEqual(request.Description, user.Description);
+        Assert.AreEqual(request.ExData.FatherName, user.ExData?.FatherName);
         Assert.IsNotNull(user.AuthCode);
         Assert.AreNotEqual(string.Empty, user.AuthCode.Trim());
 
@@ -82,8 +90,9 @@ public class SimpleUserProviderTest : BaseControllerTest
     {
         // Create
         var simpleUserProvider = TestInit1.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
-        var request = new UserCreateRequest($"{Guid.NewGuid()}@local")
+        var request = new UserCreateRequest
         {
+            Email = $"{Guid.NewGuid()}@local",
             FirstName = Guid.NewGuid().ToString(),
             LastName = Guid.NewGuid().ToString(),
             Description = Guid.NewGuid().ToString()

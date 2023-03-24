@@ -67,12 +67,12 @@ public class TestInit : IDisposable
         return await tokenBuilder.CreateAuthenticationHeader(email, email);
     }
 
-    public Task<User> CreateUserAndAddToRole(string email, SimpleRole simpleRole, string appId = "*")
+    public Task<User<string>> CreateUserAndAddToRole(string email, SimpleRole simpleRole, string appId = "*")
     {
         return CreateUserAndAddToRole(email, simpleRole.RoleName, appId);
     }
 
-    public async Task<User> CreateUserAndAddToRole(string email, string roleName, string appId = "*")
+    public async Task<User<string>> CreateUserAndAddToRole(string email, string roleName, string appId = "*")
     {
         // find the role
         var roleProvider = Scope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
@@ -81,8 +81,9 @@ public class TestInit : IDisposable
         // create user
         var userProvider = Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
         var user = await userProvider.FindByEmail(email) ??
-                   await userProvider.Create(new UserCreateRequest(email)
+                   await userProvider.Create(new UserCreateRequest
                    {
+                       Email = email,
                        FirstName = Guid.NewGuid().ToString(),
                        LastName = Guid.NewGuid().ToString(),
                        Description = Guid.NewGuid().ToString()

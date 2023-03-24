@@ -5,11 +5,11 @@ namespace GrayMint.Common.AspNetCore.SimpleUserManagement.DtoConverters;
 
 internal static class UserRoleConverter
 {
-    public static UserRole ToDto(this UserRoleModel model)
+    public static UserRole<T> ToDto<T>(this UserRoleModel model)
     {
-        var userRole = new UserRole
+        var userRole = new UserRole<T>
         {
-            User = model.User?.ToDto() ?? throw new Exception("User has not been fetched."),
+            User = model.User?.ToDto<T>() ?? throw new Exception("User has not been fetched."),
             Role = model.Role?.ToDto() ?? throw new Exception("Role has not been fetched."),
             AppId = model.AppId
         };

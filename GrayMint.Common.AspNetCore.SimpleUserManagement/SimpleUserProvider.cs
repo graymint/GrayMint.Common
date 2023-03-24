@@ -6,6 +6,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System.Security.Claims;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
+using Microsoft.Extensions.Configuration.UserSecrets;
+using GrayMint.Common.Utils;
 
 namespace GrayMint.Common.AspNetCore.SimpleUserManagement;
 
@@ -65,7 +68,10 @@ public class SimpleUserProvider : ISimpleUserProvider
         return simpleUser;
     }
 
-    public async Task<User> Create(UserCreateRequest request)
+    public Task<User<string>> Create(UserCreateRequest<string> request)
+        => Create<string>(request);
+
+    public async Task<User<T>> Create<T>(UserCreateRequest<T> request)
     {
         var res = await _simpleUserDbContext.Users.AddAsync(new Models.UserModel()
         {
@@ -74,40 +80,53 @@ public class SimpleUserProvider : ISimpleUserProvider
             LastName = request.LastName,
             CreatedTime = DateTime.UtcNow,
             Description = request.Description,
-            AuthCode = Guid.NewGuid().ToString()
+            AuthCode = Guid.NewGuid().ToString(),
+            ExData = UserConverter.ConvertExDataToString(request.ExData)
         });
         await _simpleUserDbContext.SaveChangesAsync();
 
-        return res.Entity.ToDto();
+        return res.Entity.ToDto<T>();
     }
 
-    public async Task<User> Get(Guid userId)
-    {
-        var userModel = await _simpleUserDbContext.Users.SingleAsync(x => x.UserId == userId);
-        return userModel.ToDto();
-    }
 
-    public async Task<User?> FindByEmail(string email)
-    {
-        var userModel = await _simpleUserDbContext.Users.SingleOrDefaultAsync(x => x.Email == email);
-        return userModel?.ToDto();
-    }
-
-    public async Task<User> GetByEmail(string email)
-    {
-        var userModel = await _simpleUserDbContext.Users.SingleAsync(x => x.Email == email);
-        return userModel.ToDto();
-    }
-
-    public async Task Update(Guid userId, UserUpdateRequest request)
+    public async Task Update<T>(Guid userId, UserUpdateRequest<T> request)
     {
         var userModel = await _simpleUserDbContext.Users.SingleAsync(x => x.UserId == userId);
         if (request.FirstName != null) userModel.FirstName = request.FirstName;
         if (request.LastName != null) userModel.LastName = request.LastName;
         if (request.Description != null) userModel.Description = request.Description;
         if (request.Email != null) userModel.Email = request.Email;
+        if (request.ExData != null) userModel.ExData = UserConverter.ConvertExDataToString(request.ExData);
         await _simpleUserDbContext.SaveChangesAsync();
     }
+
+    public Task<User<string>> Get(Guid userId)
+        => Get<string>(userId);
+
+    public async Task<User<T>> Get<T>(Guid userId)
+    {
+        var userModel = await _simpleUserDbContext.Users.SingleAsync(x => x.UserId == userId);
+        return userModel.ToDto<T>();
+    }
+
+    public Task<User<string>?> FindByEmail(string email)
+        => FindByEmail<string>(email);
+
+    public async Task<User<T>?> FindByEmail<T>(string email)
+    {
+        var userModel = await _simpleUserDbContext.Users.SingleOrDefaultAsync(x => x.Email == email);
+        return userModel?.ToDto<T>();
+    }
+
+    public Task<User<string>> GetByEmail(string email)
+        => GetByEmail<string>(email);
+
+    public async Task<User<T>> GetByEmail<T>(string email)
+    {
+        var userModel = await _simpleUserDbContext.Users.SingleAsync(x => x.Email == email);
+        return userModel.ToDto<T>();
+    }
+
     public async Task Remove(Guid userId)
     {
         _simpleUserDbContext.ChangeTracker.Clear();

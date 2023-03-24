@@ -68,8 +68,9 @@ public class SimpleRoleProviderTest : BaseControllerTest
     {
         // create a user
         var simpleUserProvider = TestInit1.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
-        var userCreateRequest = new UserCreateRequest($"{Guid.NewGuid()}@local")
+        var userCreateRequest = new UserCreateRequest
         {
+            Email = $"{Guid.NewGuid()}@local",
             FirstName = Guid.NewGuid().ToString(),
             LastName = Guid.NewGuid().ToString(),
             Description = Guid.NewGuid().ToString()
@@ -123,8 +124,9 @@ public class SimpleRoleProviderTest : BaseControllerTest
     {
         // create a user
         var userProvider = TestInit1.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
-        var user = await userProvider.Create(new UserCreateRequest($"{Guid.NewGuid()}@local")
+        var user = await userProvider.Create(new UserCreateRequest
         {
+            Email = $"{Guid.NewGuid()}@local",
             FirstName = Guid.NewGuid().ToString(),
             LastName = Guid.NewGuid().ToString(),
             Description = Guid.NewGuid().ToString()

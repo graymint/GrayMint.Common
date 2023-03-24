@@ -98,7 +98,12 @@ public class SimpleRoleProvider
         await _simpleUserDbContext.SaveChangesAsync();
     }
 
-    public async Task<UserRole[]> GetUserRoles(Guid? roleId = null, Guid? userId = null, string? appId = null)
+    public Task<UserRole<string>[]> GetUserRoles(Guid? roleId = null, Guid? userId = null, string? appId = null)
+    {
+        return GetUserRoles<string>(roleId, userId, appId);
+    }
+
+    public async Task<UserRole<T>[]> GetUserRoles<T>(Guid? roleId = null, Guid? userId = null, string? appId = null)
     {
         var roles = await _simpleUserDbContext.UserRoles
             .Include(x => x.Role)
@@ -109,7 +114,7 @@ public class SimpleRoleProvider
                 (appId == null || x.AppId == appId))
             .ToArrayAsync();
 
-        return roles.Select(x => x.ToDto()).ToArray();
+        return roles.Select(x => x.ToDto<T>()).ToArray();
     }
 
     public async Task Update(Guid roleId, RoleUpdateRequest request)

@@ -46,10 +46,11 @@ public partial class SimpleUserDbContext : DbContext
             entity.Property(e => e.IsDisabled)
                 .HasDefaultValue(false);
 
-            entity.HasKey(e => e.UserId);
-
             entity.HasIndex(e => e.Email)
                 .IsUnique();
+
+            entity.Property(e => e.ExData)
+                .HasMaxLength(int.MaxValue);
         });
 
         modelBuilder.Entity<RoleModel>(entity =>
@@ -60,7 +61,7 @@ public partial class SimpleUserDbContext : DbContext
                 .IsUnique();
 
             entity.Property(e => e.RoleId)
-                .HasMaxLength(50);
+                .HasMaxLength(int.MaxValue);
         });
 
         modelBuilder.Entity<UserRoleModel>(entity =>
