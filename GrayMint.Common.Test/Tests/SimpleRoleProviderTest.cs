@@ -16,8 +16,8 @@ public class SimpleRoleProviderTest : BaseControllerTest
     public async Task Crud()
     {
         // Create
-        var roleProvider = TestInit1.CurrentServiceScope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
-        var request = new RoleCreateRequest(Guid.NewGuid().ToString())
+        var roleProvider = TestInit1.Scope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
+        var request = new RoleCreateRequest
         {
             RoleName = Guid.NewGuid().ToString(),
             Description = Guid.NewGuid().ToString()
@@ -67,7 +67,7 @@ public class SimpleRoleProviderTest : BaseControllerTest
     public async Task Add_remove_user()
     {
         // create a user
-        var simpleUserProvider = TestInit1.CurrentServiceScope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
+        var simpleUserProvider = TestInit1.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
         var userCreateRequest = new UserCreateRequest($"{Guid.NewGuid()}@local")
         {
             FirstName = Guid.NewGuid().ToString(),
@@ -77,13 +77,13 @@ public class SimpleRoleProviderTest : BaseControllerTest
         var user = await simpleUserProvider.Create(userCreateRequest);
 
         // create a role
-        var roleProvider = TestInit1.CurrentServiceScope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
-        var role = await roleProvider.Create(new RoleCreateRequest(Guid.NewGuid().ToString())
+        var roleProvider = TestInit1.Scope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
+        var role = await roleProvider.Create(new RoleCreateRequest 
         {
             RoleName = Guid.NewGuid().ToString(),
             Description = Guid.NewGuid().ToString()
         });
-        await roleProvider.Create(new RoleCreateRequest(Guid.NewGuid().ToString())
+        await roleProvider.Create(new RoleCreateRequest
         {
             RoleName = Guid.NewGuid().ToString(),
             Description = Guid.NewGuid().ToString()
@@ -122,7 +122,7 @@ public class SimpleRoleProviderTest : BaseControllerTest
     public async Task GetAuthUser()
     {
         // create a user
-        var userProvider = TestInit1.CurrentServiceScope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
+        var userProvider = TestInit1.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
         var user = await userProvider.Create(new UserCreateRequest($"{Guid.NewGuid()}@local")
         {
             FirstName = Guid.NewGuid().ToString(),
@@ -131,13 +131,13 @@ public class SimpleRoleProviderTest : BaseControllerTest
         });
 
         // create roles
-        var roleProvider = TestInit1.CurrentServiceScope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
-        var role1 = await roleProvider.Create(new RoleCreateRequest(Guid.NewGuid().ToString())
+        var roleProvider = TestInit1.Scope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
+        var role1 = await roleProvider.Create(new RoleCreateRequest
         {
             RoleName = Guid.NewGuid().ToString(),
             Description = Guid.NewGuid().ToString()
         });
-        var role2 = await roleProvider.Create(new RoleCreateRequest(Guid.NewGuid().ToString())
+        var role2 = await roleProvider.Create(new RoleCreateRequest
         {
             RoleName = Guid.NewGuid().ToString(),
             Description = Guid.NewGuid().ToString()

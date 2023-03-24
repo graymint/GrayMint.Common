@@ -30,7 +30,13 @@ public static class GmUtil
         return JsonSerializer.Deserialize<T>(json, options) ??
                throw new InvalidDataException($"{typeof(T)} could not be deserialized!");
     }
-    
+
+    public static T JsonClone<T>(object obj, JsonSerializerOptions? options = null)
+    {
+        var json = JsonSerializer.Serialize(obj);
+        return JsonDeserialize<T>(json, options);
+    }
+
     public static byte[] GenerateKey(int keySize)
     {
         using var aes = Aes.Create();

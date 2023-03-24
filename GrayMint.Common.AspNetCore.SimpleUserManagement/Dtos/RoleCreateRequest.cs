@@ -2,11 +2,7 @@
 
 public class RoleCreateRequest
 {
-    public string RoleName { get; set; }
-    public string? Description { get; set; }
-
-    public RoleCreateRequest(string roleName)
-    {
-        RoleName = roleName;
-    }
+    public required string RoleName { get; init; }
+    public Guid? RoleId { get; init; }
+    public string? Description { get; init; }
 }

@@ -18,7 +18,7 @@ public class TestInit : IDisposable
 {
     public WebApplicationFactory<Program> WebApp { get; }
     public HttpClient HttpClient { get; set; }
-    public IServiceScope CurrentServiceScope { get; }
+    public IServiceScope Scope { get; }
     public AuthenticationHeaderValue AppCreatorAuthenticationHeader { get; private set; } = default!;
     public App App { get; private set; } = default!;
     public CognitoAuthenticationOptions CognitoAuthenticationOptions => WebApp.Services.GetRequiredService<IOptions<CognitoAuthenticationOptions>>().Value;
@@ -50,7 +50,7 @@ public class TestInit : IDisposable
         });
 
         // Create System user
-        CurrentServiceScope = WebApp.Services.CreateScope();
+        Scope = WebApp.Services.CreateScope();
     }
 
     private async Task Init()
@@ -63,7 +63,7 @@ public class TestInit : IDisposable
 
     public async Task<AuthenticationHeaderValue> CreateAuthorizationHeader(string email)
     {
-        var tokenBuilder = CurrentServiceScope.ServiceProvider.GetRequiredService<BotAuthenticationTokenBuilder>();
+        var tokenBuilder = Scope.ServiceProvider.GetRequiredService<BotAuthenticationTokenBuilder>();
         return await tokenBuilder.CreateAuthenticationHeader(email, email);
     }
 
@@ -74,13 +74,12 @@ public class TestInit : IDisposable
 
     public async Task<User> CreateUserAndAddToRole(string email, string roleName, string appId = "*")
     {
-        // create roles
-        var roleProvider = CurrentServiceScope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
-        var role = await roleProvider.FindByName(roleName) ??
-                   await roleProvider.Create(new RoleCreateRequest(roleName));
+        // find the role
+        var roleProvider = Scope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
+        var role = await roleProvider.GetByName(roleName);
 
         // create user
-        var userProvider = CurrentServiceScope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
+        var userProvider = Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
         var user = await userProvider.FindByEmail(email) ??
                    await userProvider.Create(new UserCreateRequest(email)
                    {
@@ -108,7 +107,7 @@ public class TestInit : IDisposable
 
     public void Dispose()
     {
-        CurrentServiceScope.Dispose();
+        Scope.Dispose();
         HttpClient.Dispose();
         WebApp.Dispose();
     }

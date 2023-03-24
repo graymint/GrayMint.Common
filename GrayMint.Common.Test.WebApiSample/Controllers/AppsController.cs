@@ -19,7 +19,7 @@ public class AppsController : ControllerBase
     }
 
     [HttpPost]
-    [AuthorizePermission(Permission.SystemWrite)]
+    [AuthorizePermission(Permissions.SystemWrite)]
     public async Task<App> CreateApp(string appName)
     {
         var ret = await _dbContext.Apps.AddAsync(new App { AppName = appName });
@@ -28,7 +28,7 @@ public class AppsController : ControllerBase
     }
 
     [HttpGet]
-    [AuthorizePermission(Permission.SystemRead)]
+    [AuthorizePermission(Permissions.SystemRead)]
     public async Task<App[]> List()
     {
         var ret = await _dbContext.Apps.ToArrayAsync();

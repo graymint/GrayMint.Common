@@ -14,7 +14,7 @@ public class SimpleUserProviderTest : BaseControllerTest
     public async Task Crud()
     {
         // Create
-        var simpleUserProvider = TestInit1.CurrentServiceScope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
+        var simpleUserProvider = TestInit1.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
         var request = new UserCreateRequest($"{Guid.NewGuid()}@local")
         {
             FirstName = Guid.NewGuid().ToString(),
@@ -81,7 +81,7 @@ public class SimpleUserProviderTest : BaseControllerTest
     public async Task Fail_Already_exist()
     {
         // Create
-        var simpleUserProvider = TestInit1.CurrentServiceScope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
+        var simpleUserProvider = TestInit1.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
         var request = new UserCreateRequest($"{Guid.NewGuid()}@local")
         {
             FirstName = Guid.NewGuid().ToString(),

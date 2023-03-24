@@ -29,7 +29,7 @@ public class ItemsController : ControllerBase
     }
 
     [HttpPost("by-permission")]
-    [AuthorizePermission(Permission.ItemWrite)]
+    [AuthorizePermission(Permissions.ItemWrite)]
     public async Task<Item> CreateByPermission(int appId, string itemName)
     {
         var ret = await _dbContext.Items.AddAsync(new Item { AppId = appId, ItemName = itemName });
@@ -46,7 +46,7 @@ public class ItemsController : ControllerBase
     }
 
     [HttpGet("itemId/by-permission")]
-    [AuthorizePermission(Permission.ItemRead)]
+    [AuthorizePermission(Permissions.ItemRead)]
     public async Task<Item> GetByPermission(int appId, int itemId)
     {
         var ret = await _dbContext.Items.SingleAsync(x => x.AppId == appId && x.ItemId == itemId);
@@ -55,7 +55,7 @@ public class ItemsController : ControllerBase
 
 
     [HttpDelete]
-    [AuthorizePermission(Permission.ItemWrite)]
+    [AuthorizePermission(Permissions.ItemWrite)]
     public async Task DeleteByPermission(int appId, string itemName)
     {
         var item = await _dbContext.Items.SingleAsync(x => x.AppId == appId && x.ItemName == itemName);

@@ -55,6 +55,7 @@ public class SimpleRoleProvider
         _simpleUserDbContext.ChangeTracker.Clear();
         var roleModel = await _simpleUserDbContext.Roles.AddAsync(new Models.RoleModel()
         {
+            RoleId = request.RoleId ?? Guid.NewGuid(),
             RoleName = request.RoleName,
             Description = request.Description
         });
