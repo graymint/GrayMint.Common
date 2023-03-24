@@ -2,6 +2,11 @@
 
 public class NotExistsException : Exception
 {
+    public NotExistsException(string? message = null)
+        : base(message)
+    {
+    }
+
     public static bool Is(Exception ex)
     {
         if (ex is NotExistsException or KeyNotFoundException)
@@ -13,5 +18,5 @@ public class NotExistsException : Exception
             return true;
 
         return ex.InnerException != null && Is(ex.InnerException);
-    }   
+    }
 }

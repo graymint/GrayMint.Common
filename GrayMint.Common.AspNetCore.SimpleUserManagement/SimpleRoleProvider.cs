@@ -53,7 +53,7 @@ public class SimpleRoleProvider
     public async Task<Role> Create(RoleCreateRequest request)
     {
         _simpleUserDbContext.ChangeTracker.Clear();
-        var roleModel = await _simpleUserDbContext.Roles.AddAsync(new Models.RoleModel()
+        var role = await _simpleUserDbContext.Roles.AddAsync(new Models.RoleModel()
         {
             RoleId = request.RoleId ?? Guid.NewGuid(),
             RoleName = request.RoleName,
@@ -61,7 +61,7 @@ public class SimpleRoleProvider
         });
         await _simpleUserDbContext.SaveChangesAsync();
 
-        return roleModel.Entity.ToDto();
+        return role.Entity.ToDto();
     }
 
     public async Task<Role[]> List()
@@ -72,35 +72,35 @@ public class SimpleRoleProvider
 
     public async Task<Role> Get(Guid roleId)
     {
-        var userModel = await _simpleUserDbContext.Roles.SingleAsync(x => x.RoleId == roleId);
-        return userModel.ToDto();
+        var user = await _simpleUserDbContext.Roles.SingleAsync(x => x.RoleId == roleId);
+        return user.ToDto();
     }
 
     public async Task<Role?> FindByName(string roleName)
     {
-        var roleModel = await _simpleUserDbContext.Roles.SingleOrDefaultAsync(x => x.RoleName == roleName);
-        return roleModel?.ToDto();
+        var role = await _simpleUserDbContext.Roles.SingleOrDefaultAsync(x => x.RoleName == roleName);
+        return role?.ToDto();
     }
 
 
     public async Task<Role> GetByName(string roleName)
     {
-        var roleModel = await _simpleUserDbContext.Roles.SingleAsync(x => x.RoleName == roleName);
-        return roleModel.ToDto();
+        var role = await _simpleUserDbContext.Roles.SingleAsync(x => x.RoleName == roleName);
+        return role.ToDto();
     }
 
     public async Task Remove(Guid roleId)
     {
         _simpleUserDbContext.ChangeTracker.Clear();
 
-        var roleModel = new Models.RoleModel { RoleId = roleId };
-        _simpleUserDbContext.Roles.Remove(roleModel);
+        var role = new Models.RoleModel { RoleId = roleId };
+        _simpleUserDbContext.Roles.Remove(role);
         await _simpleUserDbContext.SaveChangesAsync();
     }
 
     public async Task<UserRole[]> GetUserRoles(Guid? roleId = null, Guid? userId = null, string? appId = null)
     {
-        var roleModels = await _simpleUserDbContext.UserRoles
+        var roles = await _simpleUserDbContext.UserRoles
             .Include(x => x.Role)
             .Include(x => x.User)
             .Where(x =>
@@ -109,14 +109,14 @@ public class SimpleRoleProvider
                 (appId == null || x.AppId == appId))
             .ToArrayAsync();
 
-        return roleModels.Select(x => x.ToDto()).ToArray();
+        return roles.Select(x => x.ToDto()).ToArray();
     }
 
     public async Task Update(Guid roleId, RoleUpdateRequest request)
     {
-        var roleModel = await _simpleUserDbContext.Roles.SingleAsync(x => x.RoleId == roleId);
-        if (request.RoleName != null) roleModel.RoleName = request.RoleName;
-        if (request.Description != null) roleModel.Description = request.Description;
+        var role = await _simpleUserDbContext.Roles.SingleAsync(x => x.RoleId == roleId);
+        if (request.RoleName != null) role.RoleName = request.RoleName;
+        if (request.Description != null) role.Description = request.Description;
         await _simpleUserDbContext.SaveChangesAsync();
     }
 }

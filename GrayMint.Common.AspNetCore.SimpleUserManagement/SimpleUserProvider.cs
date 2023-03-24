@@ -35,7 +35,11 @@ public class SimpleUserProvider : ISimpleUserProvider
         var user = await _simpleUserDbContext.Users
             .Include(x => x.UserRoles)!
             .ThenInclude(x => x.Role)
-            .SingleAsync(x => x.Email == email);
+            .SingleOrDefaultAsync(x => x.Email == email);
+
+        // not found
+        if (user==null) 
+            return null;
 
         // update info by claims
         var givenName = claimsPrincipal.FindFirstValue(ClaimTypes.GivenName);
