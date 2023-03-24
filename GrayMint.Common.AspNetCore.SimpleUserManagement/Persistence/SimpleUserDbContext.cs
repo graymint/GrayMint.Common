@@ -24,6 +24,9 @@ public partial class SimpleUserDbContext : DbContext
     protected override void ConfigureConventions(
         ModelConfigurationBuilder configurationBuilder)
     {
+        configurationBuilder.Properties<DateTime>()
+            .HavePrecision(0);
+
         configurationBuilder.Properties<string>()
             .HaveMaxLength(400);
     }

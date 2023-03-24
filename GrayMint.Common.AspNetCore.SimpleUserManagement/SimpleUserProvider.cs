@@ -17,7 +17,7 @@ public class SimpleUserProvider : ISimpleUserProvider
 
     public SimpleUserProvider(
         SimpleUserDbContext simpleUserDbContext,
-        IMemoryCache memoryCache, 
+        IMemoryCache memoryCache,
         IOptions<SimpleUserOptions> simpleUserOptions)
     {
         _simpleUserDbContext = simpleUserDbContext;
@@ -42,7 +42,7 @@ public class SimpleUserProvider : ISimpleUserProvider
             .SingleOrDefaultAsync(x => x.Email == email);
 
         // not found
-        if (user==null) 
+        if (user == null)
             return null;
 
         // update info by claims
@@ -50,7 +50,7 @@ public class SimpleUserProvider : ISimpleUserProvider
         var surnameName = claimsPrincipal.FindFirstValue(ClaimTypes.Surname);
         if (givenName != null) user.FirstName = givenName;
         if (surnameName != null) user.LastName = surnameName;
-        if (user.AccessedTime < DateTime.UtcNow - TimeSpan.FromMinutes(60)) user.AccessedTime = DateTime.UtcNow;
+        if (user.AccessedTime is null || user.AccessedTime < DateTime.UtcNow - TimeSpan.FromMinutes(60)) user.AccessedTime = DateTime.UtcNow;
         await _simpleUserDbContext.SaveChangesAsync();
 
         // convert to simple user
