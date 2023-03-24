@@ -49,6 +49,9 @@ public partial class SimpleUserDbContext : DbContext
             entity.HasIndex(e => e.Email)
                 .IsUnique();
 
+            entity.Property(e => e.IsBot)
+                .HasDefaultValue(false);
+
             entity.Property(e => e.ExData)
                 .HasMaxLength(int.MaxValue);
         });

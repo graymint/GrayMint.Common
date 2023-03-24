@@ -11,6 +11,7 @@ internal class UserModel
     public DateTime? AccessedTime { get; set; }
     public string? AuthCode { get; set; }
     public string? Description { get; set; }
+    public bool IsBot { get; set; }
     public string? ExData { get; set; }
 
     public virtual ICollection<UserRoleModel>? UserRoles { get; set; }

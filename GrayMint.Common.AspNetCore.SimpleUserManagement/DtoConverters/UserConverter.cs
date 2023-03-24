@@ -34,6 +34,7 @@ internal static class UserConverter
             LastName = model.LastName,
             AccessedTime = model.AccessedTime,
             Description = model.Description,
+            IsBot = model.IsBot,
             ExData = ConvertExDataFromString<T>(model.ExData)
         };
 

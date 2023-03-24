@@ -1,14 +1,17 @@
 ﻿using GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
+using GrayMint.Common.AspNetCore.SimpleUserManagement.Models;
 
 namespace GrayMint.Common.AspNetCore.SimpleUserManagement.DtoConverters;
 
 internal static class RoleConverter
 {
-    public static Role ToDto(this Models.RoleModel roleModelModel)
+    public static Role ToDto(this RoleModel model)
     {
-        var role = new Role(roleModelModel.RoleId, roleModelModel.RoleName)
+        var role = new Role
         {
-            Description = roleModelModel.Description
+            RoleId = model.RoleId,
+            RoleName = model.RoleName,
+            Description = model.Description
         };
 
         return role;

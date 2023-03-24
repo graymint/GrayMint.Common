@@ -81,6 +81,7 @@ public class SimpleUserProvider : ISimpleUserProvider
             CreatedTime = DateTime.UtcNow,
             Description = request.Description,
             AuthCode = Guid.NewGuid().ToString(),
+            IsBot = request.IsBot,
             ExData = UserConverter.ConvertExDataToString(request.ExData)
         });
         await _simpleUserDbContext.SaveChangesAsync();
@@ -96,6 +97,7 @@ public class SimpleUserProvider : ISimpleUserProvider
         if (request.LastName != null) userModel.LastName = request.LastName;
         if (request.Description != null) userModel.Description = request.Description;
         if (request.Email != null) userModel.Email = request.Email;
+        if (request.IsBot != null) userModel.IsBot = request.IsBot;
         if (request.ExData != null) userModel.ExData = UserConverter.ConvertExDataToString(request.ExData);
         await _simpleUserDbContext.SaveChangesAsync();
     }
