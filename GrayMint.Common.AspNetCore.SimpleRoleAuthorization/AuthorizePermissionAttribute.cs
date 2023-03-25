@@ -8,4 +8,5 @@ public class AuthorizePermissionAttribute : AuthorizeAttribute
         : base(SimpleRoleAuth.CreatePolicyNameForPermission(permission))
     {
     }
+
 }

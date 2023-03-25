@@ -10,7 +10,7 @@ public static class SimpleRoleAuth
 
     public static string CreateAppRoleName(string appId, string roleName)
     {
-        return $"/apps/{appId}/roles/{roleName}";
+        return $"/apps/{appId}/roles/{roleName}".ToLower();
     }
 
     public static Claim CreateAppRoleClaim(string appId, string roleName)
@@ -20,7 +20,7 @@ public static class SimpleRoleAuth
 
     public static string CreateAppPermission(string appId, string permissionId)
     {
-        return $"/apps/{appId}/permissions/{permissionId}";
+        return $"/apps/{appId}/permissions/{permissionId}".ToLower();
     }
 
     public static Claim CreateAppPermissionClaim(string appId, string permissionId)
