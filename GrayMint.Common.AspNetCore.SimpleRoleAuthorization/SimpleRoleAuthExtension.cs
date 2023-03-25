@@ -20,17 +20,32 @@ public static class SimpleRoleAuthExtension
 
         services.AddAuthorization(options =>
         {
-            // add permission policies
-            foreach (var permissionId in roles.SelectMany(x => x.Permissions).Distinct())
-                options.AddPolicy(SimpleRoleAuth.CreatePolicyNameForPermission(permissionId),
-                    CreatePolicy(services, roleAuthOptions)
-                        .AddRequirements(new SimplePermissionAuthRequirement(permissionId))
-                        .Build());
+            // create default policy
+            var addBotAuthenticationSchemes = services.Any(x => x.ServiceType == typeof(BotTokenValidator));
+            var addCognitoAuthenticationSchemes = services.Any(x => x.ServiceType == typeof(CognitoTokenValidator));
 
-            // add RolePolicy
-            var rolePolicy = CreatePolicy(services, roleAuthOptions).Build();
+            var policyBuilder = new AuthorizationPolicyBuilder();
+            if (addBotAuthenticationSchemes) 
+                policyBuilder.AddAuthenticationSchemes(BotAuthenticationDefaults.AuthenticationScheme);
+
+            if (addCognitoAuthenticationSchemes)
+                policyBuilder.AddAuthenticationSchemes(CognitoAuthenticationDefaults.AuthenticationScheme);
+
+            if (!string.IsNullOrEmpty(roleAuthOptions.CustomAuthenticationScheme))
+                policyBuilder.AddAuthenticationSchemes(roleAuthOptions.CustomAuthenticationScheme);
+
+            policyBuilder.RequireAuthenticatedUser();
+            var rolePolicy = policyBuilder.Build();
             options.AddPolicy(SimpleRoleAuth.Policy, rolePolicy);
             options.DefaultPolicy = rolePolicy;
+
+            // add permission policies
+            foreach (var permissionId in roles.SelectMany(x => x.Permissions).Distinct())
+                options.AddPolicy(SimpleRoleAuth.CreatePolicyNameForPermission(permissionId), 
+                    new AuthorizationPolicyBuilder()
+                        .AddRequirements(new SimplePermissionAuthRequirement(permissionId))
+                        .Combine(rolePolicy)
+                        .Build());
         });
 
         services.AddSingleton(Options.Create(roleAuthOptions));
@@ -40,24 +55,4 @@ public static class SimpleRoleAuthExtension
         services.AddTransient<IClaimsTransformation, SimpleRoleAuthClaimsTransformation>();
         return services;
     }
-
-    private static AuthorizationPolicyBuilder CreatePolicy(IServiceCollection services, SimpleRoleAuthOptions roleAuthOptions)
-    {
-        var addBotAuthenticationSchemes = services.Any(x => x.ServiceType == typeof(BotTokenValidator));
-        var addCognitoAuthenticationSchemes = services.Any(x => x.ServiceType == typeof(CognitoTokenValidator));
-
-        var policyBuilder = new AuthorizationPolicyBuilder();
-        if (addBotAuthenticationSchemes)
-            policyBuilder.AddAuthenticationSchemes(BotAuthenticationDefaults.AuthenticationScheme);
-
-        if (addCognitoAuthenticationSchemes)
-            policyBuilder.AddAuthenticationSchemes(CognitoAuthenticationDefaults.AuthenticationScheme);
-
-        if (!string.IsNullOrEmpty(roleAuthOptions.CustomAuthenticationScheme))
-            policyBuilder.AddAuthenticationSchemes(roleAuthOptions.CustomAuthenticationScheme);
-
-        policyBuilder.RequireAuthenticatedUser();
-        return policyBuilder;
-    }
-
 }

@@ -6,9 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System.Security.Claims;
 using Microsoft.Extensions.Options;
-using System.Text.Json;
-using Microsoft.Extensions.Configuration.UserSecrets;
-using GrayMint.Common.Utils;
 
 namespace GrayMint.Common.AspNetCore.SimpleUserManagement;
 
