@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace GrayMint.Common.Test.Tests;
 
 [TestClass]
-public class SimpleUserProviderTest : BaseControllerTest
+public class SimpleUserProviderTest 
 {
     public class UserExData
     {
@@ -18,8 +18,10 @@ public class SimpleUserProviderTest : BaseControllerTest
     [TestMethod]
     public async Task Crud()
     {
+        using var testInit = await TestInit.Create();
+
         // Create
-        var simpleUserProvider = TestInit1.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
+        var simpleUserProvider = testInit.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
         var request = new UserCreateRequest<UserExData>
         {
             Email = $"{Guid.NewGuid()}@local",
@@ -88,8 +90,10 @@ public class SimpleUserProviderTest : BaseControllerTest
     [TestMethod]
     public async Task Fail_Already_exist()
     {
+        using var testInit = await TestInit.Create();
+
         // Create
-        var simpleUserProvider = TestInit1.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
+        var simpleUserProvider = testInit.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
         var request = new UserCreateRequest
         {
             Email = $"{Guid.NewGuid()}@local",

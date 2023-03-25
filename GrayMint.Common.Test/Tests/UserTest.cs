@@ -9,16 +9,18 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace GrayMint.Common.Test.Tests;
 
 [TestClass]
-public class UserTest : BaseControllerTest
+public class UserTest
 {
     [TestMethod]
     public async Task GetUserToken()
     {
-        var user = await TestInit1.CreateUserAndAddToRole(TestInit.NewEmail(), Roles.SystemAdmin);
+        using var testInit = await TestInit.Create();
+
+        var user = await testInit.CreateUserAndAddToRole(TestInit.NewEmail(), Roles.SystemAdmin);
         
         // call api buy retrieved token
-        TestInit1.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, await TestInit1.UsersClient.GetAuthorizationTokenByEmailAsync(user.Email));
-        await TestInit1.AppsClient.CreateAppAsync(Guid.NewGuid().ToString());
+        testInit.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, await testInit.UsersClient.GetAuthorizationTokenByEmailAsync(user.Email));
+        await testInit.AppsClient.CreateAppAsync(Guid.NewGuid().ToString());
     }
 
     [TestMethod]

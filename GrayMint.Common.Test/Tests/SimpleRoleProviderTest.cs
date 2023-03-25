@@ -9,14 +9,16 @@ using System.Security.Claims;
 namespace GrayMint.Common.Test.Tests;
 
 [TestClass]
-public class SimpleRoleProviderTest : BaseControllerTest
+public class SimpleRoleProviderTest 
 {
 
     [TestMethod]
     public async Task Crud()
     {
+        using var testInit = await TestInit.Create();
+
         // Create
-        var roleProvider = TestInit1.Scope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
+        var roleProvider = testInit.Scope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
         var request = new RoleCreateRequest
         {
             RoleName = Guid.NewGuid().ToString(),
@@ -66,8 +68,10 @@ public class SimpleRoleProviderTest : BaseControllerTest
     [TestMethod]
     public async Task Add_remove_user()
     {
+        using var testInit = await TestInit.Create();
+
         // create a user
-        var simpleUserProvider = TestInit1.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
+        var simpleUserProvider = testInit.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
         var userCreateRequest = new UserCreateRequest
         {
             Email = $"{Guid.NewGuid()}@local",
@@ -78,7 +82,7 @@ public class SimpleRoleProviderTest : BaseControllerTest
         var user = await simpleUserProvider.Create(userCreateRequest);
 
         // create a role
-        var roleProvider = TestInit1.Scope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
+        var roleProvider = testInit.Scope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
         var role = await roleProvider.Create(new RoleCreateRequest 
         {
             RoleName = Guid.NewGuid().ToString(),
@@ -122,8 +126,10 @@ public class SimpleRoleProviderTest : BaseControllerTest
     [TestMethod]
     public async Task GetAuthUser()
     {
+        using var testInit = await TestInit.Create();
+
         // create a user
-        var userProvider = TestInit1.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
+        var userProvider = testInit.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
         var user = await userProvider.Create(new UserCreateRequest
         {
             Email = $"{Guid.NewGuid()}@local",
@@ -133,7 +139,7 @@ public class SimpleRoleProviderTest : BaseControllerTest
         });
 
         // create roles
-        var roleProvider = TestInit1.Scope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
+        var roleProvider = testInit.Scope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
         var role1 = await roleProvider.Create(new RoleCreateRequest
         {
             RoleName = Guid.NewGuid().ToString(),

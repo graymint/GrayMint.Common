@@ -10,15 +10,16 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace GrayMint.Common.Test.Tests;
 
 [TestClass]
-public class AwsCognitoTest : BaseControllerTest
+public class AwsCognitoTest
 {
     public async Task<string> GetCredentialsAsync(string email, string password)
     {
-        var cognitoArn = Arn.Parse(TestInit1.CognitoAuthenticationOptions.CognitoArn);
+        using var testInit = await TestInit.Create();
+        var cognitoArn = Arn.Parse(testInit.CognitoAuthenticationOptions.CognitoArn);
         var awsRegion = RegionEndpoint.GetBySystemName(cognitoArn.Region);
         var provider = new AmazonCognitoIdentityProviderClient(new Amazon.Runtime.AnonymousAWSCredentials(), awsRegion);
-        var userPool = new CognitoUserPool(cognitoArn.Resource, TestInit1.CognitoAuthenticationOptions.CognitoClientId, provider);
-        var user = new CognitoUser(email, TestInit1.CognitoAuthenticationOptions.CognitoClientId, userPool, provider);
+        var userPool = new CognitoUserPool(cognitoArn.Resource, testInit.CognitoAuthenticationOptions.CognitoClientId, provider);
+        var user = new CognitoUser(email, testInit.CognitoAuthenticationOptions.CognitoClientId, userPool, provider);
         var authRequest = new InitiateSrpAuthRequest()
         {
             Password = password
@@ -32,19 +33,21 @@ public class AwsCognitoTest : BaseControllerTest
     [TestMethod]
     public async Task CognitoTest()
     {
+        using var testInit = await TestInit.Create();
+
         // add user to appCreator role
         try
         {
-            await TestInit1.CreateUserAndAddToRole("unit-tester@local", Roles.SystemAdmin);
+            await testInit.CreateUserAndAddToRole("unit-tester@local", Roles.SystemAdmin);
         }
         catch (Exception ex) when (ex.InnerException != null && ex.InnerException!.Message.Contains("Cannot insert duplicate key in object"))
         {
         }
 
         var idToken = await GetCredentialsAsync("unit-tester", "Password1@");
-        TestInit1.HttpClient.DefaultRequestHeaders.Authorization =
+        testInit.HttpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, idToken);
 
-        await TestInit1.AppsClient.ListAsync();
+        await testInit.AppsClient.ListAsync();
     }
 }
