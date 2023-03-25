@@ -69,7 +69,7 @@ public partial class SimpleUserDbContext : DbContext
 
         modelBuilder.Entity<UserRoleModel>(entity =>
         {
-            entity.HasKey(e => new { e.UserId, e.RoleId, e.AppId });
+            entity.HasKey(e => new { e.AppId, e.UserId, e.RoleId });
 
             entity.HasOne(e => e.Role)
                 .WithMany(d=>d.UserRoles)

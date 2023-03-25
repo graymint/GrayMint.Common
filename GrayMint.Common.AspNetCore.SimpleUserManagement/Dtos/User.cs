@@ -13,4 +13,3 @@ public class User<T>
     public required bool IsBot { get; set; }
     public required T? ExData { get; set; }
 }
-
