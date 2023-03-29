@@ -21,11 +21,11 @@ public static class GrayMintApp
         throw CreateOptionsValidationException(optionsName, optionsType, failureMessage);
     }
 
-    public static async Task CheckDatabaseCommand<T>(WebApplication webApplication, string[] args) where T : DbContext
+    public static async Task CheckDatabaseCommand<T>(IServiceProvider serviceProvider, string[] args) where T : DbContext
     {
-        var logger = webApplication.Services.GetRequiredService<ILogger<WebApplication>>();
+        var logger = serviceProvider.GetRequiredService<ILogger<WebApplication>>();
 
-        await using var scope = webApplication.Services.CreateAsyncScope();
+        await using var scope = serviceProvider.CreateAsyncScope();
         var appDbContext = scope.ServiceProvider.GetRequiredService<T>();
         if (args.Contains("/recreateDb", StringComparer.OrdinalIgnoreCase))
         {
