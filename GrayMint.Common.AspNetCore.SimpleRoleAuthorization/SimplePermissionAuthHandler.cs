@@ -16,11 +16,15 @@ internal class SimplePermissionAuthHandler : AuthorizationHandler<SimplePermissi
 
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, SimplePermissionAuthRequirement requirement)
     {
-        if (context.Resource is not HttpContext httpContext)
+        string? requestAppId;
+        if (context.Resource is SimpleRoleResource roleResource)
+            requestAppId = roleResource.Resource;
+        else if (context.Resource is HttpContext httpContext)
+            requestAppId = httpContext.GetRouteValue(_options.ResourceParamName)?.ToString();
+        else
             return Task.CompletedTask;
 
         var succeeded = false;
-        var requestAppId = httpContext.GetRouteValue(_options.AppIdParamName)?.ToString();
 
         succeeded |= context.User.HasClaim(
             SimpleRoleAuth.PermissionClaimType, 

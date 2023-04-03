@@ -20,7 +20,7 @@ public class SimpleRoleAuthHandler : AuthorizationHandler<RolesAuthorizationRequ
         if (context.Resource is not HttpContext httpContext)
             return Task.CompletedTask;
 
-        var requestAppId = httpContext.GetRouteValue(_simpleRoleAuthOptions.AppIdParamName)?.ToString();
+        var requestAppId = httpContext.GetRouteValue(_simpleRoleAuthOptions.ResourceParamName)?.ToString();
 
         var succeeded = false;
         foreach (var allowedRole in requirement.AllowedRoles)

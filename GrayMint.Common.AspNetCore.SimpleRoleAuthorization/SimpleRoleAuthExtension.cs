@@ -52,6 +52,7 @@ public static class SimpleRoleAuthExtension
         services.AddScoped<IBotAuthenticationProvider, BotAuthenticationProvider>();
         services.AddScoped<IAuthorizationHandler, SimpleRoleAuthHandler>();
         services.AddScoped<IAuthorizationHandler, SimplePermissionAuthHandler>();
+        services.AddScoped<SimpleRoleAuthService>();
         services.AddTransient<IClaimsTransformation, SimpleRoleAuthClaimsTransformation>();
         return services;
     }

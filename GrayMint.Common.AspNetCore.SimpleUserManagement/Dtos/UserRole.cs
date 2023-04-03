@@ -10,4 +10,3 @@ public class UserRole<T>
 public class UserRole : UserRole<string>
 {
 }
-
