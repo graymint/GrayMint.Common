@@ -5,6 +5,7 @@ using GrayMint.Common.AspNetCore.SimpleUserManagement.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System.Security.Claims;
+using GrayMint.Common.AspNetCore.SimpleUserManagement.Models;
 using Microsoft.Extensions.Options;
 
 namespace GrayMint.Common.AspNetCore.SimpleUserManagement;
@@ -65,12 +66,9 @@ public class SimpleUserProvider : ISimpleUserProvider
         return simpleUser;
     }
 
-    public Task<User<string>> Create(UserCreateRequest<string> request)
-        => Create<string>(request);
-
-    public async Task<User<T>> Create<T>(UserCreateRequest<T> request)
+    public async Task<User> Create(UserCreateRequest request)
     {
-        var res = await _simpleUserDbContext.Users.AddAsync(new Models.UserModel()
+        var res = await _simpleUserDbContext.Users.AddAsync(new UserModel()
         {
             Email = request.Email,
             FirstName = request.FirstName,
@@ -79,15 +77,15 @@ public class SimpleUserProvider : ISimpleUserProvider
             Description = request.Description,
             AuthCode = Guid.NewGuid().ToString(),
             IsBot = request.IsBot,
-            ExData = UserConverter.ConvertExDataToString(request.ExData)
+            ExData = request.ExData
         });
         await _simpleUserDbContext.SaveChangesAsync();
 
-        return res.Entity.ToDto<T>();
+        return res.Entity.ToDto();
     }
 
 
-    public async Task Update<T>(Guid userId, UserUpdateRequest<T> request)
+    public async Task Update(Guid userId, UserUpdateRequest request)
     {
         var userModel = await _simpleUserDbContext.Users.SingleAsync(x => x.UserId == userId);
         if (request.FirstName != null) userModel.FirstName = request.FirstName;
@@ -95,42 +93,33 @@ public class SimpleUserProvider : ISimpleUserProvider
         if (request.Description != null) userModel.Description = request.Description;
         if (request.Email != null) userModel.Email = request.Email;
         if (request.IsBot != null) userModel.IsBot = request.IsBot;
-        if (request.ExData != null) userModel.ExData = UserConverter.ConvertExDataToString(request.ExData);
+        if (request.ExData != null) userModel.ExData = request.ExData;
         await _simpleUserDbContext.SaveChangesAsync();
     }
 
-    public Task<User<string>> Get(Guid userId)
-        => Get<string>(userId);
-
-    public async Task<User<T>> Get<T>(Guid userId)
+    public async Task<User> Get(Guid userId)
     {
         var userModel = await _simpleUserDbContext.Users.SingleAsync(x => x.UserId == userId);
-        return userModel.ToDto<T>();
+        return userModel.ToDto();
     }
 
-    public Task<User<string>?> FindByEmail(string email)
-        => FindByEmail<string>(email);
-
-    public async Task<User<T>?> FindByEmail<T>(string email)
+    public async Task<User?> FindByEmail(string email)
     {
         var userModel = await _simpleUserDbContext.Users.SingleOrDefaultAsync(x => x.Email == email);
-        return userModel?.ToDto<T>();
+        return userModel?.ToDto();
     }
 
-    public Task<User<string>> GetByEmail(string email)
-        => GetByEmail<string>(email);
-
-    public async Task<User<T>> GetByEmail<T>(string email)
+    public async Task<User> GetByEmail(string email)
     {
         var userModel = await _simpleUserDbContext.Users.SingleAsync(x => x.Email == email);
-        return userModel.ToDto<T>();
+        return userModel.ToDto();
     }
 
     public async Task Remove(Guid userId)
     {
         _simpleUserDbContext.ChangeTracker.Clear();
 
-        var userModel = new Models.UserModel { UserId = userId };
+        var userModel = new UserModel { UserId = userId };
         _simpleUserDbContext.Users.Remove(userModel);
         await _simpleUserDbContext.SaveChangesAsync();
     }

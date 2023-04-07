@@ -22,6 +22,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GrayMint.Common.AspNetCore.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GrayMint.Common.AspNetCore.SimpleRoleAuthorization", "GrayMint.Common.AspNetCore.SimpleRoleAuthorization\GrayMint.Common.AspNetCore.SimpleRoleAuthorization.csproj", "{41BD5B80-0FCD-4876-A957-1CC50CC0DBB2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrayMint.Common.AspNetCore.SimpleUserControllers", "GrayMint.Common.AspNetCore.SimpleUserControllers\GrayMint.Common.AspNetCore.SimpleUserControllers.csproj", "{54B76379-64F5-4EE5-9877-0974D0ED8E4D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,6 +58,10 @@ Global
 		{41BD5B80-0FCD-4876-A957-1CC50CC0DBB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{41BD5B80-0FCD-4876-A957-1CC50CC0DBB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{41BD5B80-0FCD-4876-A957-1CC50CC0DBB2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{54B76379-64F5-4EE5-9877-0974D0ED8E4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54B76379-64F5-4EE5-9877-0974D0ED8E4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54B76379-64F5-4EE5-9877-0974D0ED8E4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54B76379-64F5-4EE5-9877-0974D0ED8E4D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

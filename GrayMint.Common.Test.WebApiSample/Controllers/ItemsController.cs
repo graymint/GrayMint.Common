@@ -20,7 +20,8 @@ public class ItemsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(SimpleRoleAuth.Policy, Roles = nameof(Roles.AppUser))]
+    [Authorize(SimpleRoleAuth.Policy, Roles = 
+        $"{nameof(Roles.SystemAdmin)},{nameof(Roles.AppOwner)},{nameof(Roles.AppAdmin)},{nameof(Roles.AppWriter)}")]
     public async Task<Item> Create(int appId, string itemName)
     {
         var ret = await _dbContext.Items.AddAsync(new Item { AppId = appId, ItemName = itemName });
@@ -38,7 +39,8 @@ public class ItemsController : ControllerBase
     }
 
     [HttpGet("itemId")]
-    [Authorize(SimpleRoleAuth.Policy, Roles = $"{nameof(Roles.AppUser)},{nameof(Roles.AppReader)}")]
+    [Authorize(SimpleRoleAuth.Policy, Roles = 
+        $"{nameof(Roles.SystemAdmin)},{nameof(Roles.AppOwner)},{nameof(Roles.AppAdmin)},{nameof(Roles.AppWriter)},{nameof(Roles.AppReader)}")]
     public async Task<Item> Get(int appId, int itemId)
     {
         var ret = await _dbContext.Items.SingleAsync(x => x.AppId == appId && x.ItemId == itemId);

@@ -2,6 +2,7 @@ using GrayMint.Common.AspNetCore;
 using GrayMint.Common.AspNetCore.Auth.BotAuthentication;
 using GrayMint.Common.AspNetCore.Auth.CognitoAuthentication;
 using GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
+using GrayMint.Common.AspNetCore.SimpleUserControllers;
 using GrayMint.Common.AspNetCore.SimpleUserManagement;
 using GrayMint.Common.Test.WebApiSample.Persistence;
 using GrayMint.Common.Test.WebApiSample.Security;
@@ -24,6 +25,7 @@ public class Program
 
         builder.Services.AddGrayMintSimpleRoleAuthorization(new SimpleRoleAuthOptions { Roles = Roles.All });
         builder.Services.AddGrayMintSimpleUserProvider(authConfiguration.Get<SimpleUserOptions>(), options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
+        builder.Services.AddGrayMintSimpleUserController(builder.Configuration.GetSection("TeamController").Get<SimpleUserControllerOptions>());
         builder.Services.AddDbContext<WebApiSampleDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
 
         // Add services to the container.

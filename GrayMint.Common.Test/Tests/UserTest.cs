@@ -12,29 +12,18 @@ namespace GrayMint.Common.Test.Tests;
 public class UserTest
 {
     [TestMethod]
-    public async Task GetUserToken()
-    {
-        using var testInit = await TestInit.Create();
-
-        var user = await testInit.CreateUserAndAddToRole(TestInit.NewEmail(), Roles.SystemAdmin);
-        
-        // call api buy retrieved token
-        testInit.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, await testInit.UsersClient.GetAuthorizationTokenByEmailAsync(user.Email));
-        await testInit.AppsClient.CreateAppAsync(Guid.NewGuid().ToString());
-    }
-
-    [TestMethod]
     public async Task ResetAuthUserToken()
     {
         var testInit = await TestInit.Create();
-        var user = await testInit.CreateUserAndAddToRole(TestInit.NewEmail(), Roles.SystemAdmin);
+        await testInit.SetNewUser(Roles.SystemAdmin);
+        var apiKey = await testInit.TeamClient.ResetCurrentUserApiKeyAsync();
 
         // call api buy retrieved token
-        testInit.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, await testInit.UsersClient.GetAuthorizationTokenByEmailAsync(user.Email));
+        testInit.SetApiKey(apiKey);
         await testInit.AppsClient.CreateAppAsync(Guid.NewGuid().ToString()); // make sure the current token is working
 
         //reset token
-        await testInit.UsersClient.GetAuthorizationTokenByEmailAsync(user.Email, true);
+        await testInit.TeamClient.ResetCurrentUserApiKeyAsync();
         await Task.Delay(200);
         try
         {
@@ -48,31 +37,53 @@ public class UserTest
     }
 
     [TestMethod]
-    public async Task ResetMyAuthToken()
+    public async Task ResetSystemBotAuthToken()
     {
         var testInit = await TestInit.Create();
-        var user = await testInit.CreateUserAndAddToRole(TestInit.NewEmail(), Roles.AppUser);
+        var user = await testInit.SetNewUser(Roles.SystemAdmin);
 
         // call api buy retrieved token
-        testInit.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, 
-            await testInit.UsersClient.GetAuthorizationTokenByEmailAsync(user.Email));
+        var apiKey = await testInit.TeamClient.ResetSystemBotApiKeyAsync(user.UserId);
+        testInit.SetApiKey(apiKey);
+        await testInit.AppsClient.CreateAppAsync(Guid.NewGuid().ToString()); // make sure the current token is working
 
         //reset token
-        var newToken = await testInit.UsersClient.ResetMyTokenAsync(); // make sure the current token is working
-        await Task.Delay(100);
+        await testInit.TeamClient.ResetSystemBotApiKeyAsync(user.UserId);
+        await Task.Delay(200);
         try
         {
-            await testInit.UsersClient.ResetMyTokenAsync(); // current token should not work anymore
+            await testInit.AppsClient.CreateAppAsync(Guid.NewGuid().ToString());
             Assert.Fail("Unauthorized Exception was expected.");
         }
         catch (ApiException ex)
         {
             Assert.AreEqual((int)HttpStatusCode.Unauthorized, ex.StatusCode);
         }
+    }
 
-        //check the new token
-        testInit.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, newToken);
+    [TestMethod]
+    public async Task ResetAppBotAuthToken()
+    {
+        var testInit = await TestInit.Create();
+        var apiKey = await testInit.SetNewUser(Roles.AppAdmin);
 
+        // call api buy retrieved token
+        apiKey = await testInit.TeamClient.ResetAppBotApiKeyAsync(testInit.App.AppId, apiKey.UserId);
+        testInit.SetApiKey(apiKey);
+        await testInit.ItemsClient.CreateAsync(testInit.AppId, Guid.NewGuid().ToString()); // make sure the current token is working
+
+        //reset token
+        await testInit.TeamClient.ResetAppBotApiKeyAsync(testInit.AppId, apiKey.UserId);
+        await Task.Delay(200);
+        try
+        {
+            await testInit.ItemsClient.CreateAsync(testInit.AppId, Guid.NewGuid().ToString()); // make sure the current token is working
+            Assert.Fail("Unauthorized Exception was expected.");
+        }
+        catch (ApiException ex)
+        {
+            Assert.AreEqual((int)HttpStatusCode.Unauthorized, ex.StatusCode);
+        }
     }
 
 }

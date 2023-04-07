@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\GrayMint.Common.AspNetCore.SimpleUserControllers\GrayMint.Common.AspNetCore.SimpleUserControllers.csproj" />
     <ProjectReference Include="..\GrayMint.Common.AspNetCore.SimpleUserManagement\GrayMint.Common.AspNetCore.SimpleUserManagement.csproj" />
   </ItemGroup>
 
