@@ -41,10 +41,10 @@ public class UserService
         return _simpleUserProvider.Get(userId);
     }
 
-    public async Task<UserRole> GetUserRole(string appId, Guid userId)
+    public async Task<UserRole?> GetUserRole(string appId, Guid userId)
     {
         var userRoles = await _simpleRoleProvider.GetUserRoles(userId: userId, appId: appId);
-        return userRoles.Single();
+        return userRoles.SingleOrDefault();
     }
 
     public async Task<User> Register(ClaimsPrincipal userPrincipal)

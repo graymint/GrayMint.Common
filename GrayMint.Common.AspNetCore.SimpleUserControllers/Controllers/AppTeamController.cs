@@ -92,7 +92,7 @@ public abstract class AppTeamController<TAppId, TApp, TUser, TUserRole, TRole>
     {
         var userRole = await TeamService.GetUserRole(ToAppId(appId), userId);
         await TeamService.ValidateWriteAccessToRole(User, ToAppId(appId), userRole.Role.RoleId);
-        await ValidateAppOwnerPolicy(User, ToAppId(appId), userId, userRole.Role.RoleId);
+        await ValidateAppOwnerPolicy(User, ToAppId(appId), userId, null);
         await TeamService.RemoveUser(ToAppId(appId), userId);
     }
 
@@ -117,9 +117,15 @@ public abstract class AppTeamController<TAppId, TApp, TUser, TUserRole, TRole>
     }
 
     // can not change its own owner role unless it has global TeamWrite permission
-    private async Task ValidateAppOwnerPolicy(ClaimsPrincipal claimsPrincipal, string appId, Guid userId, Guid roleId)
+    private async Task ValidateAppOwnerPolicy(ClaimsPrincipal claimsPrincipal, string appId, Guid userId, Guid? newRoleId)
     {
-        if (userId == await UserService.GetUserId(claimsPrincipal) && await TeamService.IsAppOwnerRole(appId, roleId) &&
+        var callerUserId = await UserService.GetUserId(claimsPrincipal);
+        var callerUserRole = await UserService.GetUserRole(appId, callerUserId);
+        if (callerUserId != userId || callerUserRole == null || !await TeamService.IsAppOwnerRole(appId, callerUserRole.Role.RoleId)) 
+            return; // caller is not the app owner
+
+        var isNewRoleOwner = newRoleId != null && await TeamService.IsAppOwnerRole(appId, newRoleId.Value);
+        if (!isNewRoleOwner &&
             !await TeamService.CheckUserPermission(claimsPrincipal, "*", TeamPermissions.AppTeamWrite))
             throw new InvalidOperationException("You are an owner and can not remove yourself. Ask other owners or delete the project.");
     }

@@ -22,6 +22,7 @@ public class TestInit : IDisposable
     public UsersClient UsersClient => new(HttpClient);
     public ItemsClient ItemsClient => new(HttpClient);
     public TeamClient TeamClient => new(HttpClient);
+    public ApiKeyResult SystemAdminApiKey { get; private set; } = default!;
 
 
     private TestInit(Dictionary<string, string?> appSettings, string environment)
@@ -52,7 +53,8 @@ public class TestInit : IDisposable
 
     private async Task Init()
     {
-        SetApiKey(await TeamClient.CreateSystemApiKeyAsync());
+        SystemAdminApiKey = await TeamClient.CreateSystemApiKeyAsync();
+        SetApiKey(SystemAdminApiKey);
         App = await AppsClient.CreateAppAsync(Guid.NewGuid().ToString());
     }
 
@@ -61,12 +63,18 @@ public class TestInit : IDisposable
         HttpClient.DefaultRequestHeaders.Authorization = AuthenticationHeaderValue.Parse(apiKey.Authorization);
     }
 
-    public async Task<ApiKeyResult> SetNewUser(SimpleRole simpleRole)
+    public async Task<ApiKeyResult> AddNewUser(SimpleRole simpleRole, bool setAsCurrent = true)
     {
+        var oldAuthorization = HttpClient.DefaultRequestHeaders.Authorization;
+        HttpClient.DefaultRequestHeaders.Authorization = AuthenticationHeaderValue.Parse(SystemAdminApiKey.Authorization);
+
         var apiKey = simpleRole.IsSystem
             ? await TeamClient.CreateSystemBotAsync(new TeamAddBotParam { Name = Guid.NewGuid().ToString(), RoleId = simpleRole.RoleId })
             : await TeamClient.CreateAppBotAsync(App.AppId, new TeamAddBotParam { Name = Guid.NewGuid().ToString(), RoleId = simpleRole.RoleId });
-        SetApiKey(apiKey);
+
+        HttpClient.DefaultRequestHeaders.Authorization = setAsCurrent
+            ? AuthenticationHeaderValue.Parse(apiKey.Authorization) : oldAuthorization;
+
         return apiKey;
     }
 
