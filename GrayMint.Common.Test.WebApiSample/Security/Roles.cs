@@ -51,6 +51,18 @@ public static class Roles
         }.Concat(AppAdmin.Permissions).ToArray()
     };
 
+    public static SimpleRole SystemReader { get; } = new()
+    {
+        RoleName = nameof(SystemReader),
+        RoleId = Guid.Parse("{423FDF7C-D973-484C-9064-1167A75F1467}"),
+        IsSystem = true,
+        Permissions = new[]
+        {
+            nameof(Permissions.SystemRead),
+            nameof(TeamPermissions.SystemTeamRead)
+        }.Concat(AppReader.Permissions).ToArray()
+    };
+
     public static SimpleRole SystemAdmin { get; } = new()
     {
         RoleName = nameof(SystemAdmin),

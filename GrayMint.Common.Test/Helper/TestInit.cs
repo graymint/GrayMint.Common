@@ -7,6 +7,7 @@ using GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
 using GrayMint.Common.Test.Api;
 using GrayMint.Common.Test.WebApiSample;
 using Microsoft.Extensions.Options;
+using GrayMint.Common.AspNetCore.Auth.BotAuthentication;
 
 namespace GrayMint.Common.Test.Helper;
 
@@ -37,7 +38,7 @@ public class TestInit : IDisposable
                 builder.UseEnvironment(environment);
                 builder.ConfigureServices(services =>
                 {
-                    _ = services;
+                    services.AddScoped<IBotAuthenticationProvider, TestBotAuthenticationProvider>();
                 });
             });
 
@@ -54,13 +55,8 @@ public class TestInit : IDisposable
     private async Task Init()
     {
         SystemAdminApiKey = await TeamClient.CreateSystemApiKeyAsync();
-        SetApiKey(SystemAdminApiKey);
+        HttpClient.DefaultRequestHeaders.Authorization = AuthenticationHeaderValue.Parse(SystemAdminApiKey.Authorization);
         App = await AppsClient.CreateAppAsync(Guid.NewGuid().ToString());
-    }
-
-    public void SetApiKey(ApiKeyResult apiKey)
-    {
-        HttpClient.DefaultRequestHeaders.Authorization = AuthenticationHeaderValue.Parse(apiKey.Authorization);
     }
 
     public async Task<ApiKeyResult> AddNewUser(SimpleRole simpleRole, bool setAsCurrent = true)
@@ -85,6 +81,12 @@ public class TestInit : IDisposable
         await testInit.Init();
         return testInit;
     }
+
+    public void SetApiKey(ApiKeyResult apiKey)
+    {
+        HttpClient.DefaultRequestHeaders.Authorization = AuthenticationHeaderValue.Parse(apiKey.Authorization);
+    }
+
 
     public static string NewEmail()
     {

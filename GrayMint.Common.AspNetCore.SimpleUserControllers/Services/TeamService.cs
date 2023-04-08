@@ -140,8 +140,14 @@ public class TeamService
 
     public async Task<UserRole> GetUserRole(string appId, Guid userId)
     {
+        var userRole = await GetUserRoleOrNull(appId, userId);
+        return userRole ?? throw new NotExistsException();
+    }
+
+    public async Task<UserRole?> GetUserRoleOrNull(string appId, Guid userId)
+    {
         var userRoles = await _simpleRoleProvider.GetUserRoles(userId: userId, appId: appId);
-        return userRoles.Single(x => x.User.UserId == userId);
+        return userRoles.SingleOrDefault(x => x.User.UserId == userId);
     }
 
     public async Task<UserRole> UpdateUser(string appId, Guid userId, TeamUpdateUserParam updateParam)

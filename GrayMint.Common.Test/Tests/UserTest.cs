@@ -1,9 +1,18 @@
 using System.Net;
+using GrayMint.Common.AspNetCore.SimpleUserControllers.Exceptions;
+using System.Security.Claims;
 using GrayMint.Common.Client;
 using GrayMint.Common.Test.Api;
 using GrayMint.Common.Test.Helper;
 using GrayMint.Common.Test.WebApiSample.Security;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Namotion.Reflection;
+using GrayMint.Common.AspNetCore.Auth.BotAuthentication;
+using static System.Formats.Asn1.AsnWriter;
+using static System.Net.WebRequestMethods;
+using System.Net.Http.Headers;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GrayMint.Common.Test.Tests;
 
@@ -129,4 +138,48 @@ public class UserTest
         }
     }
 
+    private static async Task<AuthenticationHeaderValue> CreateUnregisteredUserAuthorization(IServiceScope scope, string email, Claim[]? claims = null)
+    {
+        var claimsIdentity = new ClaimsIdentity();
+        claimsIdentity.AddClaim(new Claim(JwtRegisteredClaimNames.Sub, email));
+        claimsIdentity.AddClaim(new Claim(JwtRegisteredClaimNames.Email, email));
+        claimsIdentity.AddClaim(new Claim("test_authenticated", "1"));
+        if (claims != null)
+            claimsIdentity.AddClaims(claims);
+
+        var authenticationTokenBuilder = scope.ServiceProvider.GetRequiredService<BotAuthenticationTokenBuilder>();
+        return await authenticationTokenBuilder.CreateAuthenticationHeader(claimsIdentity);
+    }
+
+    [TestMethod]
+    public async Task RegisterCurrentUser()
+    {
+        var testInit = await TestInit.Create();
+        var userEmail = TestInit.NewEmail();
+
+        // ------------
+        // Check: New user should not exist if not he hasn't registered yet
+        // ------------
+        testInit.HttpClient.DefaultRequestHeaders.Authorization = await CreateUnregisteredUserAuthorization(testInit.Scope, userEmail);
+        try
+        {
+            await testInit.TeamClient.GetCurrentUserAppsAsync();
+            Assert.Fail("User should not exist!");
+        }
+        catch (ApiException ex)
+        {
+            Assert.AreEqual(nameof(UnregisteredUser), ex.ExceptionTypeName);
+        }
+
+        // ------------
+        // Check: Register current user
+        // ------------
+        await testInit.TeamClient.RegisterCurrentUserAsync();
+        var user = await testInit.TeamClient.GetCurrentUserAsync();
+        Assert.AreEqual(userEmail, user.Email);
+
+        // Get Project Get
+        var apps = await testInit.TeamClient.GetCurrentUserAppsAsync();
+        Assert.AreEqual(0, apps.Count);
+    }
 }

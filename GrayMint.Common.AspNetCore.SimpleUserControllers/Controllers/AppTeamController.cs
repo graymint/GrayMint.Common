@@ -101,8 +101,8 @@ public abstract class AppTeamController<TAppId, TApp, TUser, TUserRole, TRole>
     public async Task<IEnumerable<TApp>> GetCurrentUserApps()
     {
         var userId = await UserService.GetUserId(User);
-        var userRoles = await UserService.GetAppUserRoles(userId: userId);
-        var appIds = userRoles.Select(x => ToAppIdDto(x.AppId));
+        var userRoles = await UserService.GetUserRoles(userId: userId);
+        var appIds = userRoles.Where(x => x.AppId != "*").Select(x => ToAppIdDto(x.AppId));
         return await GetApps(appIds);
     }
 
@@ -120,8 +120,8 @@ public abstract class AppTeamController<TAppId, TApp, TUser, TUserRole, TRole>
     private async Task ValidateAppOwnerPolicy(ClaimsPrincipal claimsPrincipal, string appId, Guid userId, Guid? newRoleId)
     {
         var callerUserId = await UserService.GetUserId(claimsPrincipal);
-        var callerUserRole = await UserService.GetUserRole(appId, callerUserId);
-        if (callerUserId != userId || callerUserRole == null || !await TeamService.IsAppOwnerRole(appId, callerUserRole.Role.RoleId)) 
+        var callerUserRole = await TeamService.GetUserRoleOrNull(appId, callerUserId);
+        if (callerUserId != userId || callerUserRole == null || !await TeamService.IsAppOwnerRole(appId, callerUserRole.Role.RoleId))
             return; // caller is not the app owner
 
         var isNewRoleOwner = newRoleId != null && await TeamService.IsAppOwnerRole(appId, newRoleId.Value);
@@ -131,7 +131,7 @@ public abstract class AppTeamController<TAppId, TApp, TUser, TUserRole, TRole>
     }
 }
 
-public abstract class AppTeamController<TAppId, TApp> 
+public abstract class AppTeamController<TAppId, TApp>
     : AppTeamController<TAppId, TApp, User, UserRole, Role> where TAppId : notnull
 {
     protected AppTeamController(TeamService teamService, UserService userService) : base(teamService, userService)

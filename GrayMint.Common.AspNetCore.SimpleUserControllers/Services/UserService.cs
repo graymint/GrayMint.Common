@@ -41,14 +41,11 @@ public class UserService
         return _simpleUserProvider.Get(userId);
     }
 
-    public async Task<UserRole?> GetUserRole(string appId, Guid userId)
-    {
-        var userRoles = await _simpleRoleProvider.GetUserRoles(userId: userId, appId: appId);
-        return userRoles.SingleOrDefault();
-    }
-
     public async Task<User> Register(ClaimsPrincipal userPrincipal)
     {
+        if (!_userControllerOptions.AllowUserSelfRegister)
+            throw new UnauthorizedAccessException("Self-Register is not enabled.");
+
         var email =
             userPrincipal.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.Email)?.Value.ToLower()
             ?? throw new UnauthorizedAccessException("Could not find user's email claim!");
@@ -64,10 +61,10 @@ public class UserService
         return ret;
     }
 
-    public async Task<IEnumerable<UserRole>> GetAppUserRoles(Guid userId)
+    public async Task<IEnumerable<UserRole>> GetUserRoles(Guid userId)
     {
         var userRoles = await _simpleRoleProvider.GetUserRoles(userId: userId);
-        return userRoles.Where(x => x.AppId != "*");
+        return userRoles;
     }
 
     public async Task<ApiKeyResult> ResetApiKey(Guid userId)
