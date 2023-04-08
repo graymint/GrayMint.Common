@@ -163,7 +163,7 @@ public class UserTest
         testInit.HttpClient.DefaultRequestHeaders.Authorization = await CreateUnregisteredUserAuthorization(testInit.Scope, userEmail);
         try
         {
-            await testInit.TeamClient.GetCurrentUserAppsAsync();
+            await testInit.TeamClient.GetCurrentUserAsync();
             Assert.Fail("User should not exist!");
         }
         catch (ApiException ex)
@@ -178,7 +178,7 @@ public class UserTest
         var user = await testInit.TeamClient.GetCurrentUserAsync();
         Assert.AreEqual(userEmail, user.Email);
 
-        // Get Project Get
+        // Get App Get
         var apps = await testInit.TeamClient.GetCurrentUserAppsAsync();
         Assert.AreEqual(0, apps.Count);
     }
