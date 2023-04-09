@@ -20,7 +20,6 @@ public class TestInit : IDisposable
     public int AppId => App.AppId;
     public CognitoAuthenticationOptions CognitoAuthenticationOptions => WebApp.Services.GetRequiredService<IOptions<CognitoAuthenticationOptions>>().Value;
     public AppsClient AppsClient => new(HttpClient);
-    public UsersClient UsersClient => new(HttpClient);
     public ItemsClient ItemsClient => new(HttpClient);
     public TeamClient TeamClient => new(HttpClient);
     public ApiKeyResult SystemAdminApiKey { get; private set; } = default!;

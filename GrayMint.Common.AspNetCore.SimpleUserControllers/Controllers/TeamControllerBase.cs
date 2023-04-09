@@ -9,6 +9,7 @@ using System.Security.Claims;
 namespace GrayMint.Common.AspNetCore.SimpleUserControllers.Controllers;
 
 [Authorize]
+[Route("/api/v{version:apiVersion}/team")]
 public abstract class TeamControllerBase<TResource, TResourceId, TUser, TUserRole, TRole>
     : ControllerBase where TResourceId : notnull
 {
@@ -92,7 +93,7 @@ public abstract class TeamControllerBase<TResource, TResourceId, TUser, TUserRol
         return res.Select(ToDto);
     }
 
-    [HttpGet("resources/{resourceId}/bots")]
+    [HttpPost("resources/{resourceId}/bots")]
     public async Task<ApiKeyResult> CreateBot(TResourceId resourceId, TeamAddBotParam addParam)
     {
         await VerifyWritePermission(User, resourceId, addParam.RoleId);
