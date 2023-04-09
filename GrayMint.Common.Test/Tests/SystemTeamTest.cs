@@ -47,7 +47,7 @@ public class AppTeamControllerTest
     }
 
     [TestMethod]
-    public async Task List_user_apps()
+    public async Task List_UserApps()
     {
         using var testInit1 = await TestInit.Create();
         await testInit1.AddNewUser(Roles.AppOwner);
@@ -181,7 +181,7 @@ public class AppTeamControllerTest
     }
 
     [TestMethod]
-    public async Task List()
+    public async Task List_Users()
     {
         using var testInit = await TestInit.Create();
 
