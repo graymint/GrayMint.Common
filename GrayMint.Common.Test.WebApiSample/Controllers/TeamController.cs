@@ -8,24 +8,28 @@ using Microsoft.EntityFrameworkCore;
 namespace GrayMint.Common.Test.WebApiSample.Controllers;
 
 [ApiController]
-public class TeamController : AppTeamController<int, App>
+public class TeamController : TeamControllerBase<App, int>
 {
     private readonly WebApiSampleDbContext _dbContext;
 
     public TeamController(
-        TeamService teamService, 
-        UserService userService, 
-        WebApiSampleDbContext dbContext) : 
-        base(teamService, userService)
+        RoleService roleService,
+        WebApiSampleDbContext dbContext) :
+        base(roleService)
     {
         _dbContext = dbContext;
     }
 
-    protected override int ToAppIdDto(string appId) => int.Parse(appId);
-    protected override async Task<IEnumerable<App>> GetApps(IEnumerable<int> appIds)
+    protected override string ToResourceId(int appId)
     {
+        return appId == 0 ? "*" : appId.ToString();
+    }
+
+    protected override async Task<IEnumerable<App>> GetResources(string[] resourceIds)
+    {
+        var allApps = resourceIds.Contains("*");
         var ret = await _dbContext.Apps
-            .Where(x=>appIds.Contains(x.AppId))
+            .Where(x => allApps || resourceIds.Contains(x.AppId.ToString()))
             .ToArrayAsync();
         return ret;
     }

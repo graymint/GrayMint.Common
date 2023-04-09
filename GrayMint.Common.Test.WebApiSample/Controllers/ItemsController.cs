@@ -55,7 +55,6 @@ public class ItemsController : ControllerBase
         return ret;
     }
 
-
     [HttpDelete]
     [AuthorizePermission(Permissions.ItemWrite)]
     public async Task DeleteByPermission(int appId, string itemName)

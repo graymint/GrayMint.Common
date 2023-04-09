@@ -35,8 +35,8 @@ public static class Roles
         IsSystem = false,
         Permissions = new[]
         {
-            TeamPermissions.AppTeamWrite,
-            TeamPermissions.AppTeamRead,
+            RolePermissions.RoleWrite,
+            RolePermissions.RoleRead,
         }.Concat(AppWriter.Permissions).ToArray()
     };
 
@@ -47,7 +47,7 @@ public static class Roles
         IsSystem = false,
         Permissions = new[]
         {
-            TeamPermissions.AppTeamWriteOwner,
+            RolePermissions.RoleWriteOwner,
         }.Concat(AppAdmin.Permissions).ToArray()
     };
 
@@ -59,7 +59,6 @@ public static class Roles
         Permissions = new[]
         {
             nameof(Permissions.SystemRead),
-            nameof(TeamPermissions.SystemTeamRead)
         }.Concat(AppReader.Permissions).ToArray()
     };
 
@@ -72,8 +71,6 @@ public static class Roles
         {
             nameof(Permissions.SystemWrite),
             nameof(Permissions.SystemRead),
-            nameof(TeamPermissions.SystemTeamWrite),
-            nameof(TeamPermissions.SystemTeamRead)
         }.Concat(AppOwner.Permissions).ToArray()
     };
 

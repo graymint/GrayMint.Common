@@ -11,7 +11,6 @@ public static class SimpleUserControllersExtension
     {
         options ??= new SimpleUserControllerOptions();
         services.AddSingleton(Options.Create(options));
-        services.AddScoped<UserService>();
-        services.AddScoped<TeamService>();
+        services.AddScoped<RoleService>();
     }
 }

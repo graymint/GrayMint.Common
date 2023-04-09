@@ -40,7 +40,7 @@ public class AwsCognitoTest
         // add user to appCreator role
         try
         {
-            await testInit.TeamClient.AddSystemUserAsync(new Api.TeamAddUserParam
+            await testInit.TeamClient.AddUserAsync(0, new Api.TeamAddUserParam
             {
                 Email = "unit-tester@local",
                 RoleId = Roles.SystemAdmin.RoleId
