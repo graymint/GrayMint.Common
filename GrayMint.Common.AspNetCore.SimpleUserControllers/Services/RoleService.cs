@@ -89,7 +89,7 @@ public class RoleService
             IsBot = true
         });
 
-        await _simpleRoleProvider.AddUser(roleId: addParam.RoleId, userId: user.UserId, appId: resourceId);
+        await _simpleRoleProvider.AddUser(roleId: addParam.RoleId, userId: user.UserId, resourceId: resourceId);
         var authenticationHeader = await _botAuthenticationTokenBuilder.CreateAuthenticationHeader(user.UserId.ToString(), user.Email);
         var ret = new ApiKeyResult
         {
@@ -123,18 +123,18 @@ public class RoleService
 
     public async Task<UserRole> AddUser(string resourceId, Guid roleId, Guid userId)
     {
-        var userRoles = await _simpleRoleProvider.GetUserRoles(appId: resourceId, userId: userId);
+        var userRoles = await _simpleRoleProvider.GetUserRoles(resourceId: resourceId, userId: userId);
         if (userRoles.Any())
             throw new AlreadyExistsException("Users");
 
-        await _simpleRoleProvider.AddUser(roleId: roleId, userId: userId, appId: resourceId);
-        userRoles = await _simpleRoleProvider.GetUserRoles(userId: userId, appId: resourceId);
+        await _simpleRoleProvider.AddUser(roleId: roleId, userId: userId, resourceId: resourceId);
+        userRoles = await _simpleRoleProvider.GetUserRoles(userId: userId, resourceId: resourceId);
         return userRoles.Single(x => x.User.UserId == userId);
     }
 
     public Task<UserRole[]> GetUserRoles(string resourceId, Guid userId)
     {
-        return _simpleRoleProvider.GetUserRoles(appId: resourceId, userId: userId);
+        return _simpleRoleProvider.GetUserRoles(resourceId: resourceId, userId: userId);
     }
 
     public Task<UserRole[]> GetUserRoles(Guid userId)
@@ -154,12 +154,12 @@ public class RoleService
 
     public async Task<IEnumerable<UserRole>> GetUsers(string resourceId)
     {
-        var userRoles = await _simpleRoleProvider.GetUserRoles(appId: resourceId);
+        var userRoles = await _simpleRoleProvider.GetUserRoles(resourceId: resourceId);
         return userRoles;
     }
     public Task RemoveUser(string resourceId, Guid roleId, Guid userId)
     {
-        return _simpleRoleProvider.RemoveUser(roleId, userId, resourceId);
+        return _simpleRoleProvider.RemoveUser(resourceId: resourceId, roleId, userId);
     }
 
     public Task DeleteUser(Guid userId)

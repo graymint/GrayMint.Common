@@ -3,11 +3,11 @@
 public class SimpleUserRole
 {
     public string RoleName { get; set; }
-    public string AppId { get; set; }
+    public string ResourceId { get; set; }
 
-    public SimpleUserRole(string roleName, string appId)
+    public SimpleUserRole(string roleName, string resourceId)
     {
         RoleName = roleName;
-        AppId = appId;
+        ResourceId = resourceId;
     }
 }

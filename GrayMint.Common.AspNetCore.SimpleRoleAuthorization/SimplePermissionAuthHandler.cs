@@ -28,12 +28,12 @@ internal class SimplePermissionAuthHandler : AuthorizationHandler<SimplePermissi
 
         succeeded |= context.User.HasClaim(
             SimpleRoleAuth.PermissionClaimType, 
-            SimpleRoleAuth.CreateAppPermission("*", requirement.PermissionId));
+            SimpleRoleAuth.CreatePermission("*", requirement.PermissionId));
 
         succeeded |= requestAppId != null &&
                      context.User.HasClaim(
                          SimpleRoleAuth.PermissionClaimType, 
-                         SimpleRoleAuth.CreateAppPermission(requestAppId, requirement.PermissionId));
+                         SimpleRoleAuth.CreatePermission(requestAppId, requirement.PermissionId));
 
         if (succeeded)
             context.Succeed(requirement);

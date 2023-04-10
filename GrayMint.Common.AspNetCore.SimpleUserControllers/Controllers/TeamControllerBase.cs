@@ -73,7 +73,7 @@ public abstract class TeamControllerBase<TResource, TResourceId, TUser, TUserRol
     {
         var userId = await RoleService.GetUserId(User);
         var userRoles = await RoleService.GetUserRoles(userId: userId);
-        var resourceIds = userRoles.Distinct().Select(x => x.AppId);
+        var resourceIds = userRoles.Distinct().Select(x => x.ResourceId);
         return await GetResources(resourceIds);
     }
 

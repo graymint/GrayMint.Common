@@ -8,24 +8,24 @@ public static class SimpleRoleAuth
     public const string RoleClaimType = "app-role";
     public const string PermissionClaimType = "app-permission";
 
-    public static string CreateAppRoleName(string appId, string roleName)
+    public static string CreateRoleName(string resourceId, string roleName)
     {
-        return $"/apps/{appId}/roles/{roleName}".ToLower();
+        return $"/resources/{resourceId}/roles/{roleName}".ToLower();
     }
 
-    public static Claim CreateAppRoleClaim(string appId, string roleName)
+    public static Claim CreateRoleClaim(string resourceId, string roleName)
     {
-        return new Claim(RoleClaimType, CreateAppRoleName(appId, roleName));
+        return new Claim(RoleClaimType, CreateRoleName(resourceId, roleName));
     }
 
-    public static string CreateAppPermission(string appId, string permissionId)
+    public static string CreatePermission(string resourceId, string permissionId)
     {
-        return $"/apps/{appId}/permissions/{permissionId}".ToLower();
+        return $"/resources/{resourceId}/permissions/{permissionId}".ToLower();
     }
 
-    public static Claim CreateAppPermissionClaim(string appId, string permissionId)
+    public static Claim CreatePermissionClaim(string resourceId, string permissionId)
     {
-        return new Claim(PermissionClaimType, CreateAppPermission(appId, permissionId));
+        return new Claim(PermissionClaimType, CreatePermission(resourceId, permissionId));
     }
 
     public static string CreatePolicyNameForPermission(string permissionId)

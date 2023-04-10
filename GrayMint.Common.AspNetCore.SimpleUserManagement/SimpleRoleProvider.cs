@@ -15,7 +15,7 @@ public class SimpleRoleProvider
         _simpleUserDbContext = simpleUserDbContext;
     }
 
-    public async Task<UserRole> AddUser(Guid roleId, Guid userId, string appId)
+    public async Task<UserRole> AddUser(string resourceId, Guid roleId, Guid userId)
     {
         _simpleUserDbContext.ChangeTracker.Clear();
 
@@ -24,15 +24,15 @@ public class SimpleRoleProvider
             {
                 RoleId = roleId,
                 UserId = userId,
-                AppId = appId,
+                ResourceId = resourceId,
             });
         await _simpleUserDbContext.SaveChangesAsync();
 
-        var userRoles = await GetUserRoles(roleId:roleId, userId: userId, appId: appId);
+        var userRoles = await GetUserRoles(resourceId: resourceId, roleId:roleId, userId: userId);
         return userRoles.Single();
     }
 
-    public async Task RemoveUser(Guid roleId, Guid userId, string appId)
+    public async Task RemoveUser(string resourceId, Guid roleId, Guid userId)
     {
         _simpleUserDbContext.ChangeTracker.Clear();
         _simpleUserDbContext.UserRoles.Remove(
@@ -40,7 +40,7 @@ public class SimpleRoleProvider
             {
                 UserId = userId,
                 RoleId = roleId,
-                AppId = appId
+                ResourceId = resourceId
             });
 
         try
@@ -101,7 +101,7 @@ public class SimpleRoleProvider
         await _simpleUserDbContext.SaveChangesAsync();
     }
 
-    public async Task<UserRole[]> GetUserRoles(Guid? roleId = null, Guid? userId = null, string? appId = null)
+    public async Task<UserRole[]> GetUserRoles(Guid? roleId = null, Guid? userId = null, string? resourceId = null)
     {
         var roles = await _simpleUserDbContext.UserRoles
             .Include(x => x.Role)
@@ -109,7 +109,7 @@ public class SimpleRoleProvider
             .Where(x =>
                 (roleId == null || x.RoleId == roleId) &&
                 (userId == null || x.UserId == userId) &&
-                (appId == null || x.AppId == appId))
+                (resourceId == null || x.ResourceId == resourceId))
             .ToArrayAsync();
 
         return roles.Select(x => x.ToDto()).ToArray();

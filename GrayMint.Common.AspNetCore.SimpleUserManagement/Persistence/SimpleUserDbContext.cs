@@ -62,14 +62,14 @@ public partial class SimpleUserDbContext : DbContext
 
             entity.HasIndex(e => e.RoleName)
                 .IsUnique();
-
-            entity.Property(e => e.RoleId)
-                .HasMaxLength(int.MaxValue);
         });
 
         modelBuilder.Entity<UserRoleModel>(entity =>
         {
-            entity.HasKey(e => new { e.AppId, e.UserId, e.RoleId });
+            entity.HasKey(e => new { AppId = e.ResourceId, e.UserId, e.RoleId });
+
+            entity.Property(x=>x.ResourceId)
+                .HasMaxLength(100);
 
             entity.HasOne(e => e.Role)
                 .WithMany(d=>d.UserRoles)

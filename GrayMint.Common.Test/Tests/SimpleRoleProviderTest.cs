@@ -95,26 +95,26 @@ public class SimpleRoleProviderTest
         });
 
         // Add the user to roles
-        await roleProvider.AddUser(role.RoleId, user.UserId, "*");
-        await roleProvider.AddUser(role.RoleId, user.UserId, "1");
+        await roleProvider.AddUser("*", role.RoleId, user.UserId);
+        await roleProvider.AddUser("1", role.RoleId, user.UserId);
 
         // Check user Roles
         var userRoles = await roleProvider.GetUserRoles(userId: user.UserId);
         Assert.AreEqual(2, userRoles.Length);
-        Assert.IsTrue(userRoles.Any(x => x.AppId == "*" && x.Role.RoleName == role.RoleName));
-        Assert.IsTrue(userRoles.Any(x => x.AppId == "1" && x.Role.RoleName == role.RoleName));
+        Assert.IsTrue(userRoles.Any(x => x.ResourceId == "*" && x.Role.RoleName == role.RoleName));
+        Assert.IsTrue(userRoles.Any(x => x.ResourceId == "1" && x.Role.RoleName == role.RoleName));
 
         // Check user Roles
         userRoles = await roleProvider.GetUserRoles(roleId: role.RoleId);
         Assert.AreEqual(2, userRoles.Length);
-        Assert.IsTrue(userRoles.Any(x => x.AppId == "*" && x.Role.RoleName == role.RoleName));
-        Assert.IsTrue(userRoles.Any(x => x.AppId == "1" && x.Role.RoleName == role.RoleName));
+        Assert.IsTrue(userRoles.Any(x => x.ResourceId == "*" && x.Role.RoleName == role.RoleName));
+        Assert.IsTrue(userRoles.Any(x => x.ResourceId == "1" && x.Role.RoleName == role.RoleName));
 
         // Remove
-        await roleProvider.RemoveUser(role.RoleId, user.UserId, "*");
+        await roleProvider.RemoveUser("*", role.RoleId, user.UserId);
         try
         {
-            await roleProvider.RemoveUser(role.RoleId, user.UserId, "*");
+            await roleProvider.RemoveUser("*", role.RoleId, user.UserId);
             Assert.Fail("NotExistsException was expected.");
         }
         catch (Exception ex)
@@ -152,9 +152,9 @@ public class SimpleRoleProviderTest
         });
 
         // Add the user to roles
-        await roleProvider.AddUser(role1.RoleId, user.UserId, "*");
-        await roleProvider.AddUser(role1.RoleId, user.UserId, "1");
-        await roleProvider.AddUser(role2.RoleId, user.UserId, "1");
+        await roleProvider.AddUser("*", role1.RoleId, user.UserId);
+        await roleProvider.AddUser("1", role1.RoleId, user.UserId);
+        await roleProvider.AddUser("1", role2.RoleId, user.UserId);
 
         var identity = new ClaimsIdentity();
         identity.AddClaim(new Claim(ClaimTypes.Email, user.Email) );
@@ -162,8 +162,8 @@ public class SimpleRoleProviderTest
         Assert.IsNotNull(authUser);
         Assert.AreEqual(user.AuthCode, authUser.AuthorizationCode);
         Assert.AreEqual(3, authUser.UserRoles.Length);
-        Assert.IsTrue(authUser.UserRoles.Any(x => x.AppId == "*" && x.RoleName == role1.RoleName));
-        Assert.IsTrue(authUser.UserRoles.Any(x => x.AppId == "1" && x.RoleName == role1.RoleName));
-        Assert.IsTrue(authUser.UserRoles.Any(x => x.AppId == "1" && x.RoleName == role2.RoleName));
+        Assert.IsTrue(authUser.UserRoles.Any(x => x.ResourceId == "*" && x.RoleName == role1.RoleName));
+        Assert.IsTrue(authUser.UserRoles.Any(x => x.ResourceId == "1" && x.RoleName == role1.RoleName));
+        Assert.IsTrue(authUser.UserRoles.Any(x => x.ResourceId == "1" && x.RoleName == role2.RoleName));
     }
 }

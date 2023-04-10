@@ -59,7 +59,7 @@ public class SimpleUserProvider : ISimpleUserProvider
         {
             UserId = user.UserId.ToString(),
             AuthorizationCode = user.AuthCode,
-            UserRoles = user.UserRoles!.Select(x => new SimpleUserRole(x.Role!.RoleName, x.AppId)).ToArray() //not user RoleName as Id
+            UserRoles = user.UserRoles!.Select(x => new SimpleUserRole(x.Role!.RoleName, x.ResourceId)).ToArray() //not user RoleName as Id
         };
 
         _memoryCache.Set(email, simpleUser, _simpleUserOptions.CacheTimeout);

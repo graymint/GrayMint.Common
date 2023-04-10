@@ -25,7 +25,7 @@ internal class SimpleRoleAuthClaimsTransformation : IClaimsTransformation
         var claimsIdentity = new ClaimsIdentity();
         foreach (var claim in principal.Claims.Where(x => x.Type == ClaimTypes.Role))
         {
-            claimsIdentity.AddClaim(SimpleRoleAuth.CreateAppRoleClaim("*", claim.Value));
+            claimsIdentity.AddClaim(SimpleRoleAuth.CreateRoleClaim("*", claim.Value));
             AddPermissionClaims(claimsIdentity, "*", claim.Value, simpleRolePermissions);
         }
 
@@ -39,11 +39,11 @@ internal class SimpleRoleAuthClaimsTransformation : IClaimsTransformation
             // /apps/appId/RoleName
             foreach (var userRole in simpleUser.UserRoles)
             {
-                claimsIdentity.AddClaim(SimpleRoleAuth.CreateAppRoleClaim(userRole.AppId, userRole.RoleName));
-                AddPermissionClaims(claimsIdentity, userRole.AppId, userRole.RoleName, simpleRolePermissions);
+                claimsIdentity.AddClaim(SimpleRoleAuth.CreateRoleClaim(userRole.ResourceId, userRole.RoleName));
+                AddPermissionClaims(claimsIdentity, userRole.ResourceId, userRole.RoleName, simpleRolePermissions);
 
                 // add standard claim role
-                if (userRole.AppId == "*" && !claimsIdentity.HasClaim(ClaimTypes.Role, userRole.RoleName))
+                if (userRole.ResourceId == "*" && !claimsIdentity.HasClaim(ClaimTypes.Role, userRole.RoleName))
                     claimsIdentity.AddClaim(new Claim(ClaimTypes.Role, userRole.RoleName));
             }
         }
@@ -66,7 +66,7 @@ internal class SimpleRoleAuthClaimsTransformation : IClaimsTransformation
         return principal;
     }
 
-    private static void AddPermissionClaims(ClaimsIdentity claimsIdentity, string appId, string roleName,
+    private static void AddPermissionClaims(ClaimsIdentity claimsIdentity, string resourceId, string roleName,
         IEnumerable<SimpleRole> rolePermissions)
     {
         var rolePermission = rolePermissions.FirstOrDefault(x => x.RoleName == roleName);
@@ -75,7 +75,7 @@ internal class SimpleRoleAuthClaimsTransformation : IClaimsTransformation
 
         foreach (var permissionId in rolePermission.Permissions)
         {
-            var claim = SimpleRoleAuth.CreateAppPermissionClaim(appId, permissionId);
+            var claim = SimpleRoleAuth.CreatePermissionClaim(resourceId, permissionId);
             if (!claimsIdentity.HasClaim(claim.Type, claim.Value))
                 claimsIdentity.AddClaim(claim);
         }

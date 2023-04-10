@@ -1977,11 +1977,11 @@ namespace GrayMint.Common.Test.Api
     public partial class UserRole
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("appId")]
+        [System.Text.Json.Serialization.JsonPropertyName("resourceId")]
 
         [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.Never)]   
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string AppId { get; set; } = default!;
+        public string ResourceId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("user")]
 

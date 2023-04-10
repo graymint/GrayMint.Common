@@ -11,7 +11,7 @@ internal static class UserRoleConverter
         {
             User = model.User?.ToDto() ?? throw new Exception("User has not been fetched."),
             Role = model.Role?.ToDto() ?? throw new Exception("Role has not been fetched."),
-            AppId = model.AppId
+            ResourceId = model.ResourceId
         };
         return userRole;
     }
