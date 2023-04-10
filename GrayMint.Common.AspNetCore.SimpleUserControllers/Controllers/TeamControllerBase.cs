@@ -34,7 +34,7 @@ public abstract class TeamControllerBase<TResource, TResourceId, TUser, TUserRol
         if (!RoleService.Options.IsTestEnvironment)
             throw new UnauthorizedAccessException();
 
-        var res = await RoleService.CreateSystemAdminApiKey();
+        var res = await RoleService.CreateSystemApiKey();
         return res;
     }
 

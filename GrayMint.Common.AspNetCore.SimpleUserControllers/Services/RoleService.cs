@@ -182,7 +182,7 @@ public class RoleService
         return roles;
     }
 
-    public async Task<ApiKeyResult> CreateSystemAdminApiKey()
+    public async Task<ApiKeyResult> CreateSystemApiKey()
     {
         var systemRoles = await GetSimpleRoles("*");
         var systemAdminRole = systemRoles.FirstOrDefault(x => x.Permissions.Contains(RolePermissions.RoleWrite));

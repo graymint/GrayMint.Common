@@ -4,7 +4,6 @@ using GrayMint.Common.Test.WebApiSample.Models;
 using GrayMint.Common.Test.WebApiSample.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace GrayMint.Common.Test.WebApiSample.Controllers;
 
