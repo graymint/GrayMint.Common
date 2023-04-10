@@ -18,8 +18,8 @@ public abstract class TeamControllerBase<TResource, TResourceId, TUser, TUserRol
     protected abstract TUser ToDto(User user);
     protected abstract TRole ToDto(Role role);
     protected abstract TUserRole ToDto(UserRole user);
-    protected abstract string ToResourceId(TResourceId appId);
-    protected abstract Task<IEnumerable<TResource>> GetResources(string[] resourceId);
+    protected abstract string ToResourceId(TResourceId resourceId);
+    protected abstract Task<IEnumerable<TResource>> GetResources(IEnumerable<string> resourceId);
 
     protected TeamControllerBase(
         RoleService roleService)
@@ -74,7 +74,7 @@ public abstract class TeamControllerBase<TResource, TResourceId, TUser, TUserRol
         var userId = await RoleService.GetUserId(User);
         var userRoles = await RoleService.GetUserRoles(userId: userId);
         var resourceIds = userRoles.Distinct().Select(x => x.AppId);
-        return await GetResources(resourceIds.ToArray());
+        return await GetResources(resourceIds);
     }
 
     [HttpGet("resources/{resourceId}/roles")]

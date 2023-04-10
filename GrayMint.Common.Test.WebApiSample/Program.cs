@@ -6,6 +6,7 @@ using GrayMint.Common.AspNetCore.SimpleUserControllers;
 using GrayMint.Common.AspNetCore.SimpleUserManagement;
 using GrayMint.Common.Test.WebApiSample.Persistence;
 using GrayMint.Common.Test.WebApiSample.Security;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 
 namespace GrayMint.Common.Test.WebApiSample;
@@ -36,5 +37,24 @@ public class Program
 
         await GrayMintApp.RunAsync(webApp, args);
 
+    }
+
+    public static void Google(object builder)
+    {
+        /*
+        builder.Services
+            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.Authority = "https://accounts.google.com";
+                options.Audience = "x.apps.googleusercontent.com";
+            })
+            .AddGoogle(options =>
+            {
+                options.ClientId = "xxx.apps.googleusercontent.com";
+                options.ClientSecret = "xx";
+            });
+        */
+        throw new NotImplementedException();
     }
 }

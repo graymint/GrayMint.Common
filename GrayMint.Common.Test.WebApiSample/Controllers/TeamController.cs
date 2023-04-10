@@ -4,6 +4,7 @@ using GrayMint.Common.Test.WebApiSample.Models;
 using GrayMint.Common.Test.WebApiSample.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace GrayMint.Common.Test.WebApiSample.Controllers;
 
@@ -25,11 +26,11 @@ public class TeamController : TeamControllerBase<App, int>
         return appId == 0 ? "*" : appId.ToString();
     }
 
-    protected override async Task<IEnumerable<App>> GetResources(string[] resourceIds)
+    protected override async Task<IEnumerable<App>> GetResources(IEnumerable<string> resourceIds)
     {
-        var allApps = resourceIds.Contains("*");
+        var appIds = resourceIds.Except(new[] { "*" }).Select(int.Parse);
         var ret = await _dbContext.Apps
-            .Where(x => allApps || resourceIds.Contains(x.AppId.ToString()))
+            .Where(x => appIds.Contains(x.AppId))
             .ToArrayAsync();
         return ret;
     }

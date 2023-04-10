@@ -40,7 +40,7 @@ public class RoleService
     {
         var simpleUser = await _simpleUserProvider.FindSimpleUser(claimsPrincipal);
         if (simpleUser == null)
-            throw new UnregisteredUser("User has not been registered.");
+            throw new UnregisteredUser();
 
         return Guid.Parse(simpleUser.UserId);
     }

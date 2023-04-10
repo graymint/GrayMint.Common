@@ -63,14 +63,18 @@ public class TestInit : IDisposable
         var oldAuthorization = HttpClient.DefaultRequestHeaders.Authorization;
         HttpClient.DefaultRequestHeaders.Authorization = AuthenticationHeaderValue.Parse(SystemAdminApiKey.Authorization);
 
-        var apiKey = simpleRole.IsSystem
-            ? await TeamClient.CreateBotAsync(0, new TeamAddBotParam { Name = Guid.NewGuid().ToString(), RoleId = simpleRole.RoleId })
-            : await TeamClient.CreateBotAsync(App.AppId, new TeamAddBotParam { Name = Guid.NewGuid().ToString(), RoleId = simpleRole.RoleId });
+        var resourceId = simpleRole.IsSystem ? 0 : App.AppId;
+        var apiKey = await TeamClient.CreateBotAsync(resourceId, new TeamAddBotParam { Name = Guid.NewGuid().ToString(), RoleId = simpleRole.RoleId });
 
         HttpClient.DefaultRequestHeaders.Authorization = setAsCurrent
             ? AuthenticationHeaderValue.Parse(apiKey.Authorization) : oldAuthorization;
 
         return apiKey;
+    }
+
+    public void SetApiKey(ApiKeyResult apiKey)
+    {
+        HttpClient.DefaultRequestHeaders.Authorization = AuthenticationHeaderValue.Parse(apiKey.Authorization);
     }
 
     public static async Task<TestInit> Create(Dictionary<string, string?>? appSettings = null, string environment = "Development")
@@ -80,12 +84,6 @@ public class TestInit : IDisposable
         await testInit.Init();
         return testInit;
     }
-
-    public void SetApiKey(ApiKeyResult apiKey)
-    {
-        HttpClient.DefaultRequestHeaders.Authorization = AuthenticationHeaderValue.Parse(apiKey.Authorization);
-    }
-
 
     public static string NewEmail()
     {

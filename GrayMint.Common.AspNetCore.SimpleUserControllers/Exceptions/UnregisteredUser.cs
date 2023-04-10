@@ -2,7 +2,7 @@
 
 public class UnregisteredUser : Exception
 {
-    public UnregisteredUser(string message) : base(message)
+    public UnregisteredUser() : base("User has not been registered.")
     {
     }
 }
