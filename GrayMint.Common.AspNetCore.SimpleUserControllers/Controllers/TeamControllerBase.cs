@@ -29,7 +29,7 @@ public abstract class TeamControllerBase<TResource, TResourceId, TUser, TUserRol
 
     [HttpPost("users/system/api-key")]
     [AllowAnonymous]
-    public async Task<ApiKeyResult> CreateSystemApiKey()
+    public async Task<UserApiKey> CreateSystemApiKey()
     {
         if (!RoleService.Options.IsTestEnvironment)
             throw new UnauthorizedAccessException();
@@ -60,7 +60,7 @@ public abstract class TeamControllerBase<TResource, TResourceId, TUser, TUserRol
 
     [HttpPost("users/current/reset-api-key")]
     [Authorize]
-    public async Task<ApiKeyResult> ResetCurrentUserApiKey()
+    public async Task<UserApiKey> ResetCurrentUserApiKey()
     {
         var userId = await RoleService.GetUserId(User);
         var res = await RoleService.ResetUserApiKey(userId);
@@ -89,13 +89,13 @@ public abstract class TeamControllerBase<TResource, TResourceId, TUser, TUserRol
     public async Task<ListResult<TUserRole>> ListUsers(TResourceId resourceId,
         Guid? roleId = null, Guid? userId = null,
         string? search = null, bool? isBot = null,
-        int startIndex = 0, int? recordCount = null)
+        int recordIndex = 0, int? recordCount = null)
     {
         await VerifyRoleReadPermission(User, resourceId);
         var userRoles = await RoleService.ListUsers(resourceId: ToResourceId(resourceId),
             roleId: roleId, userId: userId,
             search: search, isBot: isBot,
-            startIndex: startIndex, recordCount: recordCount);
+            recordIndex: recordIndex, recordCount: recordCount);
 
         var ret = new ListResult<TUserRole>
         {
@@ -106,7 +106,7 @@ public abstract class TeamControllerBase<TResource, TResourceId, TUser, TUserRol
     }
 
     [HttpPost("resources/{resourceId}/bots")]
-    public async Task<ApiKeyResult> AddNewBot(TResourceId resourceId, TeamAddBotParam addParam)
+    public async Task<UserApiKey> AddNewBot(TResourceId resourceId, TeamAddBotParam addParam)
     {
         await VerifyWritePermission(User, resourceId, addParam.RoleId);
 
@@ -118,7 +118,7 @@ public abstract class TeamControllerBase<TResource, TResourceId, TUser, TUserRol
     }
 
     [HttpPost("resources/{resourceId}/bots/{userId:guid}/reset-api-key")]
-    public async Task<ApiKeyResult> ResetBotApiKey(TResourceId resourceId, Guid userId)
+    public async Task<UserApiKey> ResetBotApiKey(TResourceId resourceId, Guid userId)
     {
         var userRoles = await VerifyWritePermission(resourceId, userId);
 

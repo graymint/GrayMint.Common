@@ -104,7 +104,7 @@ public class SimpleRoleProvider
     public async Task<ListResult<UserRole>> ListUserRoles(
         string? resourceId = null, Guid? roleId = null, Guid? userId = null,
         string? search = null, bool? isBot = null,
-        int startIndex = 0, int? recordCount = null)
+        int recordIndex = 0, int? recordCount = null)
     {
         await using var trans = await _simpleUserDbContext.WithNoLockTransaction();
 
@@ -128,13 +128,13 @@ public class SimpleRoleProvider
         var result = await query
             .OrderBy(x => x.ResourceId)
             .ThenBy(x => x.User!.Email)
-            .Skip(startIndex)
+            .Skip(recordIndex)
             .Take(recordCount ?? int.MaxValue)
             .ToArrayAsync();
 
         var ret = new ListResult<UserRole>
         {
-            TotalCount = startIndex == 0 && recordCount == null ? result.Length : await query.CountAsync(),
+            TotalCount = recordIndex == 0 && recordCount == null ? result.Length : await query.CountAsync(),
             Items = result.Select(x => x.ToDto()).ToArray()
         };
 

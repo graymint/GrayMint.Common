@@ -74,7 +74,7 @@ public class RoleService
         return ret.Succeeded;
     }
 
-    public async Task<ApiKeyResult> AddNewBot(string resourceId, TeamAddBotParam addParam)
+    public async Task<UserApiKey> AddNewBot(string resourceId, TeamAddBotParam addParam)
     {
         // check is a bot already exists with the same name
         var userRoles = await ListUsers(resourceId, isBot: true);
@@ -91,7 +91,7 @@ public class RoleService
 
         await _simpleRoleProvider.AddUser(roleId: addParam.RoleId, userId: user.UserId, resourceId: resourceId);
         var authenticationHeader = await _botAuthenticationTokenBuilder.CreateAuthenticationHeader(user.UserId.ToString(), user.Email);
-        var ret = new ApiKeyResult
+        var ret = new UserApiKey
         {
             UserId = user.UserId,
             Authorization = authenticationHeader.ToString()
@@ -99,12 +99,12 @@ public class RoleService
         return ret;
     }
 
-    public async Task<ApiKeyResult> ResetUserApiKey(Guid userId)
+    public async Task<UserApiKey> ResetUserApiKey(Guid userId)
     {
         var user = await _simpleUserProvider.Get(userId);
         await _simpleUserProvider.ResetAuthorizationCode(user.UserId);
         var authenticationHeader = await _botAuthenticationTokenBuilder.CreateAuthenticationHeader(user.UserId.ToString(), user.Email);
-        var ret = new ApiKeyResult
+        var ret = new UserApiKey
         {
             UserId = userId,
             Authorization = authenticationHeader.ToString(),
@@ -157,12 +157,12 @@ public class RoleService
     public async Task<ListResult<UserRole>> ListUsers(
         string resourceId, Guid? roleId = null, Guid? userId = null, 
         string? search = null, bool? isBot = null,
-        int startIndex = 0, int? recordCount = null)
+        int recordIndex = 0, int? recordCount = null)
     {
         var userRoles = await _simpleRoleProvider.ListUserRoles(
             resourceId: resourceId, roleId: roleId, userId: userId,
             search: search, isBot: isBot,
-            startIndex: startIndex, recordCount: recordCount);
+            recordIndex: recordIndex, recordCount: recordCount);
 
         return userRoles;
     }
@@ -192,7 +192,7 @@ public class RoleService
         return roles;
     }
 
-    public async Task<ApiKeyResult> CreateSystemApiKey()
+    public async Task<UserApiKey> CreateSystemApiKey()
     {
         var systemRoles = await GetSimpleRoles("*");
         var systemAdminRole = systemRoles.FirstOrDefault(x => x.Permissions.Contains(RolePermissions.RoleWrite));
