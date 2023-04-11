@@ -13,7 +13,7 @@ public class SystemTeamControllerTest
     {
         using var testInit = await TestInit.Create();
 
-        var apiKey = await testInit.TeamClient.CreateBotAsync(0, new TeamAddBotParam
+        var apiKey = await testInit.TeamClient.AddNewBotAsync(0, new TeamAddBotParam
         {
             Name = Guid.NewGuid().ToString(),
             RoleId = Roles.SystemAdmin.RoleId
@@ -83,15 +83,15 @@ public class SystemTeamControllerTest
         // List Users
         // ---------
         var users = await testInit.TeamClient.ListUsersAsync(0);
-        Assert.IsTrue(users.Any(x => x.User.UserId == userRole1.User.UserId));
-        Assert.IsTrue(users.Any(x => x.User.UserId == userRole2.User.UserId));
+        Assert.IsTrue(users.Items.Any(x => x.User.UserId == userRole1.User.UserId));
+        Assert.IsTrue(users.Items.Any(x => x.User.UserId == userRole2.User.UserId));
 
         // ---------
         // Remove Users
         // ---------
         await testInit.TeamClient.RemoveUserAsync(0, userRole2.User.UserId);
         users = await testInit.TeamClient.ListUsersAsync(0);
-        Assert.IsTrue(users.Any(x => x.User.UserId == userRole1.User.UserId));
-        Assert.IsTrue(users.All(x => x.User.UserId != userRole2.User.UserId));
+        Assert.IsTrue(users.Items.Any(x => x.User.UserId == userRole1.User.UserId));
+        Assert.IsTrue(users.Items.All(x => x.User.UserId != userRole2.User.UserId));
     }
 }

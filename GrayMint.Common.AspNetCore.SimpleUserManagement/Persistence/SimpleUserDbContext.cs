@@ -1,5 +1,7 @@
-﻿using GrayMint.Common.AspNetCore.SimpleUserManagement.Models;
+﻿using System.Data;
+using GrayMint.Common.AspNetCore.SimpleUserManagement.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace GrayMint.Common.AspNetCore.SimpleUserManagement.Persistence;
 
@@ -19,6 +21,11 @@ public partial class SimpleUserDbContext : DbContext
     public SimpleUserDbContext(DbContextOptions<SimpleUserDbContext> options)
         : base(options)
     {
+    }
+
+    public async Task<IDbContextTransaction?> WithNoLockTransaction()
+    {
+        return Database.CurrentTransaction == null ? await Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted) : null;
     }
 
     protected override void ConfigureConventions(

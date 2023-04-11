@@ -27,9 +27,9 @@ public class SimpleRoleProvider
                 ResourceId = resourceId,
             });
         await _simpleUserDbContext.SaveChangesAsync();
-
-        var userRoles = await GetUserRoles(resourceId: resourceId, roleId:roleId, userId: userId);
-        return userRoles.Single();
+        
+        var userRoles = await ListUserRoles(resourceId: resourceId, roleId: roleId, userId);
+        return userRoles.Items.Single();
     }
 
     public async Task RemoveUser(string resourceId, Guid roleId, Guid userId)
@@ -101,18 +101,44 @@ public class SimpleRoleProvider
         await _simpleUserDbContext.SaveChangesAsync();
     }
 
-    public async Task<UserRole[]> GetUserRoles(Guid? roleId = null, Guid? userId = null, string? resourceId = null)
+    public async Task<ListResult<UserRole>> ListUserRoles(
+        string? resourceId = null, Guid? roleId = null, Guid? userId = null,
+        string? search = null, bool? isBot = null,
+        int startIndex = 0, int? recordCount = null)
     {
-        var roles = await _simpleUserDbContext.UserRoles
+        await using var trans = await _simpleUserDbContext.WithNoLockTransaction();
+
+        if (!Guid.TryParse(search, out var searchGuid)) searchGuid = Guid.Empty;
+
+        var query = _simpleUserDbContext.UserRoles
             .Include(x => x.Role)
             .Include(x => x.User)
             .Where(x =>
+                (isBot == null || x.User!.IsBot == isBot) &&
                 (roleId == null || x.RoleId == roleId) &&
                 (userId == null || x.UserId == userId) &&
                 (resourceId == null || x.ResourceId == resourceId))
+            .Where(x =>
+                string.IsNullOrEmpty(search) ||
+                (x.UserId == searchGuid && searchGuid != Guid.Empty) ||
+                (x.User!.FirstName != null && x.User.FirstName.StartsWith(search)) ||
+                (x.User!.LastName != null && x.User.LastName.StartsWith(search)) ||
+                (x.User.Email.StartsWith(search)));
+
+        var result = await query
+            .OrderBy(x => x.ResourceId)
+            .ThenBy(x => x.User!.Email)
+            .Skip(startIndex)
+            .Take(recordCount ?? int.MaxValue)
             .ToArrayAsync();
 
-        return roles.Select(x => x.ToDto()).ToArray();
+        var ret = new ListResult<UserRole>
+        {
+            TotalCount = startIndex == 0 && recordCount == null ? result.Length : await query.CountAsync(),
+            Items = result.Select(x => x.ToDto()).ToArray()
+        };
+
+        return ret;
     }
 
     public async Task Update(Guid roleId, RoleUpdateRequest request)
@@ -123,5 +149,3 @@ public class SimpleRoleProvider
         await _simpleUserDbContext.SaveChangesAsync();
     }
 }
-
-

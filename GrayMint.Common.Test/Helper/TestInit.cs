@@ -64,7 +64,7 @@ public class TestInit : IDisposable
         HttpClient.DefaultRequestHeaders.Authorization = AuthenticationHeaderValue.Parse(SystemAdminApiKey.Authorization);
 
         var resourceId = simpleRole.IsSystem ? 0 : App.AppId;
-        var apiKey = await TeamClient.CreateBotAsync(resourceId, new TeamAddBotParam { Name = Guid.NewGuid().ToString(), RoleId = simpleRole.RoleId });
+        var apiKey = await TeamClient.AddNewBotAsync(resourceId, new TeamAddBotParam { Name = Guid.NewGuid().ToString(), RoleId = simpleRole.RoleId });
 
         HttpClient.DefaultRequestHeaders.Authorization = setAsCurrent
             ? AuthenticationHeaderValue.Parse(apiKey.Authorization) : oldAuthorization;

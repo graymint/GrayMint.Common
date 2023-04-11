@@ -72,7 +72,7 @@ public abstract class TeamControllerBase<TResource, TResourceId, TUser, TUserRol
     public async Task<IEnumerable<TResource>> ListCurrentUserResources()
     {
         var userId = await RoleService.GetUserId(User);
-        var userRoles = await RoleService.GetUserRoles(userId: userId);
+        var userRoles = await RoleService.ListUserRoles(userId: userId);
         var resourceIds = userRoles.Distinct().Select(x => x.ResourceId);
         return await GetResources(resourceIds);
     }
@@ -86,22 +86,34 @@ public abstract class TeamControllerBase<TResource, TResourceId, TUser, TUserRol
     }
 
     [HttpGet("resources/{resourceId}/users")]
-    public async Task<IEnumerable<TUserRole>> ListUsers(TResourceId resourceId)
+    public async Task<ListResult<TUserRole>> ListUsers(TResourceId resourceId,
+        Guid? roleId = null, Guid? userId = null,
+        string? search = null, bool? isBot = null,
+        int startIndex = 0, int? recordCount = null)
     {
         await VerifyRoleReadPermission(User, resourceId);
-        var res = await RoleService.GetUsers(ToResourceId(resourceId));
-        return res.Select(ToDto);
+        var userRoles = await RoleService.ListUsers(resourceId: ToResourceId(resourceId),
+            roleId: roleId, userId: userId,
+            search: search, isBot: isBot,
+            startIndex: startIndex, recordCount: recordCount);
+
+        var ret = new ListResult<TUserRole>
+        {
+            TotalCount = userRoles.TotalCount,
+            Items = userRoles.Items.Select(ToDto)
+        };
+        return ret;
     }
 
     [HttpPost("resources/{resourceId}/bots")]
-    public async Task<ApiKeyResult> CreateBot(TResourceId resourceId, TeamAddBotParam addParam)
+    public async Task<ApiKeyResult> AddNewBot(TResourceId resourceId, TeamAddBotParam addParam)
     {
         await VerifyWritePermission(User, resourceId, addParam.RoleId);
 
         if (!RoleService.Options.AllowBotAppOwner && await RoleService.IsResourceOwnerRole(ToResourceId(resourceId), addParam.RoleId))
             throw new InvalidOperationException("Bot can not be an owner.");
 
-        var res = await RoleService.CreateBot(ToResourceId(resourceId), addParam);
+        var res = await RoleService.AddNewBot(ToResourceId(resourceId), addParam);
         return res;
     }
 
@@ -136,7 +148,7 @@ public abstract class TeamControllerBase<TResource, TResourceId, TUser, TUserRol
     {
         await VerifyRoleReadPermission(User, resourceId);
 
-        var res = await RoleService.GetUserRoles(ToResourceId(resourceId), userId);
+        var res = await RoleService.ListUserRoles(ToResourceId(resourceId), userId);
         return ToDto(res.First());
     }
 
@@ -159,11 +171,11 @@ public abstract class TeamControllerBase<TResource, TResourceId, TUser, TUserRol
                 await RoleService.AddUser(ToResourceId(resourceId), updateParam.RoleId, userId);
 
             // delete if user does not have any more roles in the system
-            if (!(await RoleService.GetUserRoles(userId)).Any())
+            if (!(await RoleService.ListUserRoles(userId)).Any())
                 await RoleService.DeleteUser(userId);
         }
 
-        var res = await RoleService.GetUserRoles(ToResourceId(resourceId), userId);
+        var res = await RoleService.ListUserRoles(ToResourceId(resourceId), userId);
         return ToDto(res.Single()); //throw error if it is more than one
     }
 
@@ -180,7 +192,7 @@ public abstract class TeamControllerBase<TResource, TResourceId, TUser, TUserRol
             await RoleService.RemoveUser(ToResourceId(resourceId), userRole.Role.RoleId, userRole.User.UserId);
 
         // delete if user does not have any more roles in the system
-        if (!(await RoleService.GetUserRoles(userId)).Any())
+        if (!(await RoleService.ListUserRoles(userId)).Any())
             await RoleService.DeleteUser(userId);
     }
 
@@ -193,7 +205,7 @@ public abstract class TeamControllerBase<TResource, TResourceId, TUser, TUserRol
     private async Task<UserRole[]> VerifyWritePermission(TResourceId resourceId, Guid userId)
     {
         // check user permission over all of the user roles
-        var userRoles = await RoleService.GetUserRoles(ToResourceId(resourceId), userId);
+        var userRoles = await RoleService.ListUserRoles(ToResourceId(resourceId), userId);
         if (!userRoles.Any())
             throw new UnauthorizedAccessException();
 
@@ -228,7 +240,7 @@ public abstract class TeamControllerBase<TResource, TResourceId, TUser, TUserRol
             return;
 
         // check is caller the owner of the resource
-        var callerUserRoles = await RoleService.GetUserRoles(ToResourceId(resourceId), callerUserId);
+        var callerUserRoles = await RoleService.ListUserRoles(ToResourceId(resourceId), callerUserId);
         var isCallerOwner = false;
         foreach (var callerUserRole in callerUserRoles)
             isCallerOwner |= await RoleService.IsResourceOwnerRole(ToResourceId(resourceId), callerUserRole.Role.RoleId);

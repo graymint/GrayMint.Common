@@ -99,16 +99,16 @@ public class SimpleRoleProviderTest
         await roleProvider.AddUser("1", role.RoleId, user.UserId);
 
         // Check user Roles
-        var userRoles = await roleProvider.GetUserRoles(userId: user.UserId);
-        Assert.AreEqual(2, userRoles.Length);
-        Assert.IsTrue(userRoles.Any(x => x.ResourceId == "*" && x.Role.RoleName == role.RoleName));
-        Assert.IsTrue(userRoles.Any(x => x.ResourceId == "1" && x.Role.RoleName == role.RoleName));
+        var userRoles = await roleProvider.ListUserRoles(userId: user.UserId);
+        Assert.AreEqual(2, userRoles.TotalCount);
+        Assert.IsTrue(userRoles.Items.Any(x => x.ResourceId == "*" && x.Role.RoleName == role.RoleName));
+        Assert.IsTrue(userRoles.Items.Any(x => x.ResourceId == "1" && x.Role.RoleName == role.RoleName));
 
         // Check user Roles
-        userRoles = await roleProvider.GetUserRoles(roleId: role.RoleId);
-        Assert.AreEqual(2, userRoles.Length);
-        Assert.IsTrue(userRoles.Any(x => x.ResourceId == "*" && x.Role.RoleName == role.RoleName));
-        Assert.IsTrue(userRoles.Any(x => x.ResourceId == "1" && x.Role.RoleName == role.RoleName));
+        userRoles = await roleProvider.ListUserRoles(roleId: role.RoleId);
+        Assert.AreEqual(2, userRoles.TotalCount);
+        Assert.IsTrue(userRoles.Items.Any(x => x.ResourceId == "*" && x.Role.RoleName == role.RoleName));
+        Assert.IsTrue(userRoles.Items.Any(x => x.ResourceId == "1" && x.Role.RoleName == role.RoleName));
 
         // Remove
         await roleProvider.RemoveUser("*", role.RoleId, user.UserId);

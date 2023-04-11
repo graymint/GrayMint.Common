@@ -74,11 +74,11 @@ public class RoleService
         return ret.Succeeded;
     }
 
-    public async Task<ApiKeyResult> CreateBot(string resourceId, TeamAddBotParam addParam)
+    public async Task<ApiKeyResult> AddNewBot(string resourceId, TeamAddBotParam addParam)
     {
         // check is a bot already exists with the same name
-        var userRoles = await GetUsers(resourceId);
-        if (userRoles.Any(x => addParam.Name.Equals(x.User.FirstName, StringComparison.OrdinalIgnoreCase) && x.User.IsBot))
+        var userRoles = await ListUsers(resourceId, isBot: true);
+        if (userRoles.Items.Any(x => addParam.Name.Equals(x.User.FirstName, StringComparison.OrdinalIgnoreCase) && x.User.IsBot))
             throw new AlreadyExistsException("Bots");
 
         var email = $"{Guid.NewGuid()}@bot";
@@ -123,23 +123,25 @@ public class RoleService
 
     public async Task<UserRole> AddUser(string resourceId, Guid roleId, Guid userId)
     {
-        var userRoles = await _simpleRoleProvider.GetUserRoles(resourceId: resourceId, userId: userId);
-        if (userRoles.Any())
+        var userRoles = await _simpleRoleProvider.ListUserRoles(resourceId: resourceId, userId: userId);
+        if (userRoles.Items.Any())
             throw new AlreadyExistsException("Users");
 
         await _simpleRoleProvider.AddUser(roleId: roleId, userId: userId, resourceId: resourceId);
-        userRoles = await _simpleRoleProvider.GetUserRoles(userId: userId, resourceId: resourceId);
-        return userRoles.Single(x => x.User.UserId == userId);
+        userRoles = await _simpleRoleProvider.ListUserRoles(userId: userId, resourceId: resourceId);
+        return userRoles.Items.Single(x => x.User.UserId == userId);
     }
 
-    public Task<UserRole[]> GetUserRoles(string resourceId, Guid userId)
+    public async Task<UserRole[]> ListUserRoles(string resourceId, Guid userId)
     {
-        return _simpleRoleProvider.GetUserRoles(resourceId: resourceId, userId: userId);
+        var res = await _simpleRoleProvider.ListUserRoles(resourceId: resourceId, userId: userId);
+        return res.Items.ToArray();
     }
 
-    public Task<UserRole[]> GetUserRoles(Guid userId)
+    public async Task<UserRole[]> ListUserRoles(Guid userId)
     {
-        return _simpleRoleProvider.GetUserRoles(userId: userId);
+        var res = await _simpleRoleProvider.ListUserRoles(userId: userId);
+        return res.Items.ToArray();
     }
 
     public async Task<User?> FindUserByEmail(string email)
@@ -152,11 +154,19 @@ public class RoleService
         return await _simpleUserProvider.Get(userId);
     }
 
-    public async Task<IEnumerable<UserRole>> GetUsers(string resourceId)
+    public async Task<ListResult<UserRole>> ListUsers(
+        string resourceId, Guid? roleId = null, Guid? userId = null, 
+        string? search = null, bool? isBot = null,
+        int startIndex = 0, int? recordCount = null)
     {
-        var userRoles = await _simpleRoleProvider.GetUserRoles(resourceId: resourceId);
+        var userRoles = await _simpleRoleProvider.ListUserRoles(
+            resourceId: resourceId, roleId: roleId, userId: userId,
+            search: search, isBot: isBot,
+            startIndex: startIndex, recordCount: recordCount);
+
         return userRoles;
     }
+
     public Task RemoveUser(string resourceId, Guid roleId, Guid userId)
     {
         return _simpleRoleProvider.RemoveUser(resourceId: resourceId, roleId, userId);
@@ -189,7 +199,7 @@ public class RoleService
         if (systemAdminRole == null)
             throw new NotExistsException($"Could not find {nameof(RolePermissions.RoleWrite)} in any system roles.");
 
-        var user = await CreateBot("*", new TeamAddBotParam { Name = $"TestAdmin_{Guid.NewGuid()}", RoleId = systemAdminRole.RoleId });
+        var user = await AddNewBot("*", new TeamAddBotParam { Name = $"TestAdmin_{Guid.NewGuid()}", RoleId = systemAdminRole.RoleId });
         return user;
     }
 

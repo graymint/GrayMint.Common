@@ -16,7 +16,7 @@ public class AppTeamControllerTest
     {
         using var testInit = await TestInit.Create();
 
-        var apiKey = await testInit.TeamClient.CreateBotAsync(testInit.AppId, new TeamAddBotParam
+        var apiKey = await testInit.TeamClient.AddNewBotAsync(testInit.AppId, new TeamAddBotParam
         {
             Name = Guid.NewGuid().ToString(),
             RoleId = Roles.AppAdmin.RoleId
@@ -66,7 +66,7 @@ public class AppTeamControllerTest
         // --------
         try
         {
-            await testInit.TeamClient.CreateBotAsync(testInit.AppId, new TeamAddBotParam
+            await testInit.TeamClient.AddNewBotAsync(testInit.AppId, new TeamAddBotParam
             {
                 Name = Guid.NewGuid().ToString(),
                 RoleId = Roles.AppOwner.RoleId
@@ -83,7 +83,7 @@ public class AppTeamControllerTest
     public async Task Bot_can_not_be_added()
     {
         using var testInit1 = await TestInit.Create();
-        var apiKey1 = await testInit1.TeamClient.CreateBotAsync(testInit1.AppId, new TeamAddBotParam
+        var apiKey1 = await testInit1.TeamClient.AddNewBotAsync(testInit1.AppId, new TeamAddBotParam
         {
             Name = Guid.NewGuid().ToString(),
             RoleId = Roles.AppAdmin.RoleId
@@ -199,8 +199,8 @@ public class AppTeamControllerTest
         });
 
         var userRoles = await testInit.TeamClient.ListUsersAsync(testInit.AppId);
-        var userRole1B = userRoles.Single(x => x.User.UserId == userRole1.User.UserId);
-        var userRole2B = userRoles.Single(x => x.User.UserId == userRole2.User.UserId);
+        var userRole1B = userRoles.Items.Single(x => x.User.UserId == userRole1.User.UserId);
+        var userRole2B = userRoles.Items.Single(x => x.User.UserId == userRole2.User.UserId);
 
         Assert.AreEqual(userRole1.User.Email, userRole1B.User.Email);
         Assert.AreEqual(userRole1.User.UserId, userRole1B.User.UserId);

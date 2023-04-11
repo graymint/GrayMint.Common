@@ -1214,14 +1214,39 @@ namespace GrayMint.Common.Test.Api
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="GrayMint.Common.Client.ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<UserRole>> ListUsersAsync(int resourceId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ListResultOfUserRole> ListUsersAsync(int resourceId, System.Guid? roleId = null, System.Guid? userId = null, string? search = null, bool? isBot = null, int? startIndex = null, int? recordCount = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (resourceId == null)
                 throw new System.ArgumentNullException("resourceId");
 
             var urlBuilder_ = new System.Text.StringBuilder();
-            urlBuilder_.Append("api/v1/team/resources/{resourceId}/users");
+            urlBuilder_.Append("api/v1/team/resources/{resourceId}/users?");
             urlBuilder_.Replace("{resourceId}", System.Uri.EscapeDataString(ConvertToString(resourceId, System.Globalization.CultureInfo.InvariantCulture)));
+            if (roleId != null)
+            {
+                urlBuilder_.Append(System.Uri.EscapeDataString("roleId") + "=").Append(System.Uri.EscapeDataString(ConvertToString(roleId, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            }
+            if (userId != null)
+            {
+                urlBuilder_.Append(System.Uri.EscapeDataString("userId") + "=").Append(System.Uri.EscapeDataString(ConvertToString(userId, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            }
+            if (search != null)
+            {
+                urlBuilder_.Append(System.Uri.EscapeDataString("search") + "=").Append(System.Uri.EscapeDataString(ConvertToString(search, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            }
+            if (isBot != null)
+            {
+                urlBuilder_.Append(System.Uri.EscapeDataString("isBot") + "=").Append(System.Uri.EscapeDataString(ConvertToString(isBot, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            }
+            if (startIndex != null)
+            {
+                urlBuilder_.Append(System.Uri.EscapeDataString("startIndex") + "=").Append(System.Uri.EscapeDataString(ConvertToString(startIndex, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            }
+            if (recordCount != null)
+            {
+                urlBuilder_.Append(System.Uri.EscapeDataString("recordCount") + "=").Append(System.Uri.EscapeDataString(ConvertToString(recordCount, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            }
+            urlBuilder_.Length--;
 
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -1255,7 +1280,7 @@ namespace GrayMint.Common.Test.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<UserRole>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<ListResultOfUserRole>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new GrayMint.Common.Client.ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1361,7 +1386,7 @@ namespace GrayMint.Common.Test.Api
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="GrayMint.Common.Client.ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiKeyResult> CreateBotAsync(int resourceId, TeamAddBotParam addParam, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiKeyResult> AddNewBotAsync(int resourceId, TeamAddBotParam addParam, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (resourceId == null)
                 throw new System.ArgumentNullException("resourceId");
@@ -1970,6 +1995,23 @@ namespace GrayMint.Common.Test.Api
 
         [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]   
         public string? Description { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "13.18.0.0 (NJsonSchema v10.8.0.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ListResultOfUserRole
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("totalCount")]
+
+        [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]   
+        public long? TotalCount { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("items")]
+
+        [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.Never)]   
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<UserRole> Items { get; set; } = new System.Collections.ObjectModel.Collection<UserRole>();
 
     }
 
