@@ -27,7 +27,7 @@ public class SimpleRoleProvider
                 ResourceId = resourceId,
             });
         await _simpleUserDbContext.SaveChangesAsync();
-        
+
         var userRoles = await ListUserRoles(resourceId: resourceId, roleId: roleId, userId);
         return userRoles.Items.Single();
     }
@@ -106,10 +106,10 @@ public class SimpleRoleProvider
         string? search = null, bool? isBot = null,
         int recordIndex = 0, int? recordCount = null)
     {
-        await using var trans = await _simpleUserDbContext.WithNoLockTransaction();
-
+        recordCount ??= int.MaxValue;
         if (!Guid.TryParse(search, out var searchGuid)) searchGuid = Guid.Empty;
 
+        await using var trans = await _simpleUserDbContext.WithNoLockTransaction();
         var query = _simpleUserDbContext.UserRoles
             .Include(x => x.Role)
             .Include(x => x.User)
@@ -125,7 +125,7 @@ public class SimpleRoleProvider
                 (x.User!.LastName != null && x.User.LastName.StartsWith(search)) ||
                 (x.User.Email.StartsWith(search)));
 
-        var result = await query
+        var results = await query
             .OrderBy(x => x.ResourceId)
             .ThenBy(x => x.User!.Email)
             .Skip(recordIndex)
@@ -134,8 +134,8 @@ public class SimpleRoleProvider
 
         var ret = new ListResult<UserRole>
         {
-            TotalCount = recordIndex == 0 && recordCount == null ? result.Length : await query.CountAsync(),
-            Items = result.Select(x => x.ToDto()).ToArray()
+            TotalCount = results.Length < recordCount ? recordIndex + results.Length : await query.LongCountAsync(),
+            Items = results.Select(x => x.ToDto()).ToArray()
         };
 
         return ret;

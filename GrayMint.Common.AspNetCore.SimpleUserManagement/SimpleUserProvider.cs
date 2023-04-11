@@ -68,12 +68,13 @@ public class SimpleUserProvider : ISimpleUserProvider
 
     public async Task<User> Create(UserCreateRequest request)
     {
-        var res = await _simpleUserDbContext.Users.AddAsync(new UserModel()
+        var res = await _simpleUserDbContext.Users.AddAsync(new UserModel
         {
             Email = request.Email,
             FirstName = request.FirstName,
             LastName = request.LastName,
             CreatedTime = DateTime.UtcNow,
+            AccessedTime = null,
             Description = request.Description,
             AuthCode = Guid.NewGuid().ToString(),
             IsBot = request.IsBot,
