@@ -1,13 +1,13 @@
 using System.Net;
-using GrayMint.Common.AspNetCore.SimpleUserControllers.Exceptions;
 using System.Security.Claims;
 using GrayMint.Common.Client;
 using GrayMint.Common.Test.Api;
 using GrayMint.Common.Test.Helper;
 using GrayMint.Common.Test.WebApiSample.Security;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using GrayMint.Common.AspNetCore.Auth.BotAuthentication;
 using System.Net.Http.Headers;
+using GrayMint.Authorization.Authentications.BotAuthentication;
+using GrayMint.Authorization.RoleManagement.RoleControllers.Exceptions;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -70,7 +70,10 @@ public class UserTest
     public async Task ResetAppBotAuthToken()
     {
         var testInit = await TestInit.Create();
-        var apiKey = await testInit.AddNewUser(Roles.AppAdmin);
+        var apiKey = await testInit.AddNewUser(Roles.AppAdmin, false);
+        var userRole = await testInit.TeamClient.GetUserAsync(testInit.AppId, apiKey.UserId);
+        Assert.IsNotNull(userRole.User);
+        Assert.IsNull(userRole.User.AccessedTime, "Newly created bot should not have AccessTime before login.");
 
         // call api buy retrieved token
         apiKey = await testInit.TeamClient.ResetBotApiKeyAsync(testInit.App.AppId, apiKey.UserId);
@@ -101,6 +104,7 @@ public class UserTest
             Email = $"{Guid.NewGuid()}@mail.com",
             RoleId = Roles.SystemAdmin.RoleId
         });
+        Assert.IsNotNull(userRole.User);
 
         try
         {
@@ -123,6 +127,7 @@ public class UserTest
             Email = $"{Guid.NewGuid()}@mail.com",
             RoleId = Roles.AppAdmin.RoleId
         });
+        Assert.IsNotNull(userRole.User);
 
         try
         {

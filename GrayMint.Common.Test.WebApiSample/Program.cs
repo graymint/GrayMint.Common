@@ -1,12 +1,13 @@
+using GrayMint.Authorization.Authentications.BotAuthentication;
+using GrayMint.Authorization.Authentications.CognitoAuthentication;
+using GrayMint.Authorization.RoleManagement.RoleAuthorizations;
+using GrayMint.Authorization.RoleManagement.RoleControllers;
+using GrayMint.Authorization.RoleManagement.SimpleRoleProviders;
+using GrayMint.Authorization.RoleManagement.SimpleRoleProviders.Dtos;
+using GrayMint.Authorization.UserManagement.SimpleUserProviders;
 using GrayMint.Common.AspNetCore;
-using GrayMint.Common.AspNetCore.Auth.BotAuthentication;
-using GrayMint.Common.AspNetCore.Auth.CognitoAuthentication;
-using GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
-using GrayMint.Common.AspNetCore.SimpleUserControllers;
-using GrayMint.Common.AspNetCore.SimpleUserManagement;
 using GrayMint.Common.Test.WebApiSample.Persistence;
 using GrayMint.Common.Test.WebApiSample.Security;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 
 namespace GrayMint.Common.Test.WebApiSample;
@@ -24,16 +25,21 @@ public class Program
             .AddBotAuthentication(authConfiguration.Get<BotAuthenticationOptions>(), builder.Environment.IsProduction())
             .AddCognitoAuthentication(authConfiguration.Get<CognitoAuthenticationOptions>());
 
-        builder.Services.AddGrayMintSimpleRoleAuthorization(new SimpleRoleAuthOptions { Roles = Roles.All });
-        builder.Services.AddGrayMintSimpleUserProvider(authConfiguration.Get<SimpleUserOptions>(), options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
-        builder.Services.AddGrayMintSimpleUserController(builder.Configuration.GetSection("TeamController").Get<SimpleUserControllerOptions>());
+        var authenticationSchemes = authConfiguration.GetValue<string>("CognitoClientId") == "ignore"
+            ? new[] { BotAuthenticationDefaults.AuthenticationScheme }
+            : new[] { BotAuthenticationDefaults.AuthenticationScheme, CognitoAuthenticationDefaults.AuthenticationScheme };
+        builder.Services.AddGrayMintRoleAuthorization(new RoleAuthorizationOptions { AuthenticationSchemes = authenticationSchemes } );
+        builder.Services.AddGrayMintSimpleRoleProvider(new SimpleRoleProviderOptions { Roles = SimpleRole.GetAll(typeof(Roles)) }, options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
+        builder.Services.AddGrayMintSimpleUserProvider(authConfiguration.Get<SimpleUserProviderOptions>(), options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
+        builder.Services.AddGrayMintRoleController(builder.Configuration.GetSection("TeamController").Get<RoleControllerOptions>());
         builder.Services.AddDbContext<WebApiSampleDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDatabase")));
 
         // Add services to the container.
         var webApp = builder.Build();
         webApp.UseGrayMintCommonServices(new UseServicesOptions());
-        await GrayMintApp.CheckDatabaseCommand<WebApiSampleDbContext>(webApp.Services, args);
-        await webApp.UseGrayMintSimpleUserProvider();
+        await webApp.Services.UseGrayMintDatabaseCommand<WebApiSampleDbContext>(args);
+        await webApp.Services.UseGrayMintSimpleUserProvider();
+        await webApp.Services.UseGrayMintSimpleRoleProvider();
 
         await GrayMintApp.RunAsync(webApp, args);
 

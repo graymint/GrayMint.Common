@@ -1,5 +1,5 @@
-using GrayMint.Common.AspNetCore.SimpleUserControllers.Controllers;
-using GrayMint.Common.AspNetCore.SimpleUserControllers.Services;
+using GrayMint.Authorization.RoleManagement.RoleControllers.Controllers;
+using GrayMint.Authorization.RoleManagement.RoleControllers.Services;
 using GrayMint.Common.Test.WebApiSample.Models;
 using GrayMint.Common.Test.WebApiSample.Persistence;
 using Microsoft.AspNetCore.Mvc;

@@ -54,6 +54,7 @@ public class SystemTeamControllerTest
             RoleId = Roles.SystemAdmin.RoleId
         };
         var userRole1 = await testInit.TeamClient.AddUserAsync(0, addUserParam1);
+        Assert.IsNotNull(userRole1.User);
         Assert.AreEqual(userRole1.User.Email, addUserParam1.Email);
         Assert.AreEqual(userRole1.Role.RoleId, addUserParam1.RoleId);
 
@@ -63,11 +64,14 @@ public class SystemTeamControllerTest
             RoleId = Roles.SystemAdmin.RoleId
         };
         var userRole2 = await testInit.TeamClient.AddUserAsync(0, addUserParam2);
+        Assert.IsNotNull(userRole2.User);
+
 
         // ---------
         // Get
         // ---------
         var userRole = await testInit.TeamClient.GetUserAsync(0, userRole1.User.UserId);
+        Assert.IsNotNull(userRole.User);
         Assert.AreEqual(userRole.User.Email, addUserParam1.Email);
         Assert.AreEqual(userRole.Role.RoleId, addUserParam1.RoleId);
 
@@ -83,15 +87,15 @@ public class SystemTeamControllerTest
         // List Users
         // ---------
         var users = await testInit.TeamClient.ListUsersAsync(0);
-        Assert.IsTrue(users.Items.Any(x => x.User.UserId == userRole1.User.UserId));
-        Assert.IsTrue(users.Items.Any(x => x.User.UserId == userRole2.User.UserId));
+        Assert.IsTrue(users.Items.Any(x => x.User?.UserId == userRole1.User.UserId));
+        Assert.IsTrue(users.Items.Any(x => x.User?.UserId == userRole2.User?.UserId));
 
         // ---------
         // Remove Users
         // ---------
         await testInit.TeamClient.RemoveUserAsync(0, userRole2.User.UserId);
         users = await testInit.TeamClient.ListUsersAsync(0);
-        Assert.IsTrue(users.Items.Any(x => x.User.UserId == userRole1.User.UserId));
-        Assert.IsTrue(users.Items.All(x => x.User.UserId != userRole2.User.UserId));
+        Assert.IsTrue(users.Items.Any(x => x.User?.UserId == userRole1.User.UserId));
+        Assert.IsTrue(users.Items.All(x => x.User?.UserId != userRole2.User.UserId));
     }
 }

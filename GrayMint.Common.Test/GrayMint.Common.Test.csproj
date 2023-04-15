@@ -25,7 +25,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GrayMint.Common.AspNetCore.SimpleUserManagement\GrayMint.Common.AspNetCore.SimpleUserManagement.csproj" />
+    <ProjectReference Include="..\GrayMint.Authorization.RoleManagement.SimpleRoleProvider\GrayMint.Authorization.RoleManagement.SimpleRoleProviders.csproj" />
+    <ProjectReference Include="..\GrayMint.Common.AspNetCore.SimpleUserManagement\GrayMint.Authorization.UserManagement.SimpleUserProviders.csproj" />
     <ProjectReference Include="..\GrayMint.Common.Test.WebApiSample\GrayMint.Common.Test.WebApiSample.csproj" />
   </ItemGroup>
 

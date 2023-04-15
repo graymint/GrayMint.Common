@@ -1,4 +1,4 @@
-﻿namespace GrayMint.Common;
+﻿namespace GrayMint.Common.Generics;
 
 public class ListResult<T>
 {

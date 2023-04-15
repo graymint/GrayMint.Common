@@ -17,8 +17,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GrayMint.Common.AspNetCore.SimpleUserControllers\GrayMint.Common.AspNetCore.SimpleUserControllers.csproj" />
-    <ProjectReference Include="..\GrayMint.Common.AspNetCore.SimpleUserManagement\GrayMint.Common.AspNetCore.SimpleUserManagement.csproj" />
+    <ProjectReference Include="..\GrayMint.Authorization.Authentications\GrayMint.Authorization.Authentications.csproj" />
+    <ProjectReference Include="..\GrayMint.Authorization.RoleManagement.SimpleRoleProvider\GrayMint.Authorization.RoleManagement.SimpleRoleProviders.csproj" />
+    <ProjectReference Include="..\GrayMint.Common.AspNetCore.SimpleUserControllers\GrayMint.Authorization.RoleManagement.RoleControllers.csproj" />
+    <ProjectReference Include="..\GrayMint.Common.AspNetCore.SimpleUserManagement\GrayMint.Authorization.UserManagement.SimpleUserProviders.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-using GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
+using GrayMint.Authorization.RoleManagement.RoleAuthorizations;
 using GrayMint.Common.Test.WebApiSample.Models;
 using GrayMint.Common.Test.WebApiSample.Persistence;
 using GrayMint.Common.Test.WebApiSample.Security;

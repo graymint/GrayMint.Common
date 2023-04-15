@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Authors>GrayMint</Authors>
-    <Version>1.0.125</Version>
+    <Version>2.0.125</Version>
     <Description>A simple startup skeleton and a few utils which used in some projects.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <IsPackable>true</IsPackable>
@@ -25,6 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\GrayMint.Authorization.Abstractions\GrayMint.Authorization.Abstractions.csproj" />
     <ProjectReference Include="..\GrayMint.Common\GrayMint.Common.csproj" />
   </ItemGroup>
 
@@ -42,6 +43,10 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>GrayMintResource.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Utils\" />
   </ItemGroup>
 
 </Project>

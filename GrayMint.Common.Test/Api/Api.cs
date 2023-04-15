@@ -811,7 +811,7 @@ namespace GrayMint.Common.Test.Api
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="GrayMint.Common.Client.ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiKeyResult> CreateSystemApiKeyAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<UserApiKey> CreateSystemApiKeyAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var urlBuilder_ = new System.Text.StringBuilder();
             urlBuilder_.Append("api/v1/team/users/system/api-key");
@@ -849,7 +849,7 @@ namespace GrayMint.Common.Test.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<ApiKeyResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<UserApiKey>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new GrayMint.Common.Client.ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1011,7 +1011,7 @@ namespace GrayMint.Common.Test.Api
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="GrayMint.Common.Client.ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiKeyResult> ResetCurrentUserApiKeyAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<UserApiKey> ResetCurrentUserApiKeyAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var urlBuilder_ = new System.Text.StringBuilder();
             urlBuilder_.Append("api/v1/team/users/current/reset-api-key");
@@ -1049,7 +1049,7 @@ namespace GrayMint.Common.Test.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<ApiKeyResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<UserApiKey>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new GrayMint.Common.Client.ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1214,7 +1214,7 @@ namespace GrayMint.Common.Test.Api
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="GrayMint.Common.Client.ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ListResultOfUserRole> ListUsersAsync(int resourceId, System.Guid? roleId = null, System.Guid? userId = null, string? search = null, bool? isBot = null, int? startIndex = null, int? recordCount = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ListResultOfUserRole> ListUsersAsync(int resourceId, System.Guid? roleId = null, System.Guid? userId = null, string? search = null, bool? isBot = null, int? recordIndex = null, int? recordCount = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (resourceId == null)
                 throw new System.ArgumentNullException("resourceId");
@@ -1238,9 +1238,9 @@ namespace GrayMint.Common.Test.Api
             {
                 urlBuilder_.Append(System.Uri.EscapeDataString("isBot") + "=").Append(System.Uri.EscapeDataString(ConvertToString(isBot, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
             }
-            if (startIndex != null)
+            if (recordIndex != null)
             {
-                urlBuilder_.Append(System.Uri.EscapeDataString("startIndex") + "=").Append(System.Uri.EscapeDataString(ConvertToString(startIndex, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+                urlBuilder_.Append(System.Uri.EscapeDataString("recordIndex") + "=").Append(System.Uri.EscapeDataString(ConvertToString(recordIndex, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
             }
             if (recordCount != null)
             {
@@ -1386,7 +1386,7 @@ namespace GrayMint.Common.Test.Api
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="GrayMint.Common.Client.ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiKeyResult> AddNewBotAsync(int resourceId, TeamAddBotParam addParam, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<UserApiKey> AddNewBotAsync(int resourceId, TeamAddBotParam addParam, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (resourceId == null)
                 throw new System.ArgumentNullException("resourceId");
@@ -1434,7 +1434,7 @@ namespace GrayMint.Common.Test.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<ApiKeyResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<UserApiKey>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new GrayMint.Common.Client.ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1463,7 +1463,7 @@ namespace GrayMint.Common.Test.Api
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="GrayMint.Common.Client.ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiKeyResult> ResetBotApiKeyAsync(int resourceId, System.Guid userId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<UserApiKey> ResetBotApiKeyAsync(int resourceId, System.Guid userId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (resourceId == null)
                 throw new System.ArgumentNullException("resourceId");
@@ -1509,7 +1509,7 @@ namespace GrayMint.Common.Test.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<ApiKeyResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<UserApiKey>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new GrayMint.Common.Client.ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1899,7 +1899,7 @@ namespace GrayMint.Common.Test.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "13.18.0.0 (NJsonSchema v10.8.0.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class ApiKeyResult
+    public partial class UserApiKey
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("userId")]
@@ -1958,10 +1958,10 @@ namespace GrayMint.Common.Test.Api
         [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]   
         public System.DateTime? AccessedTime { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("authCode")]
+        [System.Text.Json.Serialization.JsonPropertyName("authorizationCode")]
 
         [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]   
-        public string? AuthCode { get; set; } = default!;
+        public string? AuthorizationCode { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("isBot")]
 
@@ -2019,17 +2019,22 @@ namespace GrayMint.Common.Test.Api
     public partial class UserRole
     {
 
+        [System.Text.Json.Serialization.JsonPropertyName("user")]
+
+        [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]   
+        public User? User { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("resourceId")]
 
         [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.Never)]   
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string ResourceId { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("user")]
+        [System.Text.Json.Serialization.JsonPropertyName("userId")]
 
         [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.Never)]   
-        [System.ComponentModel.DataAnnotations.Required]
-        public User User { get; set; } = new User();
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.Guid UserId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("role")]
 

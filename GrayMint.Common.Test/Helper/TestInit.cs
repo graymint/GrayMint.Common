@@ -2,12 +2,12 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http.Headers;
-using GrayMint.Common.AspNetCore.Auth.CognitoAuthentication;
-using GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
+using GrayMint.Authorization.Abstractions;
+using GrayMint.Authorization.Authentications.CognitoAuthentication;
+using GrayMint.Authorization.RoleManagement.SimpleRoleProviders.Dtos;
 using GrayMint.Common.Test.Api;
 using GrayMint.Common.Test.WebApiSample;
 using Microsoft.Extensions.Options;
-using GrayMint.Common.AspNetCore.Auth.BotAuthentication;
 
 namespace GrayMint.Common.Test.Helper;
 
@@ -22,7 +22,7 @@ public class TestInit : IDisposable
     public AppsClient AppsClient => new(HttpClient);
     public ItemsClient ItemsClient => new(HttpClient);
     public TeamClient TeamClient => new(HttpClient);
-    public ApiKeyResult SystemAdminApiKey { get; private set; } = default!;
+    public UserApiKey SystemAdminApiKey { get; private set; } = default!;
 
 
     private TestInit(Dictionary<string, string?> appSettings, string environment)
@@ -37,7 +37,7 @@ public class TestInit : IDisposable
                 builder.UseEnvironment(environment);
                 builder.ConfigureServices(services =>
                 {
-                    services.AddScoped<IBotAuthenticationProvider, TestBotAuthenticationProvider>();
+                    services.AddScoped<IAuthorizationProvider, TestBotAuthenticationProvider>();
                 });
             });
 
@@ -58,7 +58,7 @@ public class TestInit : IDisposable
         App = await AppsClient.CreateAppAsync(Guid.NewGuid().ToString());
     }
 
-    public async Task<ApiKeyResult> AddNewUser(SimpleRole simpleRole, bool setAsCurrent = true)
+    public async Task<UserApiKey> AddNewUser(SimpleRole simpleRole, bool setAsCurrent = true)
     {
         var oldAuthorization = HttpClient.DefaultRequestHeaders.Authorization;
         HttpClient.DefaultRequestHeaders.Authorization = AuthenticationHeaderValue.Parse(SystemAdminApiKey.Authorization);
@@ -72,14 +72,16 @@ public class TestInit : IDisposable
         return apiKey;
     }
 
-    public void SetApiKey(ApiKeyResult apiKey)
+    public void SetApiKey(UserApiKey apiKey)
     {
         HttpClient.DefaultRequestHeaders.Authorization = AuthenticationHeaderValue.Parse(apiKey.Authorization);
     }
 
-    public static async Task<TestInit> Create(Dictionary<string, string?>? appSettings = null, string environment = "Development")
+    public static async Task<TestInit> Create(Dictionary<string, string?>? appSettings = null,
+        string environment = "Development", bool useCognito = false)
     {
         appSettings ??= new Dictionary<string, string?>();
+        if (!useCognito) appSettings["Auth:CognitoClientId"]="ignore";
         var testInit = new TestInit(appSettings, environment);
         await testInit.Init();
         return testInit;

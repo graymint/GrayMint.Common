@@ -1,4 +1,4 @@
-using GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
+using GrayMint.Authorization.RoleManagement.RoleAuthorizations;
 using GrayMint.Common.Test.WebApiSample.Models;
 using GrayMint.Common.Test.WebApiSample.Persistence;
 using GrayMint.Common.Test.WebApiSample.Security;
@@ -20,7 +20,7 @@ public class ItemsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(SimpleRoleAuth.Policy, Roles = 
+    [Authorize(RoleAuthorization.Policy, Roles = 
         $"{nameof(Roles.SystemAdmin)},{nameof(Roles.AppOwner)},{nameof(Roles.AppAdmin)},{nameof(Roles.AppWriter)}")]
     public async Task<Item> Create(int appId, string itemName)
     {
@@ -39,7 +39,7 @@ public class ItemsController : ControllerBase
     }
 
     [HttpGet("itemId")]
-    [Authorize(SimpleRoleAuth.Policy, Roles = 
+    [Authorize(RoleAuthorization.Policy, Roles = 
         $"{nameof(Roles.SystemAdmin)},{nameof(Roles.AppOwner)},{nameof(Roles.AppAdmin)},{nameof(Roles.AppWriter)},{nameof(Roles.AppReader)}")]
     public async Task<Item> Get(int appId, int itemId)
     {

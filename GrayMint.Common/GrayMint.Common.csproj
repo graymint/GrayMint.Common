@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Authors>GrayMint</Authors>
-    <Version>1.0.124</Version>
+    <Version>2.0.125</Version>
     <Description>A few utils which used in some projects.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <IsPackable>true</IsPackable>
@@ -17,10 +17,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
     <PackageReference Include="System.Text.Json" Version="7.0.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Generics\" />
   </ItemGroup>
 
 </Project>

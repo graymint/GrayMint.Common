@@ -1,10 +1,14 @@
-using GrayMint.Common.AspNetCore.SimpleUserManagement;
-using GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
 using GrayMint.Common.Exceptions;
 using GrayMint.Common.Test.Helper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Security.Claims;
+using GrayMint.Authorization.RoleManagement.SimpleRoleProviders;
+using GrayMint.Authorization.UserManagement.Abstractions;
+using GrayMint.Authorization.UserManagement.SimpleUserProviders;
+using GrayMint.Common.Test.WebApiSample.Security;
+using GrayMint.Authorization.Abstractions;
+using GrayMint.Authorization.RoleManagement.Abstractions;
 
 namespace GrayMint.Common.Test.Tests;
 
@@ -13,65 +17,12 @@ public class SimpleRoleProviderTest
 {
 
     [TestMethod]
-    public async Task Crud()
-    {
-        using var testInit = await TestInit.Create();
-
-        // Create
-        var roleProvider = testInit.Scope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
-        var request = new RoleCreateRequest
-        {
-            RoleName = Guid.NewGuid().ToString(),
-            Description = Guid.NewGuid().ToString()
-        };
-
-        var role = await roleProvider.Create(request);
-        Assert.AreEqual(request.RoleName, role.RoleName);
-        Assert.AreEqual(request.Description, role.Description);
-
-        // Get
-        var role2 = await roleProvider.Get(role.RoleId);
-        Assert.AreEqual(role.RoleId, role2.RoleId);
-        Assert.AreEqual(role.RoleName, role2.RoleName);
-        Assert.AreEqual(role.Description, role2.Description);
-
-        var role3 = await roleProvider.GetByName(role.RoleName);
-        Assert.AreEqual(role.RoleId, role3.RoleId);
-        Assert.AreEqual(role.RoleName, role3.RoleName);
-
-        // Update
-        var updateRequest = new RoleUpdateRequest()
-        {
-            RoleName = Guid.NewGuid().ToString(),
-            Description = Guid.NewGuid().ToString()
-        };
-        await roleProvider.Update(role.RoleId, updateRequest);
-
-        // Get
-        var role4 = await roleProvider.Get(role.RoleId);
-        Assert.AreEqual(role4.RoleName, updateRequest.RoleName.Value);
-        Assert.AreEqual(role4.Description, updateRequest.Description.Value);
-
-        // Remove
-        await roleProvider.Remove(role.RoleId);
-        try
-        {
-            await roleProvider.Get(role.RoleId);
-            Assert.Fail("NotExistsException was expected.");
-        }
-        catch (Exception ex)
-        {
-            Assert.AreEqual("Sequence contains no elements.", ex.Message);
-        }
-    }
-
-    [TestMethod]
     public async Task Add_remove_user()
     {
         using var testInit = await TestInit.Create();
 
         // create a user
-        var simpleUserProvider = testInit.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
+        var simpleUserProvider = testInit.Scope.ServiceProvider.GetRequiredService<IUserProvider>();
         var userCreateRequest = new UserCreateRequest
         {
             Email = $"{Guid.NewGuid()}@local",
@@ -82,39 +33,35 @@ public class SimpleRoleProviderTest
         var user = await simpleUserProvider.Create(userCreateRequest);
 
         // create a role
-        var roleProvider = testInit.Scope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
-        var role = await roleProvider.Create(new RoleCreateRequest 
-        {
-            RoleName = Guid.NewGuid().ToString(),
-            Description = Guid.NewGuid().ToString()
-        });
-        await roleProvider.Create(new RoleCreateRequest
-        {
-            RoleName = Guid.NewGuid().ToString(),
-            Description = Guid.NewGuid().ToString()
-        });
+        var roleProvider = testInit.Scope.ServiceProvider.GetRequiredService<IRoleProvider>();
+        var role = Roles.AppAdmin;
 
         // Add the user to roles
-        await roleProvider.AddUser("*", role.RoleId, user.UserId);
-        await roleProvider.AddUser("1", role.RoleId, user.UserId);
+        var resource1 = Guid.NewGuid().ToString();
+        var resource2 = Guid.NewGuid().ToString();
+        await roleProvider.AddUser(resource1, role.RoleId, user.UserId);
+        await roleProvider.AddUser(resource2, role.RoleId, user.UserId);
 
         // Check user Roles
-        var userRoles = await roleProvider.ListUserRoles(userId: user.UserId);
+        var userRoles = await roleProvider.GetUserRoles(userId: user.UserId);
         Assert.AreEqual(2, userRoles.TotalCount);
-        Assert.IsTrue(userRoles.Items.Any(x => x.ResourceId == "*" && x.Role.RoleName == role.RoleName));
-        Assert.IsTrue(userRoles.Items.Any(x => x.ResourceId == "1" && x.Role.RoleName == role.RoleName));
+        Assert.IsTrue(userRoles.Items.Any(x => x.ResourceId == resource1 && x.Role.RoleName == role.RoleName));
+        Assert.IsTrue(userRoles.Items.Any(x => x.ResourceId == resource2 && x.Role.RoleName == role.RoleName));
 
         // Check user Roles
-        userRoles = await roleProvider.ListUserRoles(roleId: role.RoleId);
-        Assert.AreEqual(2, userRoles.TotalCount);
-        Assert.IsTrue(userRoles.Items.Any(x => x.ResourceId == "*" && x.Role.RoleName == role.RoleName));
-        Assert.IsTrue(userRoles.Items.Any(x => x.ResourceId == "1" && x.Role.RoleName == role.RoleName));
+        userRoles = await roleProvider.GetUserRoles(resourceId: resource1, roleId: role.RoleId);
+        Assert.AreEqual(1, userRoles.TotalCount);
+        Assert.IsTrue(userRoles.Items.Any(x => x.ResourceId == resource1 && x.Role.RoleName == role.RoleName));
+        
+        userRoles = await roleProvider.GetUserRoles(resourceId: resource2, roleId: role.RoleId);
+        Assert.AreEqual(1, userRoles.TotalCount);
+        Assert.IsTrue(userRoles.Items.Any(x => x.ResourceId == resource2 && x.Role.RoleName == role.RoleName));
 
         // Remove
-        await roleProvider.RemoveUser("*", role.RoleId, user.UserId);
+        await roleProvider.RemoveUser(resource1, role.RoleId, user.UserId);
         try
         {
-            await roleProvider.RemoveUser("*", role.RoleId, user.UserId);
+            await roleProvider.RemoveUser(resource1, role.RoleId, user.UserId);
             Assert.Fail("NotExistsException was expected.");
         }
         catch (Exception ex)
@@ -129,7 +76,7 @@ public class SimpleRoleProviderTest
         using var testInit = await TestInit.Create();
 
         // create a user
-        var userProvider = testInit.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
+        var userProvider = testInit.Scope.ServiceProvider.GetRequiredService<IUserProvider>();
         var user = await userProvider.Create(new UserCreateRequest
         {
             Email = $"{Guid.NewGuid()}@local",
@@ -138,32 +85,30 @@ public class SimpleRoleProviderTest
             Description = Guid.NewGuid().ToString()
         });
 
-        // create roles
-        var roleProvider = testInit.Scope.ServiceProvider.GetRequiredService<SimpleRoleProvider>();
-        var role1 = await roleProvider.Create(new RoleCreateRequest
-        {
-            RoleName = Guid.NewGuid().ToString(),
-            Description = Guid.NewGuid().ToString()
-        });
-        var role2 = await roleProvider.Create(new RoleCreateRequest
-        {
-            RoleName = Guid.NewGuid().ToString(),
-            Description = Guid.NewGuid().ToString()
-        });
+        var role1 = Roles.AppAdmin;
+        var role2 = Roles.AppReader;
 
         // Add the user to roles
+        var roleProvider = testInit.Scope.ServiceProvider.GetRequiredService<IRoleProvider>();
         await roleProvider.AddUser("*", role1.RoleId, user.UserId);
         await roleProvider.AddUser("1", role1.RoleId, user.UserId);
         await roleProvider.AddUser("1", role2.RoleId, user.UserId);
 
+        // check authorization code
         var identity = new ClaimsIdentity();
         identity.AddClaim(new Claim(ClaimTypes.Email, user.Email) );
-        var authUser = await userProvider.FindSimpleUser(new ClaimsPrincipal(identity));
-        Assert.IsNotNull(authUser);
-        Assert.AreEqual(user.AuthCode, authUser.AuthorizationCode);
-        Assert.AreEqual(3, authUser.UserRoles.Length);
-        Assert.IsTrue(authUser.UserRoles.Any(x => x.ResourceId == "*" && x.RoleName == role1.RoleName));
-        Assert.IsTrue(authUser.UserRoles.Any(x => x.ResourceId == "1" && x.RoleName == role1.RoleName));
-        Assert.IsTrue(authUser.UserRoles.Any(x => x.ResourceId == "1" && x.RoleName == role2.RoleName));
+        var authorizationProvider = testInit.Scope.ServiceProvider.GetRequiredService<IAuthorizationProvider>();
+        var userId = await authorizationProvider.GetUserId(new ClaimsPrincipal(identity));
+        Assert.IsNotNull(userId);
+        user = await userProvider.Get(userId.Value);
+        var authorizationCode = await authorizationProvider.GetAuthorizationCode(new ClaimsPrincipal(identity));
+        Assert.AreEqual(user.AuthorizationCode, authorizationCode);
+        
+        // check user role
+        var userRoles = await roleProvider.GetUserRoles(userId: userId);
+        Assert.AreEqual(3, userRoles.TotalCount);
+        Assert.IsTrue(userRoles.Items.Any(x => x.ResourceId == "*" && x.Role.RoleName == role1.RoleName));
+        Assert.IsTrue(userRoles.Items.Any(x => x.ResourceId == "1" && x.Role.RoleName == role1.RoleName));
+        Assert.IsTrue(userRoles.Items.Any(x => x.ResourceId == "1" && x.Role.RoleName == role2.RoleName));
     }
 }

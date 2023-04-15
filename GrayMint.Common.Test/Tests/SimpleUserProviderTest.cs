@@ -1,5 +1,5 @@
-using GrayMint.Common.AspNetCore.SimpleUserManagement;
-using GrayMint.Common.AspNetCore.SimpleUserManagement.Dtos;
+using GrayMint.Authorization.UserManagement.Abstractions;
+using GrayMint.Authorization.UserManagement.SimpleUserProviders;
 using GrayMint.Common.Exceptions;
 using GrayMint.Common.Test.Helper;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,7 +16,7 @@ public class SimpleUserProviderTest
         using var testInit = await TestInit.Create();
 
         // Create
-        var simpleUserProvider = testInit.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
+        var simpleUserProvider = testInit.Scope.ServiceProvider.GetRequiredService<IUserProvider>();
         var request = new UserCreateRequest
         {
             Email = $"{Guid.NewGuid()}@local",
@@ -32,8 +32,8 @@ public class SimpleUserProviderTest
         Assert.AreEqual(request.LastName, user.LastName);
         Assert.AreEqual(request.Description, user.Description);
         Assert.AreEqual(request.ExData, user.ExData);
-        Assert.IsNotNull(user.AuthCode);
-        Assert.AreNotEqual(string.Empty, user.AuthCode.Trim());
+        Assert.IsNotNull(user.AuthorizationCode);
+        Assert.AreNotEqual(string.Empty, user.AuthorizationCode.Trim());
 
 
 
@@ -43,7 +43,7 @@ public class SimpleUserProviderTest
         Assert.AreEqual(user.FirstName, user2.FirstName);
         Assert.AreEqual(user.LastName, user2.LastName);
         Assert.AreEqual(user.Description, user2.Description);
-        Assert.AreEqual(user.AuthCode, user2.AuthCode);
+        Assert.AreEqual(user.AuthorizationCode, user2.AuthorizationCode);
         Assert.AreEqual(user.CreatedTime, user2.CreatedTime);
         Assert.AreEqual(user.UserId, user2.UserId);
 
@@ -67,7 +67,7 @@ public class SimpleUserProviderTest
         Assert.AreEqual(user4.FirstName, updateRequest.FirstName.Value);
         Assert.AreEqual(user4.LastName, updateRequest.LastName.Value);
         Assert.AreEqual(user4.Description, updateRequest.Description.Value);
-        Assert.AreEqual(user4.AuthCode, user.AuthCode);
+        Assert.AreEqual(user4.AuthorizationCode, user.AuthorizationCode);
 
         // Remove
         await simpleUserProvider.Remove(user.UserId);
@@ -88,7 +88,7 @@ public class SimpleUserProviderTest
         using var testInit = await TestInit.Create();
 
         // Create
-        var simpleUserProvider = testInit.Scope.ServiceProvider.GetRequiredService<SimpleUserProvider>();
+        var simpleUserProvider = testInit.Scope.ServiceProvider.GetRequiredService<IUserProvider>();
         var request = new UserCreateRequest
         {
             Email = $"{Guid.NewGuid()}@local",

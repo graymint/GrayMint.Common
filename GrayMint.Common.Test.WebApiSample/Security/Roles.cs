@@ -1,6 +1,5 @@
-using System.Reflection;
-using GrayMint.Common.AspNetCore.SimpleRoleAuthorization;
-using GrayMint.Common.AspNetCore.SimpleUserControllers.Security;
+using GrayMint.Authorization.RoleManagement.RoleControllers.Security;
+using GrayMint.Authorization.RoleManagement.SimpleRoleProviders.Dtos;
 
 namespace GrayMint.Common.Test.WebApiSample.Security;
 
@@ -81,17 +80,4 @@ public static class Roles
         IsSystem = true,
         Permissions = SystemAdmin.Permissions
     };
-
-    public static SimpleRole[] All
-    {
-        get
-        {
-            var properties = typeof(Roles)
-                .GetProperties(BindingFlags.Public | BindingFlags.Static)
-                .Where(x => x.PropertyType == typeof(SimpleRole));
-
-            var roles = properties.Select(propertyInfo => (SimpleRole)propertyInfo.GetValue(null)!);
-            return roles.ToArray();
-        }
-    }
 }

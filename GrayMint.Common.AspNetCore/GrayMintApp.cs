@@ -21,7 +21,7 @@ public static class GrayMintApp
         throw CreateOptionsValidationException(optionsName, optionsType, failureMessage);
     }
 
-    public static async Task CheckDatabaseCommand<T>(IServiceProvider serviceProvider, string[] args) where T : DbContext
+    public static async Task UseGrayMintDatabaseCommand<T>(this IServiceProvider serviceProvider, string[] args) where T : DbContext
     {
         var logger = serviceProvider.GetRequiredService<ILogger<WebApplication>>();
 

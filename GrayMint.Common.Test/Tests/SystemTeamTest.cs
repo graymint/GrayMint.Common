@@ -88,15 +88,15 @@ public class AppTeamControllerTest
             Name = Guid.NewGuid().ToString(),
             RoleId = Roles.AppAdmin.RoleId
         });
-        var botUser = await testInit1.TeamClient.GetUserAsync(testInit1.AppId, apiKey1.UserId);
+        var botUserRole = await testInit1.TeamClient.GetUserAsync(testInit1.AppId, apiKey1.UserId);
+        Assert.IsNotNull(botUserRole.User);
 
         using var testInit2 = await TestInit.Create();
-
         try
         {
             await testInit2.TeamClient.AddUserAsync(testInit2.AppId, new TeamAddUserParam
             {
-                Email = botUser.User.Email,
+                Email = botUserRole.User.Email,
                 RoleId = Roles.AppAdmin.RoleId
             });
             Assert.Fail("InvalidOperationException was expected.");
@@ -121,11 +121,13 @@ public class AppTeamControllerTest
             RoleId = Roles.AppAdmin.RoleId
         };
         var userRole = await testInit.TeamClient.AddUserAsync(testInit.AppId, addUserParam);
+        Assert.IsNotNull(userRole.User);
         Assert.AreEqual(addUserParam.Email, userRole.User.Email);
         Assert.AreEqual(addUserParam.RoleId, userRole.Role.RoleId);
 
         // get
         userRole = await testInit.TeamClient.GetUserAsync(testInit.AppId, userRole.User.UserId);
+        Assert.IsNotNull(userRole.User);
         Assert.AreEqual(addUserParam.Email, userRole.User.Email);
         Assert.AreEqual(addUserParam.RoleId, userRole.Role.RoleId);
 
@@ -135,10 +137,12 @@ public class AppTeamControllerTest
             RoleId = new PatchOfGuid { Value = Roles.AppReader.RoleId }
         };
         userRole = await testInit.TeamClient.UpdateUserAsync(testInit.AppId, userRole.User.UserId, teamUserUpdate);
+        Assert.IsNotNull(userRole.User);
         Assert.AreEqual(addUserParam.Email, userRole.User.Email);
         Assert.AreEqual(teamUserUpdate.RoleId.Value, userRole.Role.RoleId);
 
         userRole = await testInit.TeamClient.GetUserAsync(testInit.AppId, userRole.User.UserId);
+        Assert.IsNotNull(userRole.User);
         Assert.AreEqual(addUserParam.Email, userRole.User.Email);
         Assert.AreEqual(teamUserUpdate.RoleId.Value, userRole.Role.RoleId);
 
@@ -191,16 +195,21 @@ public class AppTeamControllerTest
             Email = $"{Guid.NewGuid()}@mail.com",
             RoleId = Roles.AppAdmin.RoleId
         });
+        Assert.IsNotNull(userRole1.User);
+
 
         var userRole2 = await testInit.TeamClient.AddUserAsync(testInit.AppId, new TeamAddUserParam
         {
             Email = $"{Guid.NewGuid()}@mail.com",
             RoleId = Roles.AppReader.RoleId
         });
+        Assert.IsNotNull(userRole2.User);
 
         var userRoles = await testInit.TeamClient.ListUsersAsync(testInit.AppId);
-        var userRole1B = userRoles.Items.Single(x => x.User.UserId == userRole1.User.UserId);
-        var userRole2B = userRoles.Items.Single(x => x.User.UserId == userRole2.User.UserId);
+        var userRole1B = userRoles.Items.Single(x => x.User?.UserId == userRole1.User.UserId);
+        var userRole2B = userRoles.Items.Single(x => x.User?.UserId == userRole2.User.UserId);
+        Assert.IsNotNull(userRole1B.User);
+        Assert.IsNotNull(userRole2B.User);
 
         Assert.AreEqual(userRole1.User.Email, userRole1B.User.Email);
         Assert.AreEqual(userRole1.User.UserId, userRole1B.User.UserId);

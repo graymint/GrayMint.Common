@@ -14,9 +14,8 @@ namespace GrayMint.Common.Test.Tests;
 [TestClass]
 public class AwsCognitoTest
 {
-    public async Task<string> GetCredentialsAsync(string email, string password)
+    public async Task<string> GetCredentialsAsync(TestInit testInit, string email, string password)
     {
-        using var testInit = await TestInit.Create();
         var cognitoArn = Arn.Parse(testInit.CognitoAuthenticationOptions.CognitoArn);
         var awsRegion = RegionEndpoint.GetBySystemName(cognitoArn.Region);
         var provider = new AmazonCognitoIdentityProviderClient(new Amazon.Runtime.AnonymousAWSCredentials(), awsRegion);
@@ -35,7 +34,7 @@ public class AwsCognitoTest
     [TestMethod]
     public async Task CognitoTest()
     {
-        using var testInit = await TestInit.Create();
+        using var testInit = await TestInit.Create(useCognito: true);
 
         // add user to appCreator role
         try
@@ -51,7 +50,7 @@ public class AwsCognitoTest
             Assert.AreEqual(nameof(AlreadyExistsException), ex.ExceptionTypeName);
         }
 
-        var idToken = await GetCredentialsAsync("unit-tester", "Password1@");
+        var idToken = await GetCredentialsAsync(testInit, "unit-tester", "Password1@");
         testInit.HttpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, idToken);
 
