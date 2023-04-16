@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
@@ -13,6 +13,9 @@
     <PackageProjectUrl>https://github.com/graymint/GrayMint.Common</PackageProjectUrl>
     <RepositoryUrl>https://github.com/graymint/GrayMint.Common</RepositoryUrl>
     <LangVersion>latest</LangVersion>
+    <IncludeSymbols>True</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageIcon>GrayMint.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -48,12 +51,5 @@
   <ItemGroup>
     <Folder Include="Utils\" />
   </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\GrayMint.png" Link="Resources\GrayMint.png">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-  </ItemGroup>
-
+ 
 </Project>
