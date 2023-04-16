@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Linq;
-using VpnHood.Common.Utils;
+﻿using System.Collections.Concurrent;
+using GrayMint.Common.Utils;
 
-namespace VpnHood.Common.Collections;
+namespace GrayMint.Common.Collections;
 
 public class TimeoutDictionary<TKey, TValue> : IDisposable where TValue : ITimeoutItem
 {

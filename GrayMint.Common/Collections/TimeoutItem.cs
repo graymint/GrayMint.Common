@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace VpnHood.Common.Collections;
+﻿namespace GrayMint.Common.Collections;
 
 public class TimeoutItem : ITimeoutItem
 {

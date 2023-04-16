@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using VpnHood.Common.Utils;
+﻿using GrayMint.Common.Utils;
 
-namespace VpnHood.Common.Collections;
+namespace GrayMint.Common.Collections;
 
 public static class TimeoutItemUtil
 {
