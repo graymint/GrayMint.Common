@@ -24,14 +24,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GrayMint.Common\GrayMint.Common.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Include="..\GrayMint.png" Link="Resources\GrayMint.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GrayMint.Common\GrayMint.Common.csproj" />
   </ItemGroup>
 
 </Project>
