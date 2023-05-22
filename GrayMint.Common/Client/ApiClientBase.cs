@@ -1,23 +1,29 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 // ReSharper disable UnusedMember.Global
-namespace GrayMint.Common.Client;
+namespace VpnHood.Common.Client;
 
-public class ApiClientBase
+public class ApiClientBase : ApiClientRequestBase
 {
     private class HttpNoResult
     {
 
     }
 
-    protected struct HttpResult<T>
+    protected readonly struct HttpResult<T>
     {
         public HttpResult(HttpResponseMessage responseMessage, T responseObject, string responseText)
         {
@@ -31,27 +37,27 @@ public class ApiClientBase
         public string Text { get; }
     }
 
-    protected JsonSerializerOptions JsonSerializerSettings { get; set; } = new();
-    protected HttpClient HttpClient;
+    protected JsonSerializerOptions JsonSerializerSettings => Settings.Value;
+    protected HttpClient? HttpClient;
+    protected readonly Lazy<JsonSerializerOptions> Settings;
     public ILogger Logger { get; set; } = NullLogger.Instance;
     public EventId LoggerEventId { get; set; } = new();
 
     public ApiClientBase(HttpClient httpClient)
     {
         HttpClient = httpClient;
+        Settings = new Lazy<JsonSerializerOptions>(CreateSerializerSettings);
     }
 
-    public Uri? DefaultBaseAddress { get; set; }
-    public AuthenticationHeaderValue? DefaultAuthorization { get; set; }
-
-    protected virtual Task PrepareRequestAsync(HttpClient client, HttpRequestMessage request, string url, CancellationToken ct)
+    protected ApiClientBase()
     {
-        return Task.CompletedTask;
+        Settings = new Lazy<JsonSerializerOptions>(CreateSerializerSettings);
     }
 
-    protected virtual Task ProcessResponseAsync(HttpClient client, HttpResponseMessage response, CancellationToken ct)
+    protected virtual JsonSerializerOptions CreateSerializerSettings()
     {
-        return Task.CompletedTask;
+        var settings = new JsonSerializerOptions();
+        return settings;
     }
 
     public bool ReadResponseAsString { get; set; }
@@ -214,17 +220,9 @@ public class ApiClientBase
             urlBuilder.Length--;
         }
 
-        var client = HttpClient;
-        var url = urlBuilder.ToString();
-        request.RequestUri = new Uri(url, UriKind.RelativeOrAbsolute);
-        request.Headers.Authorization ??= DefaultAuthorization;
+        var client = HttpClient ?? throw new Exception("HttpClient has not been set.");
+        await PrepareRequestAsync(client, request, urlBuilder, cancellationToken).ConfigureAwait(false);
 
-        // build url
-        await PrepareRequestAsync(client, request, url, cancellationToken).ConfigureAwait(false);
-
-        // add DefaultBaseAddress if exists and request uri is relative
-        if (DefaultBaseAddress != null && !request.RequestUri.IsAbsoluteUri)
-            request.RequestUri = new Uri(DefaultBaseAddress, request.RequestUri);
 
         using var response = await HttpClientSendAsync(client, request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         var headers = response.Headers.ToDictionary(h => h.Key, h => h.Value);
