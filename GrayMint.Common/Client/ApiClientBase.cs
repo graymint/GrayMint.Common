@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 // ReSharper disable UnusedMember.Global
 namespace GrayMint.Common.Client;
 
-public class ApiClientBase : ApiClientRequestBase
+public class ApiClientBase : ApiClientCommon
 {
     private class HttpNoResult
     {

@@ -3,7 +3,7 @@ using System.Text;
 
 namespace GrayMint.Common.Client;
 
-public class ApiClientRequestBase
+public abstract class ApiClientCommon
 {
     public Uri? DefaultBaseAddress { get; set; }
     public AuthenticationHeaderValue? DefaultAuthorization { get; set; }
