@@ -14,10 +14,12 @@ public static class GrayMintExceptionHandlerExtension
     {
         private readonly RequestDelegate _next;
         private readonly GrayMintExceptionHandlerOptions _grayMintExceptionOptions;
+        private readonly ILogger<GrayMintExceptionMiddleware> _logger;
 
-        public GrayMintExceptionMiddleware(RequestDelegate next, IOptions<GrayMintExceptionHandlerOptions> appExceptionOptions)
+        public GrayMintExceptionMiddleware(RequestDelegate next, IOptions<GrayMintExceptionHandlerOptions> appExceptionOptions, ILogger<GrayMintExceptionMiddleware> logger)
         {
             _next = next;
+            _logger = logger;
             _grayMintExceptionOptions = appExceptionOptions.Value;
         }
 
@@ -67,7 +69,11 @@ public static class GrayMintExceptionHandlerExtension
                     if (key != null)
                         error.Data.Add(key, item.Value?.ToString());
                 }
-                await context.Response.WriteAsync(JsonSerializer.Serialize(error));
+
+                var errorJson = JsonSerializer.Serialize(error);
+                await context.Response.WriteAsync(errorJson);
+
+                _logger.LogError(ex, "{Message}. ErrorInfo: {ErrorInfo}", ex.Message , errorJson);
             }
         }
     }
