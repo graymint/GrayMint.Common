@@ -27,6 +27,7 @@ public static class GrayMintExtension
                     .AllowAnyOrigin()
                     .AllowAnyMethod()
                     .AllowAnyHeader()
+                    .AllowCredentials()
                     .SetPreflightMaxAge(TimeSpan.FromHours(24 * 30));
             }));
 
