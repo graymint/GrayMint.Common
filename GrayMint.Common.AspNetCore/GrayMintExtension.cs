@@ -24,10 +24,9 @@ public static class GrayMintExtension
             services.AddCors(o => o.AddPolicy(GrayMintApp.CorsPolicyName, corsPolicyBuilder =>
             {
                 corsPolicyBuilder
-                    .AllowAnyOrigin()
+                    .SetIsOriginAllowed(_ => true) // allow any origin
                     .AllowAnyMethod()
                     .AllowAnyHeader()
-                    .AllowCredentials()
                     .SetPreflightMaxAge(TimeSpan.FromHours(24 * 30));
             }));
 
@@ -38,13 +37,6 @@ public static class GrayMintExtension
                 mvcOptions.ModelMetadataDetailsProviders.Add(
                     new SuppressChildValidationMetadataProvider(typeof(IPAddress)));
             });
-
-        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-        if (servicesOptions.AddSwagger)
-        {
-            services.AddEndpointsApiExplorer();
-            services.AddGrayMintSwagger(commonOptions.AppName, servicesOptions.AddSwaggerVersioning);
-        }
 
         if (servicesOptions.AddMemoryCache)
             services.AddMemoryCache();
@@ -59,12 +51,6 @@ public static class GrayMintExtension
     {
         if (options.UseCors)
             webApplication.UseCors(GrayMintApp.CorsPolicyName);
-
-        if (options.UseSwagger)
-        {
-            webApplication.UseOpenApi();
-            webApplication.UseSwaggerUi3();
-        }
 
         if (options.UseAuthentication)
             webApplication.UseAuthentication();

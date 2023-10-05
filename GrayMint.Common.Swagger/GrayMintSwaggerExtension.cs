@@ -5,12 +5,14 @@ using NJsonSchema.Generation.TypeMappers;
 using NSwag;
 using NSwag.Generation.Processors.Security;
 
-namespace GrayMint.Common.AspNetCore;
+namespace GrayMint.Common.Swagger;
 
 public static class GrayMintSwaggerExtension
 {
+    // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
     public static IServiceCollection AddGrayMintSwagger(this IServiceCollection services, string title, bool addVersioning)
     {
+        services.AddEndpointsApiExplorer();
         services.AddSwaggerDocument(configure =>
         {
             configure.Title = title;
@@ -52,5 +54,11 @@ public static class GrayMintSwaggerExtension
 
         return services;
 
+    }
+
+    public static void UseGrayMintSwagger(this WebApplication webApplication)
+    {
+        webApplication.UseOpenApi();
+        webApplication.UseSwaggerUi3();
     }
 }
