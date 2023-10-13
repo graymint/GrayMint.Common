@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Net;
 using System.Net.Mime;
+using System.Security.Authentication;
 using System.Text.Json;
 using GrayMint.Common.Client;
 using GrayMint.Common.Exceptions;
@@ -41,7 +42,8 @@ public static class GrayMintExceptionHandlerExtension
                 // set correct https status code depends on exception
                 if (NotExistsException.Is(ex)) context.Response.StatusCode = (int)HttpStatusCode.NotFound;
                 else if (AlreadyExistsException.Is(ex)) context.Response.StatusCode = (int)HttpStatusCode.Conflict;
-                else if (ex is UnauthorizedAccessException) context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                else if (ex is UnauthorizedAccessException || ex.InnerException is UnauthorizedAccessException) context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                else if (ex is AuthenticationException || ex.InnerException is AuthenticationException) context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                 else context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
 
                 // create typeFullName
