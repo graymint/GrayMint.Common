@@ -3,7 +3,6 @@ namespace GrayMint.Common.AspNetCore;
 public class UseServicesOptions
 {
     public bool UseCors { get; set; } = true;
-    public bool UseSwagger { get; set; } = true;
     public bool UseAuthentication { get; set; } = true;
     public bool UseAuthorization { get; set; } = true;
     public bool MapControllers { get; set; } = true;
