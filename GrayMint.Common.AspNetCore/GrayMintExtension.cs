@@ -9,12 +9,10 @@ namespace GrayMint.Common.AspNetCore;
 
 public static class GrayMintExtension
 {
-    public static void AddGrayMintCommonServices(this WebApplicationBuilder builder,
+    public static void AddGrayMintCommonServices(this IServiceCollection services,
         GrayMintCommonOptions commonOptions,
         RegisterServicesOptions servicesOptions)
     {
-        var services = builder.Services;
-
         // configure settings
         commonOptions.Validate();
         services.AddSingleton(Options.Create(commonOptions));
