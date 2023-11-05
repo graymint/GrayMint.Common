@@ -16,6 +16,7 @@ public static class GrayMintSwaggerExtension
         services.AddSwaggerDocument(configure =>
         {
             configure.Title = title;
+            configure.RequireParametersWithoutDefault = true;
 
             configure.TypeMappers = new List<ITypeMapper>
             {
