@@ -38,7 +38,7 @@ public static class TestUtil
     {
         message ??= "Unexpected Value";
         if (!Equals(expected, actual))
-            throw new Exception($"{message}. Expected: {expected}, Actual: {actual}");
+            throw new AssertException($"{message}. Expected: {expected}, Actual: {actual}");
     }
 
     public static async Task AssertEqualsWait<TValue>(object? expectedValue, Func<TValue?> valueFactory,
@@ -65,13 +65,14 @@ public static class TestUtil
         try
         {
             await task;
-            throw new Exception($"Expected {expectedStatusCode} but was OK. {message}");
+            throw new AssertException($"Expected {expectedStatusCode} but was OK. {message}");
         }
         catch (ApiException ex)
         {
             if (ex.StatusCode != expectedStatusCode)
                 throw new Exception($"Expected {expectedStatusCode} but was {ex.StatusCode}. {message}");
         }
+
     }
 
     public static Task AssertApiException<T>(Task task, string? message = null)
@@ -84,18 +85,19 @@ public static class TestUtil
         try
         {
             await task;
-            throw new Exception($"Expected {expectedExceptionType} exception but was OK. {message}");
+            throw new AssertException($"Expected {expectedExceptionType} exception but was OK. {message}");
         }
         catch (ApiException ex)
         {
             if (ex.ExceptionTypeName != expectedExceptionType)
-                throw new Exception($"Expected {expectedExceptionType} but was {ex.ExceptionTypeName}. {message}");
+                throw new AssertException($"Expected {expectedExceptionType} but was {ex.ExceptionTypeName}. {message}");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not AssertException)
         {
             if (ex.GetType().Name != expectedExceptionType)
-                throw new Exception($"Expected {expectedExceptionType} but was {ex.GetType().Name}. {message}");
+                throw new AssertException($"Expected {expectedExceptionType} but was {ex.GetType().Name}. {message}", ex);
         }
+
     }
 
     public static async Task AssertNotExistsException(Task task, string? message = null)
@@ -103,18 +105,19 @@ public static class TestUtil
         try
         {
             await task;
-            throw new Exception($"Expected kind of {nameof(NotExistsException)} but was OK. {message}");
+            throw new AssertException($"Expected kind of {nameof(NotExistsException)} but was OK. {message}");
         }
         catch (ApiException ex)
         {
             if (ex.ExceptionTypeName != nameof(NotExistsException))
-                throw new Exception($"Expected {nameof(NotExistsException)} but was {ex.ExceptionTypeName}. {message}");
+                throw new AssertException($"Expected {nameof(NotExistsException)} but was {ex.ExceptionTypeName}. {message}");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not AssertException)
         {
             if (!NotExistsException.Is(ex))
-                throw new Exception($"Expected kind of {nameof(NotExistsException)} but was {ex.GetType().Name}. {message}");
+                throw new AssertException($"Expected kind of {nameof(NotExistsException)} but was {ex.GetType().Name}. {message}", ex);
         }
+
     }
 
     public static async Task AssertAlreadyExistsException(Task task, string? message = null)
@@ -122,17 +125,17 @@ public static class TestUtil
         try
         {
             await task;
-            throw new Exception($"Expected kind of {nameof(AlreadyExistsException)} but was OK. {message}");
+            throw new AssertException($"Expected kind of {nameof(AlreadyExistsException)} but was OK. {message}");
         }
         catch (ApiException ex)
         {
             if (ex.ExceptionTypeName != nameof(AlreadyExistsException))
-                throw new Exception($"Expected {nameof(AlreadyExistsException)} but was {ex.ExceptionTypeName}. {message}");
+                throw new AssertException($"Expected {nameof(AlreadyExistsException)} but was {ex.ExceptionTypeName}. {message}");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not AssertException)
         {
             if (!AlreadyExistsException.Is(ex))
-                throw new Exception($"Expected kind of {nameof(AlreadyExistsException)} but was {ex.GetType().Name}. {message}");
+                throw new AssertException($"Expected kind of {nameof(AlreadyExistsException)} but was {ex.GetType().Name}. {message}", ex);
         }
     }
 }
