@@ -1,4 +1,8 @@
-﻿namespace GrayMint.Common.Utils;
+﻿using GrayMint.Common.Client;
+using GrayMint.Common.Exceptions;
+using System.Net;
+
+namespace GrayMint.Common.Utils;
 
 public static  class TestUtil
 {
@@ -49,5 +53,71 @@ public static  class TestUtil
     {
         await WaitForValue(expectedValue, valueFactory, timeout);
         AssertEquals(expectedValue, await valueFactory(), message);
+    }
+
+    public static Task AssertApiException(HttpStatusCode expectedStatusCode, Task task, string? message = null)
+    {
+        return AssertApiException((int)expectedStatusCode, task, message);
+    }
+
+    public static async Task AssertApiException(int expectedStatusCode, Task task, string? message = null)
+    {
+        try
+        {
+            await task;
+            throw new Exception($"Expected {expectedStatusCode} but was OK. {message}");
+        }
+        catch (ApiException ex)
+        {
+            if (ex.StatusCode != expectedStatusCode)
+                throw new Exception($"Expected {expectedStatusCode} but was {ex.StatusCode}. {message}");
+        }
+    }
+
+    public static Task AssertApiException<T>(Task task, string? message = null)
+    {
+        return AssertApiException(nameof(T), task, message);
+    }
+
+    public static async Task AssertApiException(string typeName, Task task, string? message = null)
+    {
+        try
+        {
+            await task;
+            throw new Exception($"Expected {typeName} exception but was OK. {message}");
+        }
+        catch (ApiException ex)
+        {
+            if (ex.ExceptionTypeName != typeName)
+                throw new Exception($"Expected {typeName} but was {ex.StatusCode}. {message}");
+        }
+    }
+
+    public static async Task AssertNotExistsException(Task task, string? message = null)
+    {
+        try
+        {
+            await task;
+            throw new Exception($"Expected kind of {nameof(NotExistsException)} but was OK. {message}");
+        }
+        catch (Exception ex)
+        {
+            if (!NotExistsException.Is(ex))
+                throw new Exception($"Expected kind of {nameof(NotExistsException)} but was {ex.GetType().Name}. {message}");
+        }
+    }
+
+    public static async Task AssertAlreadyExistsException(Task task, string? message = null)
+    {
+        try
+        {
+            await task;
+            throw new Exception($"Expected kind of {nameof(AlreadyExistsException)} but was OK. {message}");
+        }
+        catch (Exception ex)
+        {
+            if (!AlreadyExistsException.Is(ex))
+                throw new Exception($"Expected kind of {nameof(AlreadyExistsException)} but was {ex.GetType().Name}. {message}");
+        }
     }
 }
