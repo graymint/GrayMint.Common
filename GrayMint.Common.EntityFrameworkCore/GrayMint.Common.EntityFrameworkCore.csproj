@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Authors>GrayMint</Authors>
-    <Version>2.0.155</Version>
+    <Version>2.0.156</Version>
     <Description>A few utils which used in some EF Core projects.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <IsPackable>true</IsPackable>
