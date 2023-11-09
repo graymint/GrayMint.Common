@@ -89,7 +89,7 @@ public static  class TestUtil
         catch (ApiException ex)
         {
             if (ex.ExceptionTypeName != expectedExceptionType)
-                throw new Exception($"Expected {expectedExceptionType} but was {ex.GetType().Name}. {message}");
+                throw new Exception($"Expected {expectedExceptionType} but was {ex.ExceptionTypeName}. {message}");
         }
     }
 
