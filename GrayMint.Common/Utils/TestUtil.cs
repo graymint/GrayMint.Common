@@ -4,7 +4,7 @@ using System.Net;
 
 namespace GrayMint.Common.Utils;
 
-public static  class TestUtil
+public static class TestUtil
 {
     public static async Task<bool> WaitForValue<TValue>(object? expectedValue, Func<TValue?> valueFactory, int timeout = 5000)
     {
@@ -41,14 +41,14 @@ public static  class TestUtil
             throw new Exception($"{message}. Expected: {expected}, Actual: {actual}");
     }
 
-    public static async Task AssertEqualsWait<TValue>(object? expectedValue, Func<TValue?> valueFactory, 
+    public static async Task AssertEqualsWait<TValue>(object? expectedValue, Func<TValue?> valueFactory,
         string? message = null, int timeout = 5000)
     {
         await WaitForValue(expectedValue, valueFactory, timeout);
         AssertEquals(expectedValue, valueFactory(), message);
     }
 
-    public static async Task AssertEqualsWait<TValue>(object? expectedValue, Func<Task<TValue?>> valueFactory, 
+    public static async Task AssertEqualsWait<TValue>(object? expectedValue, Func<Task<TValue?>> valueFactory,
         string? message = null, int timeout = 5000)
     {
         await WaitForValue(expectedValue, valueFactory, timeout);
@@ -90,6 +90,11 @@ public static  class TestUtil
         {
             if (ex.ExceptionTypeName != expectedExceptionType)
                 throw new Exception($"Expected {expectedExceptionType} but was {ex.ExceptionTypeName}. {message}");
+        }
+        catch (Exception ex)
+        {
+            if (ex.GetType().Name != expectedExceptionType)
+                throw new Exception($"Expected {expectedExceptionType} but was {ex.GetType().Name}. {message}");
         }
     }
 
