@@ -100,6 +100,11 @@ public static  class TestUtil
             await task;
             throw new Exception($"Expected kind of {nameof(NotExistsException)} but was OK. {message}");
         }
+        catch (ApiException ex)
+        {
+            if (ex.ExceptionTypeName != nameof(NotExistsException))
+                throw new Exception($"Expected {nameof(NotExistsException)} but was {ex.ExceptionTypeName}. {message}");
+        }
         catch (Exception ex)
         {
             if (!NotExistsException.Is(ex))
@@ -113,6 +118,11 @@ public static  class TestUtil
         {
             await task;
             throw new Exception($"Expected kind of {nameof(AlreadyExistsException)} but was OK. {message}");
+        }
+        catch (ApiException ex)
+        {
+            if (ex.ExceptionTypeName != nameof(AlreadyExistsException))
+                throw new Exception($"Expected {nameof(AlreadyExistsException)} but was {ex.ExceptionTypeName}. {message}");
         }
         catch (Exception ex)
         {
