@@ -79,17 +79,17 @@ public static  class TestUtil
         return AssertApiException(nameof(T), task, message);
     }
 
-    public static async Task AssertApiException(string typeName, Task task, string? message = null)
+    public static async Task AssertApiException(string expectedExceptionType, Task task, string? message = null)
     {
         try
         {
             await task;
-            throw new Exception($"Expected {typeName} exception but was OK. {message}");
+            throw new Exception($"Expected {expectedExceptionType} exception but was OK. {message}");
         }
         catch (ApiException ex)
         {
-            if (ex.ExceptionTypeName != typeName)
-                throw new Exception($"Expected {typeName} but was {ex.StatusCode}. {message}");
+            if (ex.ExceptionTypeName != expectedExceptionType)
+                throw new Exception($"Expected {expectedExceptionType} but was {ex.StatusCode}. {message}");
         }
     }
 
