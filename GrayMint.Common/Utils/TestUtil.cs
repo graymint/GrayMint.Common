@@ -76,7 +76,7 @@ public static  class TestUtil
 
     public static Task AssertApiException<T>(Task task, string? message = null)
     {
-        return AssertApiException(nameof(T), task, message);
+        return AssertApiException(typeof(T).Name, task, message);
     }
 
     public static async Task AssertApiException(string expectedExceptionType, Task task, string? message = null)
@@ -89,7 +89,7 @@ public static  class TestUtil
         catch (ApiException ex)
         {
             if (ex.ExceptionTypeName != expectedExceptionType)
-                throw new Exception($"Expected {expectedExceptionType} but was {ex.StatusCode}. {message}");
+                throw new Exception($"Expected {expectedExceptionType} but was {ex.GetType().Name}. {message}");
         }
     }
 
