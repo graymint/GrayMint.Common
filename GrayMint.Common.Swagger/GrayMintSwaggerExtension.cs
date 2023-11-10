@@ -57,9 +57,10 @@ public static class GrayMintSwaggerExtension
 
     }
 
-    public static void UseGrayMintSwagger(this WebApplication webApplication)
+    public static IApplicationBuilder UseGrayMintSwagger(this IApplicationBuilder app)
     {
-        webApplication.UseOpenApi();
-        webApplication.UseSwaggerUi3();
+        app.UseOpenApi();
+        app.UseSwaggerUi3();
+        return app;
     }
 }

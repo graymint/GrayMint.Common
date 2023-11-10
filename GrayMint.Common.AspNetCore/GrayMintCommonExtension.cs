@@ -7,9 +7,9 @@ using Microsoft.Extensions.Options;
 
 namespace GrayMint.Common.AspNetCore;
 
-public static class GrayMintExtension
+public static class GrayMintCommonExtension
 {
-    public static void AddGrayMintCommonServices(this IServiceCollection services,
+    public static IServiceCollection AddGrayMintCommonServices(this IServiceCollection services,
         GrayMintCommonOptions commonOptions,
         RegisterServicesOptions servicesOptions)
     {
@@ -43,33 +43,38 @@ public static class GrayMintExtension
             services.AddHttpClient();
 
         services.AddHostedService<MaintenanceService>();
+        return services;
     }
 
-    public static void UseGrayMintCommonServices(this WebApplication webApplication, UseServicesOptions options)
+    public static IApplicationBuilder UseGrayMintCommonServices(this WebApplication app, UseServicesOptions options)
     {
         if (options.UseCors)
-            webApplication.UseCors(GrayMintApp.CorsPolicyName);
+            app.UseCors(GrayMintApp.CorsPolicyName);
 
         if (options.UseAuthentication)
-            webApplication.UseAuthentication();
+            app.UseAuthentication();
 
         if (options.UseAuthorization)
-            webApplication.UseAuthorization();
+            app.UseAuthorization();
 
         if (options.UseAppExceptions)
-            webApplication.UseGrayMintExceptionHandler();
+            app.UseGrayMintExceptionHandler();
 
         if (options.MapControllers)
-            webApplication.MapControllers();
+            app.MapControllers();
+
+        return app;
     }
 
-    public static void ScheduleGrayMintSqlMaintenance<TContext>(this WebApplication webApplication, TimeSpan interval) where TContext : DbContext
+    public static IApplicationBuilder ScheduleGrayMintSqlMaintenance<TContext>(this IApplicationBuilder app, TimeSpan interval) where TContext : DbContext
     {
-        var maintenanceService = (MaintenanceService)webApplication.Services
+        var maintenanceService = (MaintenanceService)app.ApplicationServices
             .GetRequiredService<IEnumerable<IHostedService>>()
             .Single(x=>x is MaintenanceService);
 
         maintenanceService.SqlMaintenanceJobs.Add(Tuple.Create(typeof(TContext), new JobSection(interval)));
+
+        return app;
     }
 
 
