@@ -1,5 +1,5 @@
 ﻿using System.Net;
-using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 using NJsonSchema;
 using NJsonSchema.Generation.TypeMappers;
 using NSwag;
@@ -38,19 +38,19 @@ public static class GrayMintSwaggerExtension
         // Version
         if (addVersioning)
         {
-            services.AddApiVersioning(options =>
-            {
-                options.DefaultApiVersion = new ApiVersion(1, 0);
-                options.AssumeDefaultVersionWhenUnspecified = true;
-                options.ReportApiVersions = true;
-            });
-
-            services.AddVersionedApiExplorer(options =>
-            {
-                // ReSharper disable once StringLiteralTypo
-                options.GroupNameFormat = "'v'VVV";
-                options.SubstituteApiVersionInUrl = true;
-            });
+            services
+                .AddApiVersioning(options =>
+                {
+                    options.DefaultApiVersion = new ApiVersion(1, 0);
+                    options.AssumeDefaultVersionWhenUnspecified = true;
+                    options.ReportApiVersions = true;
+                })
+                .AddApiExplorer(options =>
+                {
+                    // ReSharper disable once StringLiteralTypo
+                    options.GroupNameFormat = "'v'VVV";
+                    options.SubstituteApiVersionInUrl = true;
+                });
         }
 
         return services;
