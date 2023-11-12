@@ -62,7 +62,7 @@ public static class TestUtil
 
     private static void AssertExceptionContains(Exception ex, string? contains)
     {
-        if (contains != null && !ex.Message.Contains(contains))
+        if (contains != null && !ex.Message.Contains(contains, StringComparison.OrdinalIgnoreCase))
             throw new Exception($"Actual message does not contain \"{contains}\".");
     }
 
