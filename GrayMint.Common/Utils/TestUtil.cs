@@ -60,6 +60,12 @@ public static class TestUtil
         return AssertApiException((int)expectedStatusCode, task, message);
     }
 
+    private static void AssertExceptionContains(Exception ex, string? contains)
+    {
+        if (contains != null && !ex.Message.Contains(contains))
+            throw new Exception($"Actual message does not contain \"{contains}\".");
+    }
+
     public static async Task AssertApiException(int expectedStatusCode, Task task, 
         string? message = null, string? contains = null)
     {
@@ -73,8 +79,7 @@ public static class TestUtil
             if (ex.StatusCode != expectedStatusCode)
                 throw new Exception($"Expected {expectedStatusCode} but the actual was {ex.StatusCode}. {message}");
 
-            if (contains!=null && !ex.Message.Contains(contains))
-                throw new Exception($"Actual message does not contain \"{contains}\".");
+            AssertExceptionContains(ex, contains);
         }
 
     }
@@ -97,16 +102,14 @@ public static class TestUtil
             if (ex.ExceptionTypeName != expectedExceptionType)
                 throw new AssertException($"Expected {expectedExceptionType} but was {ex.ExceptionTypeName}. {message}");
 
-            if (contains != null && !ex.Message.Contains(contains))
-                throw new Exception($"Actual message does not contain \"{contains}\".");
+            AssertExceptionContains(ex, contains);
         }
         catch (Exception ex) when (ex is not AssertException)
         {
             if (ex.GetType().Name != expectedExceptionType)
                 throw new AssertException($"Expected {expectedExceptionType} but was {ex.GetType().Name}. {message}", ex);
 
-            if (contains != null && !ex.Message.Contains(contains))
-                throw new Exception($"Actual message does not contain \"{contains}\".");
+            AssertExceptionContains(ex, contains);
         }
     }
 
@@ -122,16 +125,14 @@ public static class TestUtil
             if (ex.ExceptionTypeName != nameof(NotExistsException))
                 throw new AssertException($"Expected {nameof(NotExistsException)} but was {ex.ExceptionTypeName}. {message}");
 
-            if (contains != null && !ex.Message.Contains(contains))
-                throw new Exception($"Actual message does not contain \"{contains}\".");
+            AssertExceptionContains(ex, contains);
         }
         catch (Exception ex) when (ex is not AssertException)
         {
             if (!NotExistsException.Is(ex))
                 throw new AssertException($"Expected kind of {nameof(NotExistsException)} but was {ex.GetType().Name}. {message}", ex);
 
-            if (contains != null && !ex.Message.Contains(contains))
-                throw new Exception($"Actual message does not contain \"{contains}\".");
+            AssertExceptionContains(ex, contains);
         }
     }
 
@@ -146,17 +147,15 @@ public static class TestUtil
         {
             if (ex.ExceptionTypeName != nameof(AlreadyExistsException))
                 throw new AssertException($"Expected {nameof(AlreadyExistsException)} but was {ex.ExceptionTypeName}. {message}");
-
-            if (contains != null && !ex.Message.Contains(contains))
-                throw new Exception($"Actual message does not contain \"{contains}\".");
+            
+            AssertExceptionContains(ex, contains);
         }
         catch (Exception ex) when (ex is not AssertException)
         {
             if (!AlreadyExistsException.Is(ex))
                 throw new AssertException($"Expected kind of {nameof(AlreadyExistsException)} but was {ex.GetType().Name}. {message}", ex);
 
-            if (contains != null && !ex.Message.Contains(contains))
-                throw new Exception($"Actual message does not contain \"{contains}\".");
+            AssertExceptionContains(ex, contains);
         }
     }
 }
