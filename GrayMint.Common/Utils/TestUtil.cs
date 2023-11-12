@@ -63,7 +63,7 @@ public static class TestUtil
     private static void AssertExceptionContains(Exception ex, string? contains)
     {
         if (contains != null && !ex.Message.Contains(contains, StringComparison.OrdinalIgnoreCase))
-            throw new Exception($"Actual message does not contain \"{contains}\".");
+            throw new Exception($"Actual error message does not contain \"{contains}\".");
     }
 
     public static async Task AssertApiException(int expectedStatusCode, Task task, 
