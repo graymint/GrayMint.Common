@@ -11,7 +11,7 @@ public static class GrayMintCommonExtension
     public static IServiceCollection AddGrayMintCommonServices(this IServiceCollection services,
         RegisterServicesOptions servicesOptions)
     {
-        // cors
+        // CORS
         if (servicesOptions.AddCors)
             services.AddCors(o => o.AddPolicy(GrayMintApp.CorsPolicyName, corsPolicyBuilder =>
             {
