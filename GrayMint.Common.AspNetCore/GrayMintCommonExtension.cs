@@ -3,20 +3,14 @@ using GrayMint.Common.AspNetCore.Services;
 using GrayMint.Common.JobController;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace GrayMint.Common.AspNetCore;
 
 public static class GrayMintCommonExtension
 {
     public static IServiceCollection AddGrayMintCommonServices(this IServiceCollection services,
-        GrayMintCommonOptions commonOptions,
         RegisterServicesOptions servicesOptions)
     {
-        // configure settings
-        commonOptions.Validate();
-        services.AddSingleton(Options.Create(commonOptions));
-
         // cors
         if (servicesOptions.AddCors)
             services.AddCors(o => o.AddPolicy(GrayMintApp.CorsPolicyName, corsPolicyBuilder =>
@@ -43,6 +37,7 @@ public static class GrayMintCommonExtension
             services.AddHttpClient();
 
         services.AddHostedService<MaintenanceService>();
+
         return services;
     }
 
@@ -77,5 +72,21 @@ public static class GrayMintCommonExtension
         return app;
     }
 
+    public static IApplicationBuilder RedirectRoot(this IApplicationBuilder app, string path)
+    {
+        app.Use(async (context, next) =>
+        {
+            // check if the request is *not* using the HTTPS scheme
+            if (context.Request.Path == "/")
+            {
+                context.Response.Redirect(path);
+                return;
+            }
 
+            // otherwise continue with the request pipeline
+            await next();
+        });
+
+        return app;
+    }
 }

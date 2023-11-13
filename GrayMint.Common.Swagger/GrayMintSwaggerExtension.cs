@@ -63,4 +63,22 @@ public static class GrayMintSwaggerExtension
         app.UseSwaggerUi3();
         return app;
     }
+
+    public static IApplicationBuilder RedirectRootToSwaggerUi(this IApplicationBuilder app)
+    {
+        app.Use(async (context, next) =>
+        {
+            // check if the request is *not* using the HTTPS scheme
+            if (context.Request.Path == "/")
+            {
+                context.Response.Redirect("/swagger/index.html");
+                return;
+            }
+
+            // otherwise continue with the request pipeline
+            await next();
+        });
+
+        return app;
+    }
 }

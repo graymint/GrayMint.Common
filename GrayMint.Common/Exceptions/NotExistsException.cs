@@ -1,10 +1,11 @@
 ﻿namespace GrayMint.Common.Exceptions;
 
-public class NotExistsException : Exception
+public sealed class NotExistsException : Exception
 {
     public NotExistsException(string? message = null)
         : base(message)
     {
+        Data["HttpStatusCode"] = 404;
     }
 
     public static bool Is(Exception ex)

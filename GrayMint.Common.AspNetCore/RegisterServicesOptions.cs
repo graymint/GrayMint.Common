@@ -6,4 +6,5 @@ public class RegisterServicesOptions
     public bool AddControllers { get; set; } = true;
     public bool AddMemoryCache { get; set; } = true;
     public bool AddHttpClient { get; set; } = true;
+    public string? RedirectRoot { get; set; }
 }

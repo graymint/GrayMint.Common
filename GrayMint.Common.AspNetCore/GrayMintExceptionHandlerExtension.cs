@@ -44,6 +44,7 @@ public static class GrayMintExceptionHandlerExtension
                 else if (AlreadyExistsException.Is(ex)) context.Response.StatusCode = (int)HttpStatusCode.Conflict;
                 else if (ex is UnauthorizedAccessException || ex.InnerException is UnauthorizedAccessException) context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
                 else if (ex is AuthenticationException || ex.InnerException is AuthenticationException) context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                else if (ex.Data.Contains("HttpStatusCode")) context.Response.StatusCode = (int)ex.Data["HttpStatusCode"]!;
                 else context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
 
                 // create typeFullName
@@ -75,7 +76,7 @@ public static class GrayMintExceptionHandlerExtension
                 var errorJson = JsonSerializer.Serialize(error);
                 await context.Response.WriteAsync(errorJson);
 
-                _logger.LogError(ex, "{Message}. ErrorInfo: {ErrorInfo}", ex.Message , errorJson);
+                _logger.LogError(ex, "{Message}. ErrorInfo: {ErrorInfo}", ex.Message, errorJson);
             }
         }
     }
