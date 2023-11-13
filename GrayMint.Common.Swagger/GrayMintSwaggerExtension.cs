@@ -10,7 +10,8 @@ namespace GrayMint.Common.Swagger;
 public static class GrayMintSwaggerExtension
 {
     // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-    public static IServiceCollection AddGrayMintSwagger(this IServiceCollection services, string title, bool addVersioning)
+    public static IServiceCollection AddGrayMintSwagger(this IServiceCollection services, 
+        string title, bool addVersioning)
     {
         services.AddEndpointsApiExplorer();
         services.AddSwaggerDocument(configure =>
@@ -57,27 +58,26 @@ public static class GrayMintSwaggerExtension
 
     }
 
-    public static IApplicationBuilder UseGrayMintSwagger(this IApplicationBuilder app)
+    public static IApplicationBuilder UseGrayMintSwagger(this IApplicationBuilder app, bool redirectRootToSwaggerUi = true)
     {
         app.UseOpenApi();
         app.UseSwaggerUi3();
-        return app;
-    }
 
-    public static IApplicationBuilder RedirectRootToSwaggerUi(this IApplicationBuilder app)
-    {
-        app.Use(async (context, next) =>
+        if (redirectRootToSwaggerUi)
         {
-            // check if the request is *not* using the HTTPS scheme
-            if (context.Request.Path == "/")
+            app.Use(async (context, next) =>
             {
-                context.Response.Redirect("/swagger/index.html");
-                return;
-            }
+                // check if the request is *not* using the HTTPS scheme
+                if (context.Request.Path == "/")
+                {
+                    context.Response.Redirect("/swagger/index.html");
+                    return;
+                }
 
-            // otherwise continue with the request pipeline
-            await next();
-        });
+                // otherwise continue with the request pipeline
+                await next();
+            });
+        }
 
         return app;
     }
