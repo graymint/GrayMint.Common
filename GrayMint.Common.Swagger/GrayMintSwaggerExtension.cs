@@ -58,7 +58,7 @@ public static class GrayMintSwaggerExtension
 
     }
 
-    public static IApplicationBuilder UseGrayMintSwagger(this IApplicationBuilder app, bool redirectRootToSwaggerUi = true)
+    public static IApplicationBuilder UseGrayMintSwagger(this IApplicationBuilder app, bool redirectRootToSwaggerUi = false)
     {
         app.UseOpenApi();
         app.UseSwaggerUi3();
