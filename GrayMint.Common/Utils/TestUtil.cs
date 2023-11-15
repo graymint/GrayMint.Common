@@ -6,6 +6,19 @@ namespace GrayMint.Common.Utils;
 
 public static class TestUtil
 {
+    public class AssertException : Exception
+    {
+        public AssertException(string? message = null)
+            : base(message)
+        {
+        }
+
+        public AssertException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
+
     public static async Task<bool> WaitForValue<TValue>(object? expectedValue, Func<TValue?> valueFactory, int timeout = 5000)
     {
         const int waitTime = 100;
