@@ -5,7 +5,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<Authors>GrayMint</Authors>
-		<Version>2.0.165</Version>
+		<Version>2.0.166</Version>
 		<Description>NSwag utils</Description>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<IsPackable>true</IsPackable>
