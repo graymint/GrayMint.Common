@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Data.Common;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -67,7 +68,7 @@ public static class EfCoreUtil
             await databaseCreator.CreateTablesAsync();
 
         }
-        catch (SqlException ex) when (ex.Number == 2714) // already exists exception
+        catch (DbException ex) when (ex.ErrorCode == 2714) // already exists exception
         {
             // ignore
         }
@@ -97,9 +98,10 @@ public static class EfCoreUtil
 
     private static async Task<int> ExecuteScalar(DatabaseFacade database, string sql)
     {
-        await using var cmd = (SqlCommand)database.GetDbConnection().CreateCommand();
-        if (database.CurrentTransaction != null) cmd.Transaction = (SqlTransaction)database.CurrentTransaction.GetDbTransaction();
+        await using var cmd = database.GetDbConnection().CreateCommand();
+        if (database.CurrentTransaction != null) cmd.Transaction = database.CurrentTransaction.GetDbTransaction();
 
+        ArgumentNullException.ThrowIfNull(cmd.Connection);
         var connection = cmd.Connection;
         if (connection.State != ConnectionState.Open)
             await connection.OpenAsync();
