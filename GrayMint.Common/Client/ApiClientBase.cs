@@ -12,10 +12,7 @@ namespace GrayMint.Common.Client;
 
 public class ApiClientBase : ApiClientCommon
 {
-    private class HttpNoResult
-    {
-
-    }
+    private class HttpNoResult;
 
     protected readonly struct HttpResult<T>
     {

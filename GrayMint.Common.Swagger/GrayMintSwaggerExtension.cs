@@ -1,7 +1,7 @@
 ﻿using System.Net;
-using Asp.Versioning;
 using NJsonSchema;
 using NJsonSchema.Generation.TypeMappers;
+using Asp.Versioning;
 using NSwag;
 using NSwag.Generation.Processors.Security;
 

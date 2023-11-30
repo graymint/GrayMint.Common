@@ -1,34 +1,41 @@
 <Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<Description>A few utils which used in some projects.</Description>
+		<TargetFramework>netstandard2.1</TargetFramework>
+		<IsPackable>true</IsPackable>
+	</PropertyGroup>
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <Authors>GrayMint</Authors>
-    <Version>2.0.167</Version>
-    <Description>A few utils which used in some projects.</Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <IsPackable>true</IsPackable>
-    <LangVersion>11</LangVersion>
-    <PackageProjectUrl>https://github.com/graymint/GrayMint.Common</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/graymint/GrayMint.Common</RepositoryUrl>
-    <IncludeSymbols>True</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <PackageIcon>GrayMint.png</PackageIcon>
-  </PropertyGroup>
+	<PropertyGroup>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IncludeSymbols>True</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<LangVersion>12</LangVersion>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Include="..\GrayMint.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-  </ItemGroup>
+	<PropertyGroup>
+		<Authors>GrayMint</Authors>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<Copyright>GrayMint. All rights reserved.</Copyright>
+		<PackageIcon>GrayMint.png</PackageIcon>
+		<PackageProjectUrl>https://github.com/graymint/GrayMint.Common</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/graymint/GrayMint.Common</RepositoryUrl>
+		<Version>2.0.167</Version>
+		<FileVersion>$([System.DateTime]::Now.ToString("yyyy.M.d.HHmm"))</FileVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\GrayMint.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
 
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
-    <PackageReference Include="System.Text.Json" Version="7.0.3" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
+		<PackageReference Include="System.Text.Json" Version="7.0.3" />
+	</ItemGroup>
 
 
 </Project>
