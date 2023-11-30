@@ -19,7 +19,7 @@ public static class GrayMintSwaggerExtension
             configure.Title = title;
             configure.RequireParametersWithoutDefault = true;
 
-            configure.TypeMappers = new List<ITypeMapper>
+            configure.SchemaSettings.TypeMappers = new List<ITypeMapper>
             {
                 new PrimitiveTypeMapper(typeof(IPAddress), s => { s.Type = JsonObjectType.String; }),
                 new PrimitiveTypeMapper(typeof(IPEndPoint), s => { s.Type = JsonObjectType.String; }),
@@ -61,7 +61,7 @@ public static class GrayMintSwaggerExtension
     public static IApplicationBuilder UseGrayMintSwagger(this IApplicationBuilder app, bool redirectRootToSwaggerUi = false)
     {
         app.UseOpenApi();
-        app.UseSwaggerUi3();
+        app.UseSwaggerUi();
 
         if (redirectRootToSwaggerUi)
         {
