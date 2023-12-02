@@ -37,10 +37,10 @@ public static class GmUtil
         return JsonDeserialize<T>(json, options);
     }
 
-    public static byte[] GenerateKey(int keySize)
+    public static byte[] GenerateKey(int keySizeInBit)
     {
         using var aes = Aes.Create();
-        aes.KeySize = keySize;
+        aes.KeySize = keySizeInBit;
         aes.GenerateKey();
         return aes.Key;
     }
