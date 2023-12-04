@@ -1,9 +1,6 @@
-﻿using System.Collections;
-using System.Net;
+﻿using System.Net;
 using System.Net.Mime;
 using System.Security.Authentication;
-using System.Text.Json;
-using GrayMint.Common.Client;
 using GrayMint.Common.Exceptions;
 using Microsoft.Extensions.Options;
 
@@ -24,13 +21,6 @@ public static class GrayMintExceptionHandlerExtension
             _grayMintExceptionOptions = appExceptionOptions.Value;
         }
 
-        private static Type GetExceptionType(Exception ex)
-        {
-            if (AlreadyExistsException.Is(ex)) return typeof(AlreadyExistsException);
-            if (NotExistsException.Is(ex)) return typeof(NotExistsException);
-            return ex.GetType();
-        }
-
         public async Task Invoke(HttpContext context)
         {
             try
@@ -47,33 +37,14 @@ public static class GrayMintExceptionHandlerExtension
                 else if (ex.Data.Contains("HttpStatusCode")) context.Response.StatusCode = (int)ex.Data["HttpStatusCode"]!;
                 else context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
 
-                // create typeFullName
-                var typeFullName = GetExceptionType(ex).FullName;
+                // create portable exception
+                var portableException = new PortableException(ex);
                 if (!string.IsNullOrEmpty(_grayMintExceptionOptions.RootNamespace))
-                    typeFullName = typeFullName?.Replace(nameof(GrayMint), _grayMintExceptionOptions.RootNamespace);
+                    portableException.TypeFullName = portableException.TypeFullName?.Replace(nameof(GrayMint), _grayMintExceptionOptions.RootNamespace);
 
-                var message = ex.Message;
-                if (!string.IsNullOrEmpty(ex.InnerException?.Message))
-                    message += $" InnerMessage: {ex.InnerException?.Message}";
-
-                // set optional information
+                // write son
+                var errorJson = portableException.ToJson();
                 context.Response.ContentType = MediaTypeNames.Application.Json;
-                var error = new ApiException.ServerException
-                {
-                    Data = new Dictionary<string, string?>(),
-                    TypeName = GetExceptionType(ex).Name,
-                    TypeFullName = typeFullName,
-                    Message = message
-                };
-
-                foreach (DictionaryEntry item in ex.Data)
-                {
-                    var key = item.Key.ToString();
-                    if (key != null)
-                        error.Data.Add(key, item.Value?.ToString());
-                }
-
-                var errorJson = JsonSerializer.Serialize(error);
                 await context.Response.WriteAsync(errorJson);
 
                 _logger.LogError(ex, "{Message}. ErrorInfo: {ErrorInfo}", ex.Message, errorJson);
