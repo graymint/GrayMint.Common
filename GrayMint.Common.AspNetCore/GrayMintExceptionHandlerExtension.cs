@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Mime;
 using System.Security.Authentication;
+using GrayMint.Common.Client;
 using GrayMint.Common.Exceptions;
 using Microsoft.Extensions.Options;
 
@@ -37,13 +38,13 @@ public static class GrayMintExceptionHandlerExtension
                 else if (ex.Data.Contains("HttpStatusCode")) context.Response.StatusCode = (int)ex.Data["HttpStatusCode"]!;
                 else context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
 
-                // create portable exception
-                var portableException = new PortableException(ex);
+                // create Api Error
+                var apiError = new ApiError(ex);
                 if (!string.IsNullOrEmpty(_grayMintExceptionOptions.RootNamespace))
-                    portableException.TypeFullName = portableException.TypeFullName?.Replace(nameof(GrayMint), _grayMintExceptionOptions.RootNamespace);
+                    apiError.TypeFullName = apiError.TypeFullName?.Replace(nameof(GrayMint), _grayMintExceptionOptions.RootNamespace);
 
                 // write son
-                var errorJson = portableException.ToJson();
+                var errorJson = apiError.ToJson();
                 context.Response.ContentType = MediaTypeNames.Application.Json;
                 await context.Response.WriteAsync(errorJson);
 
