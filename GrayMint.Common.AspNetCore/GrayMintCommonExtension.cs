@@ -74,17 +74,17 @@ public static class GrayMintCommonExtension
 
     public static IApplicationBuilder RedirectRoot(this IApplicationBuilder app, string path)
     {
-        app.Use(async (context, next) =>
+        app.Use((context, next) =>
         {
             // check if the request is *not* using the HTTPS scheme
             if (context.Request.Path == "/")
             {
                 context.Response.Redirect(path);
-                return;
+                return Task.CompletedTask;
             }
 
             // otherwise continue with the request pipeline
-            await next();
+            return next();
         });
 
         return app;

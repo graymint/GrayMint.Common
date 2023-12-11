@@ -10,7 +10,7 @@ internal class MaintenanceService : IHostedService, IJob
     private readonly JobRunner _jobRunner;
     private CancellationTokenSource _cancellationTokenSource = new();
     public JobSection? JobSection => null;
-    public List<Tuple<Type, JobSection>> SqlMaintenanceJobs { get; } = new();
+    public List<Tuple<Type, JobSection>> SqlMaintenanceJobs { get; } = [];
 
     public MaintenanceService(
         ILogger<MaintenanceService> logger,

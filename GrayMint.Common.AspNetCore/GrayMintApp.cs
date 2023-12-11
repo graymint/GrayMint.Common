@@ -35,15 +35,15 @@ public static class GrayMintApp
         await appDbContext.Database.EnsureCreatedAsync();
     }
 
-    public static async Task RunAsync(WebApplication webApplication, string[] args)
+    public static Task RunAsync(WebApplication webApplication, string[] args)
     {
         var logger = webApplication.Services.GetRequiredService<ILogger<WebApplication>>();
         if (args.Contains("/initOnly", StringComparer.OrdinalIgnoreCase))
         {
             logger.LogInformation("Initialize mode prevents application to start.");
-            return;
+            return Task.CompletedTask;
         }
 
-        await webApplication.RunAsync();
+        return webApplication.RunAsync();
     }
 }
