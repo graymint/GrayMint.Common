@@ -28,6 +28,32 @@ public static class GrayMintExceptionHandlerExtension
             {
                 await _next.Invoke(context);
             }
+            catch (ApiException ex)
+            {
+                var apiError = new ApiError(ex.ExceptionTypeName ?? nameof(ApiException), ex.Message)
+                {
+                    TypeFullName = ex.ExceptionTypeFullName,
+                    InnerMessage = ex.InnerException?.Message,
+                };
+
+                foreach (var key in ex.Data)
+                {
+                    if (key is string keyStr)
+                        apiError.Data.TryAdd(keyStr, ex.Data[keyStr]?.ToString());
+                    apiError.Data.TryAdd("InnerStatusCode", ex.StatusCode.ToString());
+                }
+
+                if (!string.IsNullOrEmpty(_grayMintExceptionOptions.RootNamespace))
+                    apiError.TypeFullName = apiError.TypeFullName?.Replace(nameof(GrayMint), _grayMintExceptionOptions.RootNamespace);
+
+
+                var errorJson = apiError.ToJson();
+                context.Response.ContentType = MediaTypeNames.Application.Json;
+                await context.Response.WriteAsync(errorJson);
+
+                _logger.LogError(ex, "{Message}. ErrorInfo: {ErrorInfo}", ex.Message, errorJson);
+
+            }
             catch (Exception ex)
             {
                 // set correct https status code depends on exception
