@@ -9,24 +9,16 @@ namespace GrayMint.Common.AspNetCore;
 
 public static class GrayMintExceptionHandlerExtension
 {
-    public class GrayMintExceptionMiddleware
+    public class GrayMintExceptionMiddleware(
+        RequestDelegate next, 
+        IOptions<GrayMintExceptionHandlerOptions> appExceptionOptions, 
+        ILogger<GrayMintExceptionMiddleware> logger)
     {
-        private readonly RequestDelegate _next;
-        private readonly GrayMintExceptionHandlerOptions _grayMintExceptionOptions;
-        private readonly ILogger<GrayMintExceptionMiddleware> _logger;
-
-        public GrayMintExceptionMiddleware(RequestDelegate next, IOptions<GrayMintExceptionHandlerOptions> appExceptionOptions, ILogger<GrayMintExceptionMiddleware> logger)
-        {
-            _next = next;
-            _logger = logger;
-            _grayMintExceptionOptions = appExceptionOptions.Value;
-        }
-
         public async Task Invoke(HttpContext context)
         {
             try
             {
-                await _next.Invoke(context);
+                await next.Invoke(context);
             }
             catch (ApiException ex)
             {
@@ -43,15 +35,15 @@ public static class GrayMintExceptionHandlerExtension
                     apiError.Data.TryAdd("InnerStatusCode", ex.StatusCode.ToString());
                 }
 
-                if (!string.IsNullOrEmpty(_grayMintExceptionOptions.RootNamespace))
-                    apiError.TypeFullName = apiError.TypeFullName?.Replace(nameof(GrayMint), _grayMintExceptionOptions.RootNamespace);
+                if (!string.IsNullOrEmpty(appExceptionOptions.Value.RootNamespace))
+                    apiError.TypeFullName = apiError.TypeFullName?.Replace(nameof(GrayMint), appExceptionOptions.Value.RootNamespace);
 
 
                 var errorJson = apiError.ToJson();
                 context.Response.ContentType = MediaTypeNames.Application.Json;
                 await context.Response.WriteAsync(errorJson);
 
-                _logger.LogError(ex, "{Message}. ErrorInfo: {ErrorInfo}", ex.Message, errorJson);
+                logger.LogError(ex, "{Message}. ErrorInfo: {ErrorInfo}", ex.Message, errorJson);
 
             }
             catch (Exception ex)
@@ -66,15 +58,15 @@ public static class GrayMintExceptionHandlerExtension
 
                 // create Api Error
                 var apiError = new ApiError(ex);
-                if (!string.IsNullOrEmpty(_grayMintExceptionOptions.RootNamespace))
-                    apiError.TypeFullName = apiError.TypeFullName?.Replace(nameof(GrayMint), _grayMintExceptionOptions.RootNamespace);
+                if (!string.IsNullOrEmpty(appExceptionOptions.Value.RootNamespace))
+                    apiError.TypeFullName = apiError.TypeFullName?.Replace(nameof(GrayMint), appExceptionOptions.Value.RootNamespace);
 
                 // write son
                 var errorJson = apiError.ToJson();
                 context.Response.ContentType = MediaTypeNames.Application.Json;
                 await context.Response.WriteAsync(errorJson);
 
-                _logger.LogError(ex, "{Message}. ErrorInfo: {ErrorInfo}", ex.Message, errorJson);
+                logger.LogError(ex, "{Message}. ErrorInfo: {ErrorInfo}", ex.Message, errorJson);
             }
         }
     }

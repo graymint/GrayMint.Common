@@ -58,20 +58,21 @@ public class JobRunner
 
                 try
                 {
-                    job
-                        .RunJob()
-                        .ContinueWith(_ =>
-                        {
-                            job.JobSection?.Leave();
-                        });
+                    job.RunJob()
+                       .ContinueWith(_ =>
+                       {
+                           job.JobSection?.Leave();
+                       });
                 }
                 catch (ObjectDisposedException)
                 {
+                    job.JobSection?.Leave();
                     _deadJobs.Add(jobRef);
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, "Could not run a job.");
+                    job.JobSection?.Leave();
+                    Logger.LogError(ex, "Could not run a job. JobName: {JobName}", job.JobSection?.Name ?? "NoName");
                 }
             }
 
@@ -92,12 +93,32 @@ public class JobRunner
         _ = AddInternal(job);
     }
 
+    public void Remove(IJob job)
+    {
+        _ = RemoveInternal(job);
+    }
+
+
     private async Task AddInternal(IJob job)
     {
         try
         {
             await _semaphore.WaitAsync();
             _jobRefs.AddLast(new WeakReference<IJob>(job));
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    private async Task RemoveInternal(IJob job)
+    {
+        try
+        {
+            await _semaphore.WaitAsync();
+            var item = _jobRefs.FirstOrDefault(x => x.TryGetTarget(out var target) && target == job);
+            _jobRefs.Remove(item);
         }
         finally
         {

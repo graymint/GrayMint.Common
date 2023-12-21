@@ -46,17 +46,14 @@ public static class GrayMintCommonExtension
         if (options.UseCors)
             app.UseCors(GrayMintApp.CorsPolicyName);
 
-        if (options.UseAuthentication)
-            app.UseAuthentication();
-
-        if (options.UseAuthorization)
-            app.UseAuthorization();
-
         if (options.UseAppExceptions)
             app.UseGrayMintExceptionHandler();
 
         if (options.MapControllers)
             app.MapControllers();
+
+        if (options.UseHttpsRedirection)
+            app.UseHttpsRedirection();
 
         return app;
     }

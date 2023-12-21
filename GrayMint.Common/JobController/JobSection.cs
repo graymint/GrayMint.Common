@@ -14,14 +14,21 @@ public class JobSection
     public TimeSpan Elapsed => FastDateTime.Now - LastDoneTime;
     public TimeSpan Interval { get; set; } = TimeSpan.FromSeconds(30);
     public DateTime LastDoneTime { get; private set; } = FastDateTime.Now;
+    public string? Name { get; init; }
 
     public JobSection()
     {
     }
 
-    public JobSection(TimeSpan interval)
+    public JobSection(TimeSpan interval, string? name = null)
     {
         Interval = interval;
+        Name = name;
+    }
+
+    public JobSection(JobConfig jobConfig)
+        : this(jobConfig.Interval, jobConfig.Name)
+    {
     }
 
     public JobLock Enter()

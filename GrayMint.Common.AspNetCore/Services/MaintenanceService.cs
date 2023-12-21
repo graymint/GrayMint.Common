@@ -24,6 +24,7 @@ internal class MaintenanceService : IHostedService, IJob
             Logger = logger
         };
         _jobRunner.Add(this);
+
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
