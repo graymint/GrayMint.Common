@@ -9,12 +9,10 @@ namespace TestWebApp.Controllers
     {
         private static readonly string[] Summaries = ["Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"];
 
-        private readonly ILogger<WeatherForecastController> _logger = logger;
-
         [HttpGet(Name = "GetWeatherForecast")]
         public IEnumerable<WeatherForecast> Get()
         {
-            _logger.LogTrace("WeatherForecastController get.");
+            logger.LogTrace("WeatherForecastController get.");
 
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {

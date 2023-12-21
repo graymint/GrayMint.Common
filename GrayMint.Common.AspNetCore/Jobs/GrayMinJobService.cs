@@ -1,28 +1,23 @@
 using GrayMint.Common.JobController;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace GrayMint.Common.AspNetCore.Jobs;
 
-public class GrayMinJobService<T>(IServiceProvider serviceProvider, JobConfig jobConfig)
+public class GrayMinJobService<T>(IServiceProvider serviceProvider, JobConfig jobConfig, JobRunner jobRunner)
     : IHostedService, IJob where T : IGrayMintJob
 {
     private CancellationTokenSource? _cancellationTokenSource;
-    private readonly ILogger<GrayMinJobService<T>> _logger = serviceProvider.GetRequiredService<ILogger<GrayMinJobService<T>>>() ;
     public JobSection JobSection { get; } = new (jobConfig);
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        if (JobRunner.Default.Logger == NullLogger.Instance)
-            JobRunner.Default.Logger = _logger;
-                
         _cancellationTokenSource = new CancellationTokenSource();
-        JobRunner.Default.Add(this);
+        jobRunner.Add(this);
         return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        JobRunner.Default.Remove(this);
+        jobRunner.Remove(this);
         _cancellationTokenSource?.Cancel();
         return Task.CompletedTask;
     }
