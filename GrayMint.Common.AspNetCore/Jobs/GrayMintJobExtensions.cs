@@ -1,24 +1,40 @@
 using GrayMint.Common.JobController;
+using Microsoft.Extensions.Options;
 
 namespace GrayMint.Common.AspNetCore.Jobs;
 
 public static class GrayMintJobExtensions
 {
-    private static JobRunner? _jobRunner;
-
     public static IServiceCollection AddGrayMintJob<T>(this IServiceCollection services,
-        JobConfig jobConfig,
-        int maxDegreeOfParallelism = 1)
+        JobOptions jobOptions,
+        int? maxDegreeOfParallelism = default)
         where T : IGrayMintJob
     {
-        services.AddHostedService((serviceProvider) =>
+        // Add GrayMinJobService
+        services.AddHostedService(serviceProvider =>
         {
-            // create a single instance of JobRunner
-            _jobRunner ??= new JobRunner(logger: serviceProvider.GetRequiredService<ILogger<JobRunner>>());
-            _jobRunner.MaxDegreeOfParallelism = maxDegreeOfParallelism;
-
-            return new GrayMinJobService<T>(serviceProvider, jobConfig, _jobRunner);
+            var jobRunner = serviceProvider.GetRequiredService<JobRunner>();
+            return new GrayMinJobService<T>(serviceProvider, jobOptions, jobRunner);
         });
+
+        // Add JobRunner as singleton if not already added
+        if (services.All(x => x.ServiceType != typeof(JobRunner)))
+        {
+            services.AddSingleton(serviceProvider =>
+            {
+                var config = serviceProvider.GetRequiredService<IOptions<JobRunnerOptions>>();
+                var logger = serviceProvider.GetRequiredService<ILogger<JobRunner>>();
+                var jobRunner = new JobRunner(start: true, logger: logger)
+                {
+                    MaxDegreeOfParallelism = config.Value.MaxDegreeOfParallelism
+                };
+                return jobRunner;
+            });
+        }
+
+        if (maxDegreeOfParallelism != null)
+            services.Configure<JobRunnerOptions>((x) => x.MaxDegreeOfParallelism = maxDegreeOfParallelism.Value);
+
         return services;
     }
 }

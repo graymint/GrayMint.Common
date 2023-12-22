@@ -2,11 +2,11 @@ using GrayMint.Common.JobController;
 
 namespace GrayMint.Common.AspNetCore.Jobs;
 
-public class GrayMinJobService<T>(IServiceProvider serviceProvider, JobConfig jobConfig, JobRunner jobRunner)
+public class GrayMinJobService<T>(IServiceProvider serviceProvider, JobOptions jobOptions, JobRunner jobRunner)
     : IHostedService, IJob where T : IGrayMintJob
 {
     private CancellationTokenSource? _cancellationTokenSource;
-    public JobSection JobSection { get; } = new (jobConfig);
+    public JobSection JobSection { get; } = new (jobOptions);
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
