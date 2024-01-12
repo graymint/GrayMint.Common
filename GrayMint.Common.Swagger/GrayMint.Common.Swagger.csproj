@@ -28,7 +28,7 @@
 	<ItemGroup>
 		<PackageReference Include="Asp.Versioning.Mvc" Version="8.0.0" />
 		<PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.0.0" />
-		<PackageReference Include="NSwag.AspNetCore" Version="14.0.0-preview012" />
+		<PackageReference Include="NSwag.AspNetCore" Version="14.0.1" />
 	</ItemGroup>
 
 	<ItemGroup>
