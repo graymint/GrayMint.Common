@@ -10,8 +10,8 @@ namespace GrayMint.Common.AspNetCore;
 public static class GrayMintExceptionHandlerExtension
 {
     public class GrayMintExceptionMiddleware(
-        RequestDelegate next, 
-        IOptions<GrayMintExceptionHandlerOptions> appExceptionOptions, 
+        RequestDelegate next,
+        IOptions<GrayMintExceptionHandlerOptions> appExceptionOptions,
         ILogger<GrayMintExceptionMiddleware> logger)
     {
         public async Task Invoke(HttpContext context)
@@ -41,6 +41,7 @@ public static class GrayMintExceptionHandlerExtension
 
                 var errorJson = apiError.ToJson();
                 context.Response.ContentType = MediaTypeNames.Application.Json;
+                context.Response.StatusCode = ex.StatusCode;
                 await context.Response.WriteAsync(errorJson);
 
                 logger.LogError(ex, "{Message}. ErrorInfo: {ErrorInfo}", ex.Message, errorJson);
