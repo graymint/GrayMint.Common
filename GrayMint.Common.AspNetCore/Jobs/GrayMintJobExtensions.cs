@@ -13,6 +13,7 @@ public static class GrayMintJobExtensions
         // Add GrayMinJobService
         services.AddHostedService(serviceProvider =>
         {
+            jobOptions.Name ??= typeof(T).Name;
             var jobRunner = serviceProvider.GetRequiredService<JobRunner>();
             return new GrayMinJobService<T>(serviceProvider, jobOptions, jobRunner);
         });
