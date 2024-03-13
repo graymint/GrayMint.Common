@@ -32,7 +32,7 @@ public static class GrayMintJobExtensions
                 };
 
                 // set jobRunner Interval
-                if (jobRunner.Interval < _minInterval)
+                if (_minInterval  < jobRunner.Interval)
                     jobRunner.Interval = _minInterval.Value;
 
                 return jobRunner;
