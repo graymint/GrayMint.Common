@@ -15,8 +15,8 @@ public class Program
 
         builder.Services.AddGrayMintCommonServices(new RegisterServicesOptions());
         builder.Services.AddGrayMintSwagger("Common.Test", true);
-        builder.Services.AddGrayMintJob<MyJobService>(new JobOptions { Interval = TimeSpan.FromSeconds(5), DueTime = TimeSpan.Zero, Name = "MyJobService" }, 1);
-        builder.Services.AddGrayMintJob<MyJobService2>(new JobOptions { Interval = TimeSpan.FromSeconds(10) }, 2);
+        builder.Services.AddGrayMintJob<MyJobService>(new GrayMintJobOptions { Interval = TimeSpan.FromSeconds(5), DueTime = TimeSpan.Zero, Name = "MyJobService" }, 1);
+        builder.Services.AddGrayMintJob<MyJobService2>(new GrayMintJobOptions { Interval = TimeSpan.FromSeconds(10) }, 2);
         builder.Services.AddScoped<MyJobService>();
         builder.Services.AddScoped<MyJobService2>();
 
