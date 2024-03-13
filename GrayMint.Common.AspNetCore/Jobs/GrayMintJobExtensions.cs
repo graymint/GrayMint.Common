@@ -5,6 +5,7 @@ namespace GrayMint.Common.AspNetCore.Jobs;
 
 public static class GrayMintJobExtensions
 {
+    private static TimeSpan? _minInterval;
     public static IServiceCollection AddGrayMintJob<T>(this IServiceCollection services,
         JobOptions jobOptions,
         int? maxDegreeOfParallelism = default)
@@ -29,12 +30,21 @@ public static class GrayMintJobExtensions
                 {
                     MaxDegreeOfParallelism = config.Value.MaxDegreeOfParallelism
                 };
+
+                // set jobRunner Interval
+                if (jobRunner.Interval < _minInterval)
+                    jobRunner.Interval = _minInterval.Value;
+
                 return jobRunner;
             });
         }
 
+        // configure JobRunnerOptions
         if (maxDegreeOfParallelism != null)
-            services.Configure<JobRunnerOptions>((x) => x.MaxDegreeOfParallelism = maxDegreeOfParallelism.Value);
+            services.Configure<JobRunnerOptions>(x => x.MaxDegreeOfParallelism = maxDegreeOfParallelism.Value);
+
+        if (_minInterval == null || _minInterval < jobOptions.Interval)
+            _minInterval = jobOptions.Interval;
 
         return services;
     }
