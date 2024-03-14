@@ -3,14 +3,13 @@ using GrayMint.Common.JobController;
 namespace GrayMint.Common.AspNetCore.Jobs;
 
 public class GrayMinJobService<T>(
-    ILogger<GrayMinJobService<T>> logger,
-    IServiceProvider serviceProvider, 
-    GrayMintJobOptions jobOptions, 
+    IServiceProvider serviceProvider,
+    GrayMintJobOptions jobOptions,
     JobRunner jobRunner)
     : IHostedService, IJob where T : IGrayMintJob
 {
     private CancellationTokenSource? _cancellationTokenSource;
-    public JobSection JobSection { get; } = new (jobOptions);
+    public JobSection JobSection { get; } = new(jobOptions);
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
@@ -30,11 +29,12 @@ public class GrayMinJobService<T>(
             }
             catch (Exception ex)
             {
+                var logger = serviceProvider.GetRequiredService<ILogger<GrayMinJobService<T>>>();
                 logger.LogError(ex, "Could not execute the job in the shutdown. JobName: {JobName}", JobSection.Name);
             }
         }
 
-        if (_cancellationTokenSource!=null)
+        if (_cancellationTokenSource != null)
             await _cancellationTokenSource.CancelAsync();
     }
 

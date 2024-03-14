@@ -16,8 +16,7 @@ public static class GrayMintJobExtensions
         {
             jobOptions.Name ??= typeof(T).Name;
             var jobRunner = serviceProvider.GetRequiredService<JobRunner>();
-            var logger = serviceProvider.GetRequiredService<ILogger<GrayMinJobService<T>>>();
-            return new GrayMinJobService<T>(logger, serviceProvider, jobOptions, jobRunner);
+            return new GrayMinJobService<T>(serviceProvider, jobOptions, jobRunner);
         });
 
         // Add JobRunner as singleton if not already added
