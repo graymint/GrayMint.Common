@@ -3,6 +3,7 @@ using GrayMint.Common.JobController;
 namespace GrayMint.Common.AspNetCore.Jobs;
 
 public class GrayMinJobService<T>(
+    ILogger<GrayMinJobService<T>> logger,
     IServiceProvider serviceProvider, 
     GrayMintJobOptions jobOptions, 
     JobRunner jobRunner)
@@ -22,7 +23,16 @@ public class GrayMinJobService<T>(
     {
         jobRunner.Remove(this);
         if (jobOptions.ExecuteOnShutdown)
-            await JobSection.Enter(RunJob, true);
+        {
+            try
+            {
+                await JobSection.Enter(RunJob, true);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Could not execute the job in the shutdown. JobName: {JobName}", JobSection.Name);
+            }
+        }
 
         if (_cancellationTokenSource!=null)
             await _cancellationTokenSource.CancelAsync();
