@@ -33,23 +33,18 @@ public static class TestUtil
         return false;
     }
 
-    public static Task<bool> WaitForValue<TValue>(object? expectedValue, Func<Task<TValue?>> valueFactory, int timeout = 5000)
-    {
-        return WaitForValue(expectedValue, valueFactory(), timeout);
-    }
-
-    public static async Task<bool> WaitForValue<TValue>(object? expectedValue, Task<TValue?> task, int timeout = 5000)
+    private static async Task WaitForValue<TValue>(object? expectedValue, Task<TValue?> task, int timeout = 5000)
     {
         const int waitTime = 100;
         for (var elapsed = 0; elapsed < timeout; elapsed += waitTime)
         {
             if (Equals(expectedValue, await task))
-                return true;
+                return;
 
             await Task.Delay(waitTime);
         }
 
-        return false;
+        throw new TimeoutException();
     }
 
     private static void AssertEquals(object? expected, object? actual, string? message)
@@ -75,8 +70,8 @@ public static class TestUtil
     public static async Task AssertEqualsWait<TValue>(object? expectedValue, Task<TValue?> task,
         string? message = null, int timeout = 5000)
     {
-        var result = await WaitForValue(expectedValue, task, timeout);
-        AssertEquals(expectedValue, result, message);
+        await WaitForValue(expectedValue, task, timeout);
+        AssertEquals(expectedValue, await task, message);
     }
 
 
@@ -91,7 +86,7 @@ public static class TestUtil
             throw new Exception($"Actual error message does not contain \"{contains}\".");
     }
 
-    public static async Task AssertApiException(int expectedStatusCode, Task task, 
+    public static async Task AssertApiException(int expectedStatusCode, Task task,
         string? message = null, string? contains = null)
     {
         try
@@ -114,7 +109,7 @@ public static class TestUtil
         return AssertApiException(typeof(T).Name, task, message, contains);
     }
 
-    public static async Task AssertApiException(string expectedExceptionType, Task task, 
+    public static async Task AssertApiException(string expectedExceptionType, Task task,
         string? message = null, string? contains = null)
     {
         try
@@ -172,7 +167,7 @@ public static class TestUtil
         {
             if (ex.ExceptionTypeName != nameof(AlreadyExistsException))
                 throw new AssertException($"Expected {nameof(AlreadyExistsException)} but was {ex.ExceptionTypeName}. {message}");
-            
+
             AssertExceptionContains(ex, contains);
         }
         catch (Exception ex) when (ex is not AssertException)
