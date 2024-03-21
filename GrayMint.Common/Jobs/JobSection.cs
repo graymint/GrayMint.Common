@@ -1,6 +1,6 @@
 ﻿using GrayMint.Common.Utils;
 
-namespace GrayMint.Common.JobController;
+namespace GrayMint.Common.Jobs;
 
 public class JobSection
 {

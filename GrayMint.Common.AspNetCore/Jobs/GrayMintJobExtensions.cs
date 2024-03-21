@@ -1,4 +1,4 @@
-using GrayMint.Common.JobController;
+using GrayMint.Common.Jobs;
 using Microsoft.Extensions.Options;
 
 namespace GrayMint.Common.AspNetCore.Jobs;

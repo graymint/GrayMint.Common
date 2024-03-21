@@ -14,18 +14,11 @@ public class ApiClientBase : ApiClientCommon
 {
     private class HttpNoResult;
 
-    protected readonly struct HttpResult<T>
+    protected readonly struct HttpResult<T>(HttpResponseMessage responseMessage, T responseObject, string responseText)
     {
-        public HttpResult(HttpResponseMessage responseMessage, T responseObject, string responseText)
-        {
-            ResponseMessage = responseMessage;
-            Object = responseObject;
-            Text = responseText;
-        }
-
-        public HttpResponseMessage ResponseMessage { get; }
-        public T Object { get; }
-        public string Text { get; }
+        public HttpResponseMessage ResponseMessage { get; } = responseMessage;
+        public T Object { get; } = responseObject;
+        public string Text { get; } = responseText;
     }
 
     protected JsonSerializerOptions JsonSerializerSettings => Settings.Value;

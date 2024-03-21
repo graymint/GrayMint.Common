@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace GrayMint.Common.JobController;
+namespace GrayMint.Common.Jobs;
 
 public class JobRunner
 {

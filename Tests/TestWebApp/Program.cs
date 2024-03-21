@@ -1,7 +1,7 @@
 
 using GrayMint.Common.AspNetCore;
 using GrayMint.Common.AspNetCore.Jobs;
-using GrayMint.Common.JobController;
+using GrayMint.Common.Jobs;
 using GrayMint.Common.Swagger;
 using TestWebApp.Services;
 

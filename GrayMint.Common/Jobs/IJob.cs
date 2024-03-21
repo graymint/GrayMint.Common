@@ -1,4 +1,4 @@
-﻿namespace GrayMint.Common.JobController;
+﻿namespace GrayMint.Common.Jobs;
 
 public interface IJob
 {

@@ -2,7 +2,7 @@ using System.Net;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using GrayMint.Common.AspNetCore.Services;
-using GrayMint.Common.JobController;
+using GrayMint.Common.Jobs;
 
 namespace GrayMint.Common.AspNetCore;
 
