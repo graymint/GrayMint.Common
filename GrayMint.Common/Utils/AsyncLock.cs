@@ -2,7 +2,7 @@
 
 namespace GrayMint.Common.Utils;
 
-public class AsyncLock
+public sealed class AsyncLock
 {
     private readonly SemaphoreSlimEx _semaphoreSlimEx = new(1, 1);
     private static readonly ConcurrentDictionary<string, SemaphoreSlimEx> SemaphoreSlims = new();
@@ -18,10 +18,7 @@ public class AsyncLock
         public int ReferenceCount { get; set; }
     }
 
-    private class SemaphoreLock(
-        SemaphoreSlimEx semaphoreSlimEx, 
-        bool succeeded, 
-        string? name)
+    private class SemaphoreLock(SemaphoreSlimEx semaphoreSlimEx, bool succeeded, string? name)
         : ILockAsyncResult
     {
         private bool _disposed;
@@ -42,9 +39,10 @@ public class AsyncLock
         }
     }
 
-    public Task<ILockAsyncResult> LockAsync()
+    public async Task<ILockAsyncResult> LockAsync(CancellationToken cancellationToken = default)
     {
-        return LockAsync(Timeout.InfiniteTimeSpan);
+        await _semaphoreSlimEx.WaitAsync(cancellationToken);
+        return new SemaphoreLock(_semaphoreSlimEx, true, null);
     }
 
     public async Task<ILockAsyncResult> LockAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
