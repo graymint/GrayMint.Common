@@ -26,10 +26,12 @@ public sealed class AsyncLock
 
         public void Dispose()
         {
-            if (_disposed || !Succeeded) return;
+            if (_disposed) return;
             _disposed = true;
 
-            semaphoreSlimEx.Release();
+            if (Succeeded)
+                semaphoreSlimEx.Release();
+
             lock (SemaphoreSlims)
             {
                 semaphoreSlimEx.ReferenceCount--;
