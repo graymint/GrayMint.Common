@@ -1,6 +1,6 @@
-﻿using GrayMint.Common.Client;
+﻿using System.Net;
+using GrayMint.Common.Client;
 using GrayMint.Common.Exceptions;
-using System.Net;
 
 namespace GrayMint.Common.Utils;
 

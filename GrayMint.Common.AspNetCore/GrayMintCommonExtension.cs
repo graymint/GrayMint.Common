@@ -1,8 +1,8 @@
 using System.Net;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.EntityFrameworkCore;
 using GrayMint.Common.AspNetCore.Services;
 using GrayMint.Common.Jobs;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.EntityFrameworkCore;
 
 namespace GrayMint.Common.AspNetCore;
 

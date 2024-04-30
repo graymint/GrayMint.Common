@@ -1,4 +1,3 @@
-
 using GrayMint.Common.AspNetCore;
 using GrayMint.Common.AspNetCore.Jobs;
 using GrayMint.Common.Jobs;

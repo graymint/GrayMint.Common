@@ -25,7 +25,7 @@ public static class GrayMintExceptionHandlerExtension
                 var apiError = new ApiError(ex.ExceptionTypeName ?? nameof(ApiException), ex.Message)
                 {
                     TypeFullName = ex.ExceptionTypeFullName,
-                    InnerMessage = ex.InnerException?.Message,
+                    InnerMessage = ex.InnerException?.Message
                 };
 
                 foreach (var key in ex.Data)

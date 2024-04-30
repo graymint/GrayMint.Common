@@ -15,8 +15,10 @@ public static class GrayMintJobExtensions
         services.AddHostedService(serviceProvider =>
         {
             jobOptions.Name ??= typeof(T).Name;
+            var  serviceScopeFactory = serviceProvider.GetRequiredService<IServiceScopeFactory>();
             var jobRunner = serviceProvider.GetRequiredService<JobRunner>();
-            return new GrayMinJobService<T>(serviceProvider, jobOptions, jobRunner);
+            var logger = serviceProvider.GetRequiredService<ILogger<GrayMinJobService<T>>>();
+            return new GrayMinJobService<T>(serviceScopeFactory, logger, jobOptions, jobRunner);
         });
 
         // Add JobRunner as singleton if not already added

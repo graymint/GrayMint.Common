@@ -1,7 +1,7 @@
 ﻿using System.Net;
+using Asp.Versioning;
 using NJsonSchema;
 using NJsonSchema.Generation.TypeMappers;
-using Asp.Versioning;
 using NSwag;
 using NSwag.Generation.Processors.Security;
 
@@ -23,7 +23,7 @@ public static class GrayMintSwaggerExtension
             {
                 new PrimitiveTypeMapper(typeof(IPAddress), s => { s.Type = JsonObjectType.String; }),
                 new PrimitiveTypeMapper(typeof(IPEndPoint), s => { s.Type = JsonObjectType.String; }),
-                new PrimitiveTypeMapper(typeof(Version), s => { s.Type = JsonObjectType.String; }),
+                new PrimitiveTypeMapper(typeof(Version), s => { s.Type = JsonObjectType.String; })
             };
 
             configure.OperationProcessors.Add(new OperationSecurityScopeProcessor("Bearer"));

@@ -3,7 +3,8 @@ using GrayMint.Common.Jobs;
 namespace GrayMint.Common.AspNetCore.Jobs;
 
 public class GrayMinJobService<T>(
-    IServiceProvider serviceProvider,
+    IServiceScopeFactory serviceScopeFactory,
+    ILogger<GrayMinJobService<T>> logger,
     GrayMintJobOptions jobOptions,
     JobRunner jobRunner)
     : IHostedService, IJob where T : IGrayMintJob
@@ -29,7 +30,6 @@ public class GrayMinJobService<T>(
             }
             catch (Exception ex)
             {
-                var logger = serviceProvider.GetRequiredService<ILogger<GrayMinJobService<T>>>();
                 logger.LogError(ex, "Could not execute the job in the shutdown. JobName: {JobName}", JobSection.Name);
             }
         }
@@ -38,13 +38,13 @@ public class GrayMinJobService<T>(
             await _cancellationTokenSource.CancelAsync();
     }
 
-    public Task RunJob()
+    public async Task RunJob()
     {
         if (_cancellationTokenSource?.IsCancellationRequested == true)
-            return Task.CompletedTask;
+            return;
 
-        var scope = serviceProvider.CreateAsyncScope();
+        await using var scope = serviceScopeFactory.CreateAsyncScope();
         var service = scope.ServiceProvider.GetRequiredService<T>();
-        return service.RunJob(_cancellationTokenSource?.Token ?? CancellationToken.None);
+        await service.RunJob(_cancellationTokenSource?.Token ?? CancellationToken.None);
     }
 }
