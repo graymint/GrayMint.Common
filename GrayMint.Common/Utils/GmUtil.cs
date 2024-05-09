@@ -38,6 +38,11 @@ public static class GmUtil
         return JsonDeserialize<T>(json, options);
     }
 
+    public static byte[] GenerateKey()
+    {
+        return GenerateKey(128);
+    }
+
     public static byte[] GenerateKey(int keySizeInBit)
     {
         using var aes = Aes.Create();
