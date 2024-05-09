@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -61,5 +62,15 @@ public static class GmUtil
         return
             (left == null && right == null) ||
             (left != null && right != null && left.SequenceEqual(right));
+    }
+
+    public static bool IsNullOrEmpty<T>([NotNullWhen(false)] IEnumerable<T>? array)
+    {
+        return array == null || !array.Any();
+    }
+
+    public static bool IsNullOrEmpty<T>([NotNullWhen(false)] T[]? array)
+    {
+        return array == null || array.Length == 0;
     }
 }
