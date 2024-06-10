@@ -1,5 +1,5 @@
 ﻿using System.Net;
-using GrayMint.Common.Client;
+using GrayMint.Common.ApiClients;
 using GrayMint.Common.Exceptions;
 
 namespace GrayMint.Common.Utils;

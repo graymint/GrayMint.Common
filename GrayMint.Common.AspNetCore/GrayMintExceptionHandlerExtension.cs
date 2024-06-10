@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Net.Mime;
 using System.Security.Authentication;
-using GrayMint.Common.Client;
+using GrayMint.Common.ApiClients;
 using GrayMint.Common.Exceptions;
 using Microsoft.Extensions.Options;
 

@@ -4,9 +4,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using GrayMint.Common.Exceptions;
 
-namespace GrayMint.Common.Client;
+namespace GrayMint.Common.ApiClients;
 
-[Obsolete("Moved to GrayMint.Common.ApiClients")]
 public class ApiError
 {
     public string TypeName { get; set; }

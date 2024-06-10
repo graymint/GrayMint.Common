@@ -1,9 +1,8 @@
 ﻿using System.Net.Http.Headers;
 using System.Text;
 
-namespace GrayMint.Common.Client;
+namespace GrayMint.Common.ApiClients;
 
-[Obsolete("Moved to GrayMint.Common.ApiClients")]
 public abstract class ApiClientCommon
 {
     public Uri? DefaultBaseAddress { get; set; }

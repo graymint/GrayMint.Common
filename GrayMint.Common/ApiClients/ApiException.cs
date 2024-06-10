@@ -1,6 +1,5 @@
-namespace GrayMint.Common.Client;
+namespace GrayMint.Common.ApiClients;
 
-[Obsolete("Moved to GrayMint.Common.ApiClients")]
 public sealed class ApiException : Exception
 {
     public int StatusCode { get; }
