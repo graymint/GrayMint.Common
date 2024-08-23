@@ -34,7 +34,7 @@ public static class GrayMintJobExtensions
                 };
 
                 // set jobRunner Interval
-                if (jobRunner.Interval < _minInterval)
+                if (jobRunner.Interval > _minInterval)
                     jobRunner.Interval = _minInterval.Value;
 
                 return jobRunner;
@@ -45,7 +45,7 @@ public static class GrayMintJobExtensions
         if (maxDegreeOfParallelism != null)
             services.Configure<JobRunnerOptions>(x => x.MaxDegreeOfParallelism = maxDegreeOfParallelism.Value);
 
-        if (_minInterval == null || _minInterval < jobOptions.Interval)
+        if (_minInterval == null || _minInterval > jobOptions.Interval)
             _minInterval = jobOptions.Interval;
 
         return services;
