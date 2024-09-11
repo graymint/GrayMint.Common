@@ -29,8 +29,8 @@ public static class GrayMintApp
         var appDbContext = scope.ServiceProvider.GetRequiredService<T>();
         if (args.Contains("/recreateDb", StringComparer.OrdinalIgnoreCase))
         {
-            var hostEnvironment = serviceProvider.GetService<IHostEnvironment>();
-            if (hostEnvironment?.IsDevelopment() == true)
+            var hostEnvironment = serviceProvider.GetRequiredService<IHostEnvironment>();
+            if (!hostEnvironment.IsDevelopment())
                 throw new InvalidOperationException("RecreateDb command is only allowed in Development environment.");
 
             logger.LogInformation($"Recreating the {nameof(T)} database...");
