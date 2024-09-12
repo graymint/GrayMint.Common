@@ -36,7 +36,7 @@ public class GrayMinApplicationLifetimeService<T>(
             {
                 try
                 {
-                    logger.LogError(ex, "Error occurred while stopping application");
+                    logger.LogError(ex, "Error occurred while stopping application.");
                 }
                 catch (Exception ex2)
                 {
