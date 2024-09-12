@@ -26,6 +26,7 @@ public class GrayMinApplicationLifetimeService<T>(
         {
             using var scope = serviceScopeFactory.CreateAsyncScope();
             var service = scope.ServiceProvider.GetRequiredService<T>();
+            
             // ReSharper disable once MethodSupportsCancellation
             try
             {
@@ -33,7 +34,15 @@ public class GrayMinApplicationLifetimeService<T>(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error occurred while stopping application");
+                try
+                {
+                    logger.LogError(ex, "Error occurred while stopping application");
+                }
+                catch (Exception ex2)
+                {
+                    Console.WriteLine("Error:" + ex);
+                    Console.WriteLine("Error:" + ex2);
+                }
             }
         });
 
