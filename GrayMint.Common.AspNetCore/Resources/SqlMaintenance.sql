@@ -1,100 +1,46 @@
-/*Perform a 'USE <database name>' to select the database in which to run the script.*/  
--- Declare variables  
-SET NOCOUNT ON;  
-DECLARE @tablename VARCHAR(255);  
-DECLARE @execstr   VARCHAR(400);  
-DECLARE @objectid  INT;  
-DECLARE @indexid   INT;  
-DECLARE @frag      DECIMAL;  
-DECLARE @maxfrag   DECIMAL;  
-  
--- Decide on the maximum fragmentation to allow for.  
-SELECT @maxfrag = 30.0;  
-  
--- Declare a cursor.  
-DECLARE tables CURSOR FOR  
-   SELECT TABLE_SCHEMA + '.' + TABLE_NAME  
-   FROM INFORMATION_SCHEMA.TABLES  
-   WHERE TABLE_TYPE = 'BASE TABLE';  
-  
--- Create the table.  
-CREATE TABLE #fraglist (  
-   ObjectName CHAR(255),  
-   ObjectId INT,  
-   IndexName CHAR(255),  
-   IndexId INT,  
-   Lvl INT,  
-   CountPages INT,  
-   CountRows INT,  
-   MinRecSize INT,  
-   MaxRecSize INT,  
-   AvgRecSize INT,  
-   ForRecCount INT,  
-   Extents INT,  
-   ExtentSwitches INT,  
-   AvgFreeBytes INT,  
-   AvgPageDensity INT,  
-   ScanDensity DECIMAL,  
-   BestCount INT,  
-   ActualCount INT,  
-   LogicalFrag DECIMAL,  
-   ExtentFrag DECIMAL);  
-  
--- Open the cursor.  
-OPEN tables;  
-  
--- Loop through all the tables in the database.  
-FETCH NEXT  
-   FROM tables  
-   INTO @tablename;  
-  
-WHILE @@FETCH_STATUS = 0  
-BEGIN  
--- Do the showcontig of all indexes of the table  
-   INSERT INTO #fraglist   
-   EXEC ('DBCC SHOWCONTIG (''' + @tablename + ''')   
-      WITH FAST, TABLERESULTS, ALL_INDEXES, NO_INFOMSGS');  
-   FETCH NEXT  
-      FROM tables  
-      INTO @tablename;  
-END;  
-  
--- Close and deallocate the cursor.  
-CLOSE tables;  
-DEALLOCATE tables;  
-  
--- Declare the cursor for the list of indexes to be defragged.  
-DECLARE indexes CURSOR FOR  
-   SELECT ObjectName, ObjectId, IndexId, LogicalFrag  
-   FROM #fraglist  
-   WHERE LogicalFrag >= @maxfrag  
-      AND INDEXPROPERTY (ObjectId, IndexName, 'IndexDepth') > 0;  
-  
--- Open the cursor.  
-OPEN indexes;  
-  
--- Loop through the indexes.  
-FETCH NEXT  
-   FROM indexes  
-   INTO @tablename, @objectid, @indexid, @frag;  
-  
-WHILE @@FETCH_STATUS = 0  
-BEGIN  
-   PRINT 'Executing DBCC INDEXDEFRAG (0, ' + RTRIM(@tablename) + ',  
-      ' + RTRIM(@indexid) + ') - fragmentation currently '  
-       + RTRIM(CONVERT(varchar(15),@frag)) + '%';  
-   SELECT @execstr = 'DBCC INDEXDEFRAG (0, ' + RTRIM(@objectid) + ',  
-       ' + RTRIM(@indexid) + ')';  
-   EXEC (@execstr);  
-  
-   FETCH NEXT  
-      FROM indexes  
-      INTO @tablename, @objectid, @indexid, @frag;  
-END;  
-  
--- Close and deallocate the cursor.  
-CLOSE indexes;  
-DEALLOCATE indexes;  
-  
--- Delete the temporary table.  
-DROP TABLE #fraglist;  
+DECLARE @TableName NVARCHAR(128);
+DECLARE @IndexName NVARCHAR(128);
+DECLARE @SchemaName NVARCHAR(128);
+DECLARE @SQL NVARCHAR(MAX);
+DECLARE @Message NVARCHAR(MAX);
+DECLARE @Fragmentation FLOAT;
+
+DECLARE IndexCursor CURSOR FOR
+SELECT 
+    s.name AS SchemaName,
+    t.name AS TableName,
+    i.name AS IndexName,
+    ips.avg_fragmentation_in_percent
+FROM 
+    sys.dm_db_index_physical_stats(DB_ID(), NULL, NULL, NULL, 'LIMITED') ips
+    JOIN sys.indexes i ON ips.object_id = i.object_id AND ips.index_id = i.index_id
+    JOIN sys.tables t ON ips.object_id = t.object_id
+    JOIN sys.schemas s ON t.schema_id = s.schema_id
+WHERE 
+    ips.avg_fragmentation_in_percent > 10  -- Fragmentation threshold
+    AND i.type > 0  -- Only non-clustered and clustered indexes (exclude heap)
+ORDER BY 
+    ips.avg_fragmentation_in_percent DESC;
+
+OPEN IndexCursor;
+
+FETCH NEXT FROM IndexCursor INTO @SchemaName, @TableName, @IndexName, @Fragmentation;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    -- Check the fragmentation level and decide whether to rebuild or reorganize
+    IF @Fragmentation > 30
+        SET @SQL = 'ALTER INDEX [' + @IndexName + '] ON [' + @SchemaName + '].[' + @TableName + '] REBUILD;';
+    ELSE
+        SET @SQL = 'ALTER INDEX [' + @IndexName + '] ON [' + @SchemaName + '].[' + @TableName + '] REORGANIZE;';
+    
+    -- Execute the reorganize or rebuild command
+	SET @Message = @SQL + ' Fragmentation: ' + CONVERT(VARCHAR(50), ROUND(@Fragmentation, 0)) + '%';
+	RAISERROR('Working: %s', 0, 1, @Message) WITH NOWAIT;
+    EXEC sp_executesql @SQL;
+
+    FETCH NEXT FROM IndexCursor INTO @SchemaName, @TableName, @IndexName, @Fragmentation;
+END
+
+CLOSE IndexCursor;
+DEALLOCATE IndexCursor;
