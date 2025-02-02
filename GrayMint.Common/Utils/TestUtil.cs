@@ -5,7 +5,7 @@ using GrayMint.Common.Exceptions;
 
 namespace GrayMint.Common.Utils;
 
-public static class VhTestUtil
+public static class TestUtil
 {
     public class AssertException : Exception
     {
