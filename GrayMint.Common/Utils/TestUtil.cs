@@ -1,10 +1,11 @@
-﻿using System.Net;
+﻿using System.Diagnostics;
+using System.Net;
 using GrayMint.Common.ApiClients;
 using GrayMint.Common.Exceptions;
 
 namespace GrayMint.Common.Utils;
 
-public static class TestUtil
+public static class VhTestUtil
 {
     public class AssertException : Exception
     {
@@ -20,12 +21,13 @@ public static class TestUtil
     }
 
     private static async Task<TValue> WaitForValue<TValue>(TValue expectedValue, Func<TValue> valueFactory,
-        int timeout = 5000)
+        int timeout, bool noTimeoutOnDebugger)
     {
+        noTimeoutOnDebugger &= Debugger.IsAttached;
         const int waitTime = 100;
         var maxTime = FastDateTime.Now.AddMilliseconds(timeout);
         var actualValue = valueFactory();
-        while (FastDateTime.Now <= maxTime)
+        while (FastDateTime.Now <= maxTime || noTimeoutOnDebugger)
         {
             if (Equals(expectedValue, actualValue))
                 return actualValue;
@@ -37,11 +39,14 @@ public static class TestUtil
         return actualValue;
     }
 
-    private static async Task<TValue> WaitForValue<TValue>(TValue expectedValue, Func<Task<TValue>> valueFactory, int timeout = 5000)
+    private static async Task<TValue> WaitForValue<TValue>(TValue expectedValue, Func<Task<TValue>> valueFactory,
+        int timeout, bool noTimeoutOnDebugger)
     {
+        noTimeoutOnDebugger &= Debugger.IsAttached;
         const int waitTime = 100;
+        var maxTime = FastDateTime.Now.AddMilliseconds(timeout);
         var actualValue = await valueFactory();
-        for (var elapsed = 0; elapsed < timeout; elapsed += waitTime)
+        while (FastDateTime.Now <= maxTime || noTimeoutOnDebugger)
         {
             if (Equals(expectedValue, actualValue))
                 return actualValue;
@@ -62,23 +67,23 @@ public static class TestUtil
     }
 
     public static async Task AssertEqualsWait<TValue>(TValue expectedValue, Func<TValue> valueFactory,
-        string? message = null, int timeout = 5000)
+        string? message = null, int timeout = 5000, bool noTimeoutOnDebugger = true)
     {
-        var actualValue = await WaitForValue(expectedValue, valueFactory, timeout);
+        var actualValue = await WaitForValue(expectedValue, valueFactory, timeout, noTimeoutOnDebugger);
         AssertEquals(expectedValue, actualValue, message);
     }
 
     public static async Task AssertEqualsWait<TValue>(TValue expectedValue, Func<Task<TValue>> valueFactory,
-        string? message = null, int timeout = 5000)
+        string? message = null, int timeout = 5000, bool noTimeoutOnDebugger = true)
     {
-        var actualValue = await WaitForValue(expectedValue, valueFactory, timeout);
+        var actualValue = await WaitForValue(expectedValue, valueFactory, timeout, noTimeoutOnDebugger);
         AssertEquals(expectedValue, actualValue, message);
     }
 
     public static async Task AssertEqualsWait<TValue>(TValue expectedValue, Task<TValue> task,
-        string? message = null, int timeout = 5000)
+        string? message = null, int timeout = 5000, bool noTimeoutOnDebugger = true)
     {
-        var actualValue = await WaitForValue(expectedValue, () => task, timeout);
+        var actualValue = await WaitForValue(expectedValue, () => task, timeout, noTimeoutOnDebugger);
         AssertEquals(expectedValue, actualValue, message);
     }
 
@@ -108,7 +113,6 @@ public static class TestUtil
 
             AssertExceptionContains(ex, contains);
         }
-
     }
 
     public static Task AssertApiException<T>(Task task, string? message = null, string? contains = null)
@@ -127,14 +131,16 @@ public static class TestUtil
         catch (ApiException ex)
         {
             if (ex.ExceptionTypeName != expectedExceptionType)
-                throw new AssertException($"Expected {expectedExceptionType} but was {ex.ExceptionTypeName}. {message}");
+                throw new AssertException(
+                    $"Expected {expectedExceptionType} but was {ex.ExceptionTypeName}. {message}");
 
             AssertExceptionContains(ex, contains);
         }
         catch (Exception ex) when (ex is not AssertException)
         {
             if (ex.GetType().Name != expectedExceptionType)
-                throw new AssertException($"Expected {expectedExceptionType} but was {ex.GetType().Name}. {message}", ex);
+                throw new AssertException($"Expected {expectedExceptionType} but was {ex.GetType().Name}. {message}",
+                    ex);
 
             AssertExceptionContains(ex, contains);
         }
@@ -150,14 +156,16 @@ public static class TestUtil
         catch (ApiException ex)
         {
             if (ex.ExceptionTypeName != nameof(NotExistsException))
-                throw new AssertException($"Expected {nameof(NotExistsException)} but was {ex.ExceptionTypeName}. {message}");
+                throw new AssertException(
+                    $"Expected {nameof(NotExistsException)} but was {ex.ExceptionTypeName}. {message}");
 
             AssertExceptionContains(ex, contains);
         }
         catch (Exception ex) when (ex is not AssertException)
         {
             if (!NotExistsException.Is(ex))
-                throw new AssertException($"Expected kind of {nameof(NotExistsException)} but was {ex.GetType().Name}. {message}", ex);
+                throw new AssertException(
+                    $"Expected kind of {nameof(NotExistsException)} but was {ex.GetType().Name}. {message}", ex);
 
             AssertExceptionContains(ex, contains);
         }
@@ -173,14 +181,16 @@ public static class TestUtil
         catch (ApiException ex)
         {
             if (ex.ExceptionTypeName != nameof(AlreadyExistsException))
-                throw new AssertException($"Expected {nameof(AlreadyExistsException)} but was {ex.ExceptionTypeName}. {message}");
+                throw new AssertException(
+                    $"Expected {nameof(AlreadyExistsException)} but was {ex.ExceptionTypeName}. {message}");
 
             AssertExceptionContains(ex, contains);
         }
         catch (Exception ex) when (ex is not AssertException)
         {
             if (!AlreadyExistsException.Is(ex))
-                throw new AssertException($"Expected kind of {nameof(AlreadyExistsException)} but was {ex.GetType().Name}. {message}", ex);
+                throw new AssertException(
+                    $"Expected kind of {nameof(AlreadyExistsException)} but was {ex.GetType().Name}. {message}", ex);
 
             AssertExceptionContains(ex, contains);
         }
