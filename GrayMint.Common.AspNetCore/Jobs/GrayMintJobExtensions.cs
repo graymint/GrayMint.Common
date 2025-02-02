@@ -8,7 +8,7 @@ public static class GrayMintJobExtensions
     private static TimeSpan? _minInterval;
     public static IServiceCollection AddGrayMintJob<T>(this IServiceCollection services,
         GrayMintJobOptions jobOptions,
-        int? maxDegreeOfParallelism = default)
+        int? maxDegreeOfParallelism = null)
         where T : IGrayMintJob
     {
         // Add GrayMinJobService

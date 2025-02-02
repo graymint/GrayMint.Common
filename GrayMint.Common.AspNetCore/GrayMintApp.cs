@@ -12,7 +12,7 @@ public static class GrayMintApp
         string? failureMessage = null)
     {
         var failureMessages = new[] { string.Format(OptionsValidationMsgTemplate, optionsName) };
-        if (failureMessage != null) failureMessages = failureMessages.Concat(new[] { failureMessage }).ToArray();
+        if (failureMessage != null) failureMessages = failureMessages.Concat([failureMessage]).ToArray();
         return new OptionsValidationException(optionsName, optionsType, failureMessages);
     }
 
