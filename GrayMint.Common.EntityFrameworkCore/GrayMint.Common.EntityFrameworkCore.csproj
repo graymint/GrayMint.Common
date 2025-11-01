@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<Description>A few utils which used in some EF Core projects.</Description>
 		<TargetFramework>net9.0</TargetFramework>
@@ -21,7 +21,7 @@
 		<PackageIcon>GrayMint.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/graymint/GrayMint.Common</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/graymint/GrayMint.Common</RepositoryUrl>
-		<Version>2.0.225</Version>
+		<Version>2.0.226</Version>
 		<FileVersion>$([System.DateTime]::Now.ToString("yyyy.M.d.HHmm"))</FileVersion>
 	</PropertyGroup>
 
