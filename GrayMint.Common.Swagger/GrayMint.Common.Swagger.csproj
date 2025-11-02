@@ -26,8 +26,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Asp.Versioning.Mvc" Version="8.1.0" />
-		<PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.10" />
+		<PackageReference Include="Scalar.AspNetCore.Microsoft" Version="2.9.0" />
 		<PackageReference Include="NSwag.AspNetCore" Version="14.6.1" />
 	</ItemGroup>
 

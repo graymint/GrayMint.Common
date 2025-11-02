@@ -1,84 +1,74 @@
-﻿using System.Net;
-using Asp.Versioning;
-using NJsonSchema;
-using NJsonSchema.Generation.TypeMappers;
-using NSwag;
-using NSwag.Generation.Processors.Security;
+﻿using GrayMint.Common.Swagger.NSwag;
+using GrayMint.Common.Swagger.OpenApi;
 
 namespace GrayMint.Common.Swagger;
 
 public static class GrayMintSwaggerExtension
 {
-    // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-    public static IServiceCollection AddGrayMintSwagger(this IServiceCollection services, 
-        string title, bool addVersioning)
+    private static AddSwaggerOptions? _options;
+
+    public static IServiceCollection AddGrayMintSwagger(
+        this IServiceCollection services,
+        AddSwaggerOptions? options = null)
     {
-        services.AddEndpointsApiExplorer();
-        services.AddSwaggerDocument(configure =>
-        {
-            configure.Title = title;
-            configure.RequireParametersWithoutDefault = true;
+        options ??= new AddSwaggerOptions();
+        _options = options;
 
-            configure.SchemaSettings.TypeMappers = new List<ITypeMapper>
-            {
-                new PrimitiveTypeMapper(typeof(IPAddress), s => { s.Type = JsonObjectType.String; }),
-                new PrimitiveTypeMapper(typeof(IPEndPoint), s => { s.Type = JsonObjectType.String; }),
-                new PrimitiveTypeMapper(typeof(Version), s => { s.Type = JsonObjectType.String; })
-            };
+        // Add NSwag
+        if (options.AddNSwag)
+            services.AddGrayMintNSwag(options.Title);
 
-            configure.OperationProcessors.Add(new OperationSecurityScopeProcessor("Bearer"));
-            configure.AddSecurity("Bearer", new OpenApiSecurityScheme
-            {
-                Name = "Authorization",
-                Type = OpenApiSecuritySchemeType.ApiKey,
-                In = OpenApiSecurityApiKeyLocation.Header,
-                Description = "Type into the text-box: Bearer YOUR_JWT"
-            });
-        });
-
-        // Version
-        if (addVersioning)
-        {
-            services
-                .AddApiVersioning(options =>
-                {
-                    options.DefaultApiVersion = new ApiVersion(1, 0);
-                    options.AssumeDefaultVersionWhenUnspecified = true;
-                    options.ReportApiVersions = true;
-                })
-                .AddApiExplorer(options =>
-                {
-                    // ReSharper disable once StringLiteralTypo
-                    options.GroupNameFormat = "'v'VVV";
-                    options.SubstituteApiVersionInUrl = true;
-                });
-        }
+        // Add OpenApi/Scalar last to override redirect uri
+        if (options.AddScalar || options.AddOpenApi)
+            services.AddGrayMintOpenApi();
 
         return services;
-
     }
 
-    public static IApplicationBuilder UseGrayMintSwagger(this IApplicationBuilder app, bool redirectRootToSwaggerUi = false)
+    public static void UseGrayMintSwagger(
+        this WebApplication app, 
+        UseSwaggerOptions? options = null)
     {
-        app.UseOpenApi();
-        app.UseSwaggerUi();
+        options ??= new UseSwaggerOptions();
 
-        if (redirectRootToSwaggerUi)
+        // validation
+        if (_options == null)
+            throw new InvalidOperationException(
+                "GrayMintSwaggerExtension is not initialized. Please call AddGrayMintSwagger in IServiceCollection first.");
+
+        string? launchUrl = null;
+
+        // Use NSwag
+        if (_options.AddNSwag)
         {
-            app.Use((context, next) =>
-            {
-                // check if the request is *not* using the HTTPS scheme
-                if (context.Request.Path == "/")
-                {
-                    context.Response.Redirect("/swagger/index.html");
-                    return Task.CompletedTask;
-                }
-
-                // otherwise continue with the request pipeline
-                return next();
-            });
+            app.UseGrayMintNSwag();
+            launchUrl = "/swagger/index.html";
         }
 
-        return app;
+        // Use OpenApi/Scalar last to override redirect uri
+        if (_options.AddScalar)
+        {
+            app.UseGrayMintOpenApi(_options.Title);
+            launchUrl = "/scalar";
+        }
+
+        if (options.RedirectRootToSwaggerUi && !string.IsNullOrEmpty(launchUrl))
+            app.RedirectRootToUrl(launchUrl);
+    }
+
+    private static void RedirectRootToUrl(this IApplicationBuilder app, string url)
+    {
+        app.Use((context, next) =>
+        {
+            // check if the request is *not* using the HTTPS scheme
+            if (context.Request.Path == "/")
+            {
+                context.Response.Redirect(url);
+                return Task.CompletedTask;
+            }
+
+            // otherwise continue with the request pipeline
+            return next();
+        });
     }
 }

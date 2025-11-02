@@ -13,7 +13,7 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddGrayMintCommonServices(new RegisterServicesOptions());
-        builder.Services.AddGrayMintSwagger("Common.Test", true);
+        builder.Services.AddGrayMintSwagger();
         builder.Services.AddGrayMintJob<MyJobService>(new GrayMintJobOptions { Interval = TimeSpan.FromSeconds(5), DueTime = TimeSpan.Zero, Name = "MyJobService" }, 1);
         builder.Services.AddGrayMintJob<MyJobService2>(new GrayMintJobOptions { Interval = TimeSpan.FromSeconds(10) }, 2);
         builder.Services.AddScoped<MyJobService>();
@@ -21,7 +21,7 @@ public class Program
 
         var app = builder.Build();
         app.UseGrayMintCommonServices(new UseServicesOptions());
-        app.UseGrayMintSwagger(true);
+        app.UseGrayMintSwagger(new UseSwaggerOptions{ RedirectRootToSwaggerUi = true});
 
         JobRunner.Default.MaxDegreeOfParallelism = 2;
 
