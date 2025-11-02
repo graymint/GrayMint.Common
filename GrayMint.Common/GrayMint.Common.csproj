@@ -1,41 +1,34 @@
 <Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<Description>A few utils which used in some projects.</Description>
-		<TargetFramework>netstandard2.1</TargetFramework>
-		<IsPackable>true</IsPackable>
-	</PropertyGroup>
-
-	<PropertyGroup>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-		<IncludeSymbols>True</IncludeSymbols>
-		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
-		<LangVersion>12</LangVersion>
-	</PropertyGroup>
-
-	<PropertyGroup>
-		<Authors>GrayMint</Authors>
-		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<Copyright>GrayMint. All rights reserved.</Copyright>
-		<PackageIcon>GrayMint.png</PackageIcon>
-		<PackageProjectUrl>https://github.com/graymint/GrayMint.Common</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/graymint/GrayMint.Common</RepositoryUrl>
-		<Version>2.0.226</Version>
-		<FileVersion>$([System.DateTime]::Now.ToString("yyyy.M.d.HHmm"))</FileVersion>
-	</PropertyGroup>
-
-	<ItemGroup>
-		<None Include="..\GrayMint.png">
-			<Pack>True</Pack>
-			<PackagePath>\</PackagePath>
-		</None>
-	</ItemGroup>
-
-
-	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.10" />
-		<PackageReference Include="System.Text.Json" Version="9.0.10" />
-	</ItemGroup>
-
-
+  <PropertyGroup>
+    <Description>A few utils which used in some projects.</Description>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IncludeSymbols>True</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <LangVersion>12</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <Authors>GrayMint</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Copyright>GrayMint. All rights reserved.</Copyright>
+    <PackageIcon>GrayMint.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/graymint/GrayMint.Common</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/graymint/GrayMint.Common</RepositoryUrl>
+    <Version>2.0.227</Version>
+    <FileVersion>$([System.DateTime]::Now.ToString("yyyy.M.d.HHmm"))</FileVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="..\GrayMint.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.10" />
+    <PackageReference Include="System.Text.Json" Version="9.0.10" />
+  </ItemGroup>
 </Project>
