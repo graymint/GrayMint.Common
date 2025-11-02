@@ -39,7 +39,7 @@ jobs:
         $csprojFiles = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter *.csproj -File
         foreach ($proj in $csprojFiles) {
           Write-Host "Setting version $($pub.Version) in: $($proj.FullName)"
-          $xml = New-Object System.Xml.XmlDocument
+          $xml = [xml](Get-Content $projectFile -Raw)
           $xml.PreserveWhitespace = $true
           $xml.Load($projectFile)
           $versionNode = $xml.SelectSingleNode("Project/PropertyGroup/Version")
