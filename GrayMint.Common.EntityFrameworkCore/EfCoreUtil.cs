@@ -53,12 +53,6 @@ public static class EfCoreUtil
         }
     }
 
-    public static async Task EnsureTablesCreated(DatabaseFacade database, string checkSchema, string checkTableName)
-    {
-        if (!await SqlTableExists(database, checkSchema, checkTableName))
-            await EnsureTablesCreated(database);
-    }
-
     public static async Task EnsureTablesCreated(DatabaseFacade database)
     {
         try
@@ -67,7 +61,10 @@ public static class EfCoreUtil
             await databaseCreator.CreateTablesAsync();
 
         }
-        catch (DbException ex) when (ex.ErrorCode == 2714) // already exists exception
+        catch (DbException ex) when (
+            ex.ErrorCode == 2714 ||
+            ex.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase) ||
+            ex.Message.Contains("duplicate", StringComparison.OrdinalIgnoreCase)) // already exists exception
         {
             // ignore
         }
