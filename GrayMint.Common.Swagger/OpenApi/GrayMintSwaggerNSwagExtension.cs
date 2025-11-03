@@ -9,6 +9,7 @@ internal static class GrayMintSwaggerOpenApiExtension
         services.AddOpenApi(options =>
         {
             options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+            options.AddSchemaTransformer<PrimitiveTypeSchemaTransformer>();
         });
 
         return services;
