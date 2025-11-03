@@ -64,6 +64,7 @@ public static class EfCoreUtil
         catch (DbException ex) when (
             ex.ErrorCode == 2714 ||
             ex.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase) ||
+            ex.Message.Contains("already an object", StringComparison.OrdinalIgnoreCase) ||
             ex.Message.Contains("duplicate", StringComparison.OrdinalIgnoreCase)) // already exists exception
         {
             // ignore
