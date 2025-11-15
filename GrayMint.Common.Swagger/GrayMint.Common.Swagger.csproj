@@ -24,7 +24,7 @@
 		<PackageIcon>GrayMint.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/graymint/GrayMint.Common</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/graymint/GrayMint.Common</RepositoryUrl>
-		<Version>2.0.232</Version>
+		<Version>2.1.234</Version>
 		<FileVersion>$([System.DateTime]::Now.ToString("yyyy.M.d.HHmm"))</FileVersion>
 	</PropertyGroup>
 
