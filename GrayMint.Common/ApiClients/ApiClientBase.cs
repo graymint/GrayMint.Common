@@ -14,11 +14,11 @@ public class ApiClientBase : ApiClientCommon
 {
     private class HttpNoResult;
 
-    protected readonly struct HttpResult<T>(HttpResponseMessage responseMessage, T responseObject, string responseText)
+    protected readonly struct HttpResult<T>
     {
-        public HttpResponseMessage ResponseMessage { get; } = responseMessage;
-        public T Object { get; } = responseObject;
-        public string Text { get; } = responseText;
+        public required HttpResponseMessage ResponseMessage { get; init; }
+        public required T Object { get; init; }
+        public required string Text { get; init; }
     }
 
     protected JsonSerializerOptions JsonSerializerSettings => Settings.Value;
@@ -51,11 +51,11 @@ public class ApiClientBase : ApiClientCommon
     {
         if (ReadResponseAsString)
         {
-            var responseText = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var responseText = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 var typedBody = JsonSerializer.Deserialize<T>(responseText, JsonSerializerSettings);
-                return new HttpResult<T?>(response, typedBody, responseText);
+                return new HttpResult<T?> { ResponseMessage = response, Object = typedBody, Text = responseText };
             }
             catch (JsonException exception)
             {
@@ -66,9 +66,10 @@ public class ApiClientBase : ApiClientCommon
 
         try
         {
-            await using var responseStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-            var typedBody = await JsonSerializer.DeserializeAsync<T>(responseStream, JsonSerializerSettings, cancellationToken).ConfigureAwait(false);
-            return new HttpResult<T?>(response, typedBody, string.Empty);
+            await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+            var typedBody = await JsonSerializer
+                .DeserializeAsync<T>(responseStream, JsonSerializerSettings, cancellationToken).ConfigureAwait(false);
+            return new HttpResult<T?> { ResponseMessage = response, Object = typedBody, Text = string.Empty };
         }
         catch (JsonException exception)
         {
@@ -98,8 +99,10 @@ public class ApiClientBase : ApiClientCommon
                     }
                 }
 
-                var converted = Convert.ToString(Convert.ChangeType(value, Enum.GetUnderlyingType(value.GetType()), cultureInfo));
-                return converted;
+                var converted =
+                    Convert.ToString(Convert.ChangeType(value, Enum.GetUnderlyingType(value.GetType()), cultureInfo));
+
+                return converted ?? "";
             }
         }
         else if (value is bool b)
@@ -121,23 +124,26 @@ public class ApiClientBase : ApiClientCommon
     }
 
     protected async Task<string> HttpSendAsync(HttpMethod httpMethod, string urlPart,
-        Dictionary<string, object?>? parameters = null, object? data = null, CancellationToken cancellationToken = default)
+        Dictionary<string, object?>? parameters = null, object? data = null,
+        CancellationToken cancellationToken = default)
     {
-        var res = await HttpSendExAsync<HttpNoResult>(httpMethod, urlPart, parameters, data, cancellationToken);
+        var res = await HttpSendExAsync<HttpNoResult>(httpMethod, urlPart, parameters, data, cancellationToken)
+            .ConfigureAwait(false);
         return res.Text;
     }
 
     protected async Task<T> HttpSendAsync<T>(HttpMethod httpMethod, string urlPart,
-        Dictionary<string, object?>? parameters = null, object? data = null, CancellationToken cancellationToken = default)
+        Dictionary<string, object?>? parameters = null, object? data = null,
+        CancellationToken cancellationToken = default)
     {
-        var res = await HttpSendExAsync<T>(httpMethod, urlPart, parameters, data, cancellationToken);
+        var res = await HttpSendExAsync<T>(httpMethod, urlPart, parameters, data, cancellationToken).ConfigureAwait(false);
         return res.Object;
     }
 
     protected async Task<HttpResult<T>> HttpSendExAsync<T>(HttpMethod httpMethod, string urlPart,
-        Dictionary<string, object?>? parameters = null, object? data = null, CancellationToken cancellationToken = default)
+        Dictionary<string, object?>? parameters = null, object? data = null,
+        CancellationToken cancellationToken = default)
     {
-
         using var request = new HttpRequestMessage();
         request.Method = httpMethod;
         request.Headers.Accept.Add(MediaTypeWithQualityHeaderValue.Parse("application/json"));
@@ -149,43 +155,49 @@ public class ApiClientBase : ApiClientCommon
             request.Content = content;
         }
 
-        return await HttpSendAsync<T>(urlPart, parameters, request, cancellationToken);
+        // don't return Task as request will be disposed
+        return await HttpSendAsync<T>(urlPart, parameters, request, cancellationToken).ConfigureAwait(false);
     }
 
     protected async Task<string> HttpSendAsync(string urlPart, Dictionary<string, object?>? parameters,
         HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var res = await HttpSendAsync<HttpNoResult>(urlPart, parameters, request, cancellationToken);
+        var res = await HttpSendAsync<HttpNoResult>(urlPart, parameters, request, cancellationToken).ConfigureAwait(false);
         return res.Text;
     }
 
-    protected virtual async Task<HttpResult<T>> HttpSendAsync<T>(string urlPart, Dictionary<string, object?>? parameters,
+    protected virtual async Task<HttpResult<T>> HttpSendAsync<T>(string urlPart,
+        Dictionary<string, object?>? parameters,
         HttpRequestMessage request, CancellationToken cancellationToken)
     {
         try
         {
-            var ret = await HttpSendAsyncImpl<T>(urlPart, parameters, request, cancellationToken);
+            var ret = await HttpSendAsyncImpl<T>(urlPart, parameters, request, cancellationToken).ConfigureAwait(false);
 
             // report the log
-            Logger.LogInformation(LoggerEventId, "API Called. Method: {Method}, Uri: {RequestUri} => StatusCode: {StatusCode}.",
+            Logger.LogInformation(LoggerEventId,
+                "API Called. Method: {Method}, Uri: {RequestUri} => StatusCode: {StatusCode}.",
                 request.Method, request.RequestUri, ret.ResponseMessage.StatusCode);
 
             return ret;
         }
         catch (ApiException ex)
         {
-            Logger.LogError(LoggerEventId, ex, "API Called. Method: {Method}, Uri: {RequestUri} => StatusCode: {StatusCode}.", request.Method, request.RequestUri, ex.StatusCode);
+            Logger.LogError(LoggerEventId, ex,
+                "API Called. Method: {Method}, Uri: {RequestUri} => StatusCode: {StatusCode}.", request.Method,
+                request.RequestUri, ex.StatusCode);
             throw;
         }
         catch (Exception ex)
         {
-            Logger.LogError(LoggerEventId, ex, "API Called. Method: {Method}, Uri: {RequestUri}, Failed.", request.Method, request.RequestUri);
+            Logger.LogError(LoggerEventId, ex, "API Called. Method: {Method}, Uri: {RequestUri}, Failed.",
+                request.Method, request.RequestUri);
             throw;
         }
     }
 
     private async Task<HttpResult<T>> HttpSendAsyncImpl<T>(string urlPart, Dictionary<string, object?>? parameters,
-    HttpRequestMessage request, CancellationToken cancellationToken)
+        HttpRequestMessage request, CancellationToken cancellationToken)
     {
         parameters ??= new Dictionary<string, object?>();
 
@@ -201,6 +213,7 @@ public class ApiClientBase : ApiClientCommon
                     .Append(Uri.EscapeDataString(ConvertToString(parameter.Value, CultureInfo.InvariantCulture)))
                     .Append('&');
             }
+
             urlBuilder.Length--;
         }
 
@@ -208,7 +221,9 @@ public class ApiClientBase : ApiClientCommon
         await PrepareRequestAsync(client, request, urlBuilder, cancellationToken).ConfigureAwait(false);
 
 
-        using var response = await HttpClientSendAsync(client, request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+        using var response =
+            await HttpClientSendAsync(client, request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+                .ConfigureAwait(false);
         var headers = response.Headers.ToDictionary(h => h.Key, h => h.Value);
 
         // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
@@ -224,20 +239,26 @@ public class ApiClientBase : ApiClientCommon
         if (status is >= 200 and < 300)
         {
             if (typeof(T) == typeof(HttpNoResult))
-                return new HttpResult<T>(response, default!, string.Empty);
+                return new HttpResult<T> { ResponseMessage = response, Object = default!, Text = string.Empty };
 
-            var objectResponse = await ReadObjectResponseAsync<T>(response, headers, cancellationToken).ConfigureAwait(false);
+            var objectResponse =
+                await ReadObjectResponseAsync<T>(response, headers, cancellationToken).ConfigureAwait(false);
             if (objectResponse.Object == null)
-                throw new ApiException("Response was null which was not expected.", status, objectResponse.Text, headers, null);
+                throw new ApiException("Response was null which was not expected.", status, objectResponse.Text,
+                    headers, null);
 
             return objectResponse!;
         }
 
-        var responseData = response.Content != null ? await response.Content.ReadAsStringAsync().ConfigureAwait(false) : null;
-        throw new ApiException("The HTTP status code of the response was not expected (" + status + ").", status, responseData, headers, null);
+        var responseData = response.Content != null
+            ? await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false)
+            : null;
+        throw new ApiException("The HTTP status code of the response was not expected (" + status + ").", status,
+            responseData, headers, null);
     }
 
-    protected virtual Task<HttpResponseMessage> HttpClientSendAsync(HttpClient client, HttpRequestMessage request, HttpCompletionOption responseHeadersRead, CancellationToken cancellationToken)
+    protected virtual Task<HttpResponseMessage> HttpClientSendAsync(HttpClient client, HttpRequestMessage request,
+        HttpCompletionOption responseHeadersRead, CancellationToken cancellationToken)
     {
         return client.SendAsync(request, responseHeadersRead, cancellationToken);
     }
@@ -284,9 +305,9 @@ public class ApiClientBase : ApiClientCommon
         return HttpSendAsync(HttpMethod.Patch, urlPart, parameters, data, cancellationToken);
     }
 
-    protected async Task HttpDeleteAsync(string urlPart,
+    protected Task HttpDeleteAsync(string urlPart,
         Dictionary<string, object?>? parameters = null, CancellationToken cancellationToken = default)
     {
-        await HttpSendAsync(HttpMethod.Delete, urlPart, parameters, null, cancellationToken);
+        return HttpSendAsync(HttpMethod.Delete, urlPart, parameters, null, cancellationToken);
     }
 }

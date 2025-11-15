@@ -1,155 +1,146 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
+﻿using GrayMint.Common.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace GrayMint.Common.Jobs;
 
 public class JobRunner
 {
-    public ILogger Logger { get; set; }
-    private int _currentMaxDegreeOfParallelism;
     private SemaphoreSlim _semaphore;
-    private readonly LinkedList<WeakReference<IJob>> _jobRefs = [];
-    private readonly List<WeakReference<IJob>> _deadJobs = [];
-    private readonly List<IJob> _jobs = [];
-    private Timer? _timer;
-    public bool IsStarted => _timer != null;
-    public int MaxDegreeOfParallelism { get; set; } = 100;
-    public static JobRunner Default => DefaultLazy.Value;
-    private static readonly Lazy<JobRunner> DefaultLazy = new(() => new JobRunner());
+    private readonly LinkedList<JobItem> _jobs = [];
+    private static readonly Lazy<JobRunner> SlowInstanceLazy = new(() => new JobRunner(TimeSpan.FromSeconds(10)));
+    private static readonly Lazy<JobRunner> FastInstanceLazy = new(() => new JobRunner(TimeSpan.FromSeconds(2)));
+    private int _maxDegreeOfParallelism = 2;
+    private readonly TimeSpan _cleanupTimeSpan = TimeSpan.FromSeconds(60);
+    private DateTime _lastCleanupTime = FastDateTime.Now;
 
-    public TimeSpan Interval
-    {
-        get;
-        set
-        {
-            field = value;
-            if (!IsStarted) return;
-            Stop();
-            Start();
+    public ILogger? Logger { get; init; }
+    public static JobRunner SlowInstance => SlowInstanceLazy.Value;
+    public static JobRunner FastInstance => FastInstanceLazy.Value;
+    public TimeSpan Interval { get; set; }
+
+    public int MaxDegreeOfParallelism {
+        get => _maxDegreeOfParallelism;
+        set {
+            if (value < 1)
+                throw new ArgumentOutOfRangeException(nameof(value), "MaxDegreeOfParallelism must be greater than 0.");
+            _maxDegreeOfParallelism = value;
+            _semaphore = new SemaphoreSlim(_maxDegreeOfParallelism);
         }
-    } = TimeSpan.FromSeconds(5);
-
-    public JobRunner(bool start = true, ILogger? logger = null)
-    {
-        _currentMaxDegreeOfParallelism = MaxDegreeOfParallelism;
-        _semaphore = new SemaphoreSlim(MaxDegreeOfParallelism);
-        Logger = logger ?? NullLogger.Instance;
-        if (start)
-            Start();
     }
 
-    private void RunJobs()
+    public JobRunner(TimeSpan interval)
     {
-        IJob[] jobs;
-        lock (_jobRefs)
-        {
-            // find jobs to run
-            foreach (var jobRef in _jobRefs)
-            {
-                // the WatchDog object is dead
-                if (!jobRef.TryGetTarget(out var job))
-                {
-                    _deadJobs.Add(jobRef);
-                    continue;
-                }
+        Interval = interval;
+        _semaphore = new SemaphoreSlim(_maxDegreeOfParallelism);
+        Task.Run(RunJobs);
+    }
 
-                // The watch dog is busy
-                if (job.JobSection.ShouldRunnerEnter)
-                    _jobs.Add(job);
+
+    private async Task RunJobs()
+    {
+        while (true) {
+            await Task.Delay(Interval).ConfigureAwait(false);
+
+            // Periodic cleanup of dead jobs based on CleanupTimeSpan
+            var now = FastDateTime.Now;
+            if (now - _lastCleanupTime >= _cleanupTimeSpan) {
+                RemoveDeadCallbacks();
+                _lastCleanupTime = now;
             }
 
-            // clear dead watch dogs
-            foreach (var item in _deadJobs)
-                _jobRefs.Remove(item);
-
-            // collect jobs from temporary list
-            jobs = _jobs.ToArray();
-
-            // clear temporary lists
-            _jobs.Clear();
-            _deadJobs.Clear();
+            // Run jobs
+            await RunJobsInternal().ConfigureAwait(false);
         }
 
-        if (jobs.Length > 0)
-            _ = RunJobs(jobs);
+        // ReSharper disable once FunctionNeverReturns
     }
 
-    private async Task RunJobs(IEnumerable<IJob> jobs)
+    private async Task RunJobsInternal()
     {
-        // update MaxDegreeOfParallelism
-        if (_currentMaxDegreeOfParallelism != MaxDegreeOfParallelism && _semaphore.CurrentCount == _currentMaxDegreeOfParallelism)
-        {
-            _currentMaxDegreeOfParallelism = MaxDegreeOfParallelism;
-            _semaphore = new SemaphoreSlim(MaxDegreeOfParallelism);
-        }
+        // copy all callbacks to a temporary list
+        var jobCallbacks = GetReadyJobs();
 
         // run jobs
-        foreach (var job in jobs)
-        {
-            await _semaphore.WaitAsync();
-            _ = RunJob(job);
+        foreach (var jobCallback in jobCallbacks) {
+            await _semaphore.WaitAsync().ConfigureAwait(false);
+            _ = RunJob(jobCallback);
         }
     }
 
-    private async Task RunJob(IJob job)
+    private async Task RunJob(Job job)
     {
-        // The watch dog is busy
-        if (!job.JobSection.EnterRunner())
-        {
+        try {
+            await job.RunNow().ConfigureAwait(false);
+        }
+        catch (ObjectDisposedException) {
+            Remove(job);
+        }
+        catch (Exception ex) {
+            Logger?.LogCritical(ex, "JobCallback should not throw this exception.");
+        }
+        finally {
             _semaphore.Release();
-            return;
         }
+    }
 
-        // run the job
-        try
-        {
-            await job.RunJob();
-        }
-        catch (ObjectDisposedException)
-        {
-            // remove from jobs
-            lock (_jobRefs)
-            {
-                var jobRef = _jobRefs.FirstOrDefault(x => x.TryGetTarget(out var target) && target == job);
-                _jobRefs.Remove(jobRef);
+    private void RemoveDeadCallbacks()
+    {
+        lock (_jobs) {
+            var node = _jobs.First;
+            while (node != null) {
+                // store next before possibly removing current
+                var next = node.Next;
+
+                // if the WeakReference is dead, remove it
+                if (!node.Value.JobReference.TryGetTarget(out _)) {
+                    Logger?.LogDebug(
+                        "Removing a dead job. Ensure proper disposal by the caller. JobName: {JobName}",
+                        node.Value.Name);
+
+                    _jobs.Remove(node);
+                }
+
+                node = next;
             }
         }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Could not run a job. JobName: {JobName}", job.JobSection.Name ?? "NoName");
-        }
-        finally
-        {
-            job.JobSection.Leave();
-            _semaphore.Release();
-        }
     }
 
-    public void Add(IJob job)
+    private List<Job> GetReadyJobs()
     {
-        lock (_jobRefs)
-            _jobRefs.AddLast(new WeakReference<IJob>(job));
+        List<Job> jobs;
+        lock (_jobs) {
+            jobs = new List<Job>(_jobs.Count);
+            foreach (var jobRef in _jobs) {
+                if (jobRef.JobReference.TryGetTarget(out var target) && target.IsReadyToRun) {
+                    jobs.Add(target);
+                }
+            }
+        }
+
+        return jobs;
     }
 
-    public void Remove(IJob job)
+    public void Add(Job job)
     {
-        lock (_jobRefs)
-        {
-            var item = _jobRefs.FirstOrDefault(x => x.TryGetTarget(out var target) && target == job);
+        lock (_jobs)
+            _jobs.AddLast(new JobItem {
+                Name = job.Name,
+                JobReference = new WeakReference<Job>(job)
+            });
+    }
+
+    public void Remove(Job job)
+    {
+        lock (_jobs) {
+            var item = _jobs.FirstOrDefault(x => x.JobReference.TryGetTarget(out var target) && target == job);
             if (item != null)
-                _jobRefs.Remove(item);
+                _jobs.Remove(item);
         }
     }
 
-    public void Start()
+    private class JobItem
     {
-        _timer?.Dispose();
-        _timer = new Timer(_ => RunJobs(), null, TimeSpan.Zero, Interval);
-    }
-
-    public void Stop()
-    {
-        _timer?.Dispose();
-        _timer = null;
+        public required string Name { get; init; }
+        public required WeakReference<Job> JobReference { get; init; }
     }
 }

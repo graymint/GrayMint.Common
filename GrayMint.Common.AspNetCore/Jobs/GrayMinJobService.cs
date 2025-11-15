@@ -1,50 +1,61 @@
 using GrayMint.Common.Jobs;
+using GrayMint.Common.Utils;
 
 namespace GrayMint.Common.AspNetCore.Jobs;
 
-public class GrayMinJobService<T>(
-    IServiceScopeFactory serviceScopeFactory,
-    ILogger<GrayMinJobService<T>> logger,
-    GrayMintJobOptions jobOptions,
-    JobRunner jobRunner)
-    : IHostedService, IJob where T : IGrayMintJob
+public class GrayMinJobService<T> : IHostedService where T : IGrayMintJob
 {
     private CancellationTokenSource? _cancellationTokenSource;
-    public JobSection JobSection { get; } = new(jobOptions);
+    private readonly Job _job;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly GrayMintJobOptions _jobOptions;
+
+    public GrayMinJobService(
+        IServiceScopeFactory serviceScopeFactory,
+        GrayMintJobOptions jobOptions,
+        JobRunner? jobRunner)
+    {
+        _serviceScopeFactory = serviceScopeFactory;
+        _jobOptions = jobOptions;
+        _job = new Job(RunJob, _jobOptions, jobRunner);
+        _job.Stop();
+    }
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _cancellationTokenSource = new CancellationTokenSource();
-        jobRunner.Add(this);
+        _job.Start();
         return Task.CompletedTask;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        jobRunner.Remove(this);
-        if (jobOptions.ExecuteOnShutdown)
+        if (_jobOptions.ExecuteOnShutdown)
         {
             try
             {
-                await JobSection.Enter(RunJob, true);
+                if (!_job.IsStarted)
+                    await _job.RunNow(cancellationToken);
             }
-            catch (Exception ex)
+            catch 
             {
-                logger.LogError(ex, "Could not execute the job in the shutdown. JobName: {JobName}", JobSection.Name);
+                // no error on shutdown. RunNow already logs errors.
             }
         }
 
+        _job.Stop();
         if (_cancellationTokenSource != null)
-            await _cancellationTokenSource.CancelAsync();
+            await _cancellationTokenSource.TryCancelAsync();
     }
 
-    public async Task RunJob()
+    private async ValueTask RunJob(CancellationToken cancellationToken)
     {
         if (_cancellationTokenSource?.IsCancellationRequested == true)
             return;
 
-        await using var scope = serviceScopeFactory.CreateAsyncScope();
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cancellationTokenSource?.Token ?? CancellationToken.None);
+        await using var scope = _serviceScopeFactory.CreateAsyncScope();
         var service = scope.ServiceProvider.GetRequiredService<T>();
-        await service.RunJob(_cancellationTokenSource?.Token ?? CancellationToken.None);
+        await service.RunJob(linkedCts.Token);
     }
 }
