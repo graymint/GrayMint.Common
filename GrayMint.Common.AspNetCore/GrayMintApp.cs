@@ -16,12 +16,14 @@ public static class GrayMintApp
         return new OptionsValidationException(optionsName, optionsType, failureMessages);
     }
 
-    public static void ThrowOptionsValidationException(string optionsName, Type optionsType, string? failureMessage = null)
+    public static void ThrowOptionsValidationException(string optionsName, Type optionsType,
+        string? failureMessage = null)
     {
         throw CreateOptionsValidationException(optionsName, optionsType, failureMessage);
     }
 
-    public static async Task UseGrayMintDatabaseCommand<T>(this IServiceProvider serviceProvider, string[] args) where T : DbContext
+    public static async Task UseGrayMintDatabaseCommand<T>(this IServiceProvider serviceProvider, string[] args)
+        where T : DbContext
     {
         var logger = serviceProvider.GetRequiredService<ILogger<WebApplication>>();
 
@@ -36,6 +38,7 @@ public static class GrayMintApp
             logger.LogInformation($"Recreating the {nameof(T)} database...");
             await appDbContext.Database.EnsureDeletedAsync();
         }
+
         await appDbContext.Database.EnsureCreatedAsync();
     }
 

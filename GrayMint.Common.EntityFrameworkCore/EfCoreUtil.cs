@@ -30,7 +30,8 @@ public static class EfCoreUtil
         {
             // find 
             var dbItemKeyProp = dbItem.GetType().GetProperties().Single(x => x.Name.EndsWith("Id"));
-            var dbItemKeyValue = dbItemKeyProp.GetValue(dbItem, null) ?? throw new InvalidOperationException("LookupId can not be null");
+            var dbItemKeyValue = dbItemKeyProp.GetValue(dbItem, null) ??
+                                 throw new InvalidOperationException("LookupId can not be null");
             var dbItemNameProp = dbItem.GetType().GetProperties().Single(x => x.Name.EndsWith("Name"));
 
             if (enumItems.TryGetValue((TEnumType)dbItemKeyValue, out var itemValue))
@@ -48,7 +49,8 @@ public static class EfCoreUtil
         var newEnumItems = enumItems.ExceptBy(oldEnumItemKeys, x => x.Key);
         foreach (var item in newEnumItems)
         {
-            var newDbItem = (T)Activator.CreateInstance(typeof(T), Enum.Parse(typeof(TEnum), item.Value!, true), item.Value)!;
+            var newDbItem =
+                (T)Activator.CreateInstance(typeof(T), Enum.Parse(typeof(TEnum), item.Value!, true), item.Value)!;
             dbSet.Add(newDbItem);
         }
     }
@@ -57,9 +59,8 @@ public static class EfCoreUtil
     {
         try
         {
-            var databaseCreator = (RelationalDatabaseCreator)database.GetService <IDatabaseCreator>();
+            var databaseCreator = (RelationalDatabaseCreator)database.GetService<IDatabaseCreator>();
             await databaseCreator.CreateTablesAsync();
-
         }
         catch (DbException ex) when (
             ex.ErrorCode == 2714 ||
@@ -108,5 +109,4 @@ public static class EfCoreUtil
         var res = (int)(await command.ExecuteScalarAsync())!;
         return res;
     }
-
 }

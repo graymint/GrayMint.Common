@@ -37,7 +37,7 @@ public class GrayMinJobService<T> : IHostedService where T : IGrayMintJob
                 if (!_job.IsStarted)
                     await _job.RunNow(cancellationToken);
             }
-            catch 
+            catch
             {
                 // no error on shutdown. RunNow already logs errors.
             }
@@ -53,7 +53,8 @@ public class GrayMinJobService<T> : IHostedService where T : IGrayMintJob
         if (_cancellationTokenSource?.IsCancellationRequested == true)
             return;
 
-        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cancellationTokenSource?.Token ?? CancellationToken.None);
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken,
+            _cancellationTokenSource?.Token ?? CancellationToken.None);
         await using var scope = _serviceScopeFactory.CreateAsyncScope();
         var service = scope.ServiceProvider.GetRequiredService<T>();
         await service.RunJob(linkedCts.Token);

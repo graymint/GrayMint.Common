@@ -26,7 +26,7 @@ public static class GrayMintSwaggerExtension
     }
 
     public static void UseGrayMintSwagger(
-        this WebApplication app, 
+        this WebApplication app,
         UseSwaggerOptions? options = null)
     {
         options ??= new UseSwaggerOptions();

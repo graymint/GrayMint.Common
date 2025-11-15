@@ -16,14 +16,15 @@ public class Program
 
         builder.Services.AddGrayMintCommonServices(new RegisterServicesOptions());
         builder.Services.AddGrayMintSwagger();
-        builder.Services.AddGrayMintJob<MyJobService>(new GrayMintJobOptions { Interval = TimeSpan.FromSeconds(5), DueTime = TimeSpan.Zero, Name = "MyJobService" });
+        builder.Services.AddGrayMintJob<MyJobService>(new GrayMintJobOptions
+            { Interval = TimeSpan.FromSeconds(5), DueTime = TimeSpan.Zero, Name = "MyJobService" });
         builder.Services.AddGrayMintJob<MyJobService2>(new GrayMintJobOptions { Interval = TimeSpan.FromSeconds(10) });
         builder.Services.AddScoped<MyJobService>();
         builder.Services.AddScoped<MyJobService2>();
 
         var app = builder.Build();
         app.UseGrayMintCommonServices(new UseServicesOptions());
-        app.UseGrayMintSwagger(new UseSwaggerOptions{ RedirectRootToSwaggerUi = true});
+        app.UseGrayMintSwagger(new UseSwaggerOptions { RedirectRootToSwaggerUi = true });
 
 
         return app.RunAsync();

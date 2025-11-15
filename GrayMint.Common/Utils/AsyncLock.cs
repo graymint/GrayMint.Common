@@ -58,7 +58,8 @@ public sealed class AsyncLock
         return LockAsync(name, Timeout.InfiniteTimeSpan);
     }
 
-    public static async Task<ILockAsyncResult> LockAsync(string name, TimeSpan timeout, CancellationToken cancellationToken = default)
+    public static async Task<ILockAsyncResult> LockAsync(string name, TimeSpan timeout,
+        CancellationToken cancellationToken = default)
     {
         SemaphoreSlimEx semaphoreSlim;
         lock (SemaphoreSlims)

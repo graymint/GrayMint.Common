@@ -36,7 +36,8 @@ public static class TaskExtensions
     {
         public Exception? TryCancel()
         {
-            try {
+            try
+            {
                 if (!cancellationTokenSource.IsCancellationRequested)
                     cancellationTokenSource.Cancel();
                 return null;
@@ -49,12 +50,14 @@ public static class TaskExtensions
 
         public async Task<Exception?> TryCancelAsync()
         {
-            try {
+            try
+            {
                 if (!cancellationTokenSource.IsCancellationRequested)
                     await cancellationTokenSource.CancelAsync().Vhc();
                 return null;
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 return ex;
             }
         }

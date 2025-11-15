@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.OpenApi;
-using Microsoft.OpenApi;
 using System.Net;
 using System.Text.Json.Nodes;
+using Microsoft.AspNetCore.OpenApi;
+using Microsoft.OpenApi;
 
 namespace GrayMint.Common.Swagger.OpenApi;
 
@@ -43,5 +43,4 @@ public class PrimitiveTypeSchemaTransformer : IOpenApiSchemaTransformer
         schema.AnyOf?.Clear();
         return Task.CompletedTask;
     }
-
 }

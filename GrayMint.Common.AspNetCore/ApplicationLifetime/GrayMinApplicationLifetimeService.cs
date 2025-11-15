@@ -21,12 +21,11 @@ public class GrayMinApplicationLifetimeService<T>(
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-
         hostApplicationLifetime.ApplicationStopping.Register(() =>
         {
             using var scope = serviceScopeFactory.CreateAsyncScope();
             var service = scope.ServiceProvider.GetRequiredService<T>();
-            
+
             // ReSharper disable once MethodSupportsCancellation
             try
             {

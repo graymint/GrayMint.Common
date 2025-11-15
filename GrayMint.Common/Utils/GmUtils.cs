@@ -23,6 +23,7 @@ public static class GmUtils
                     tasks.Remove(completedTask);
             }
         }
+
         await Task.WhenAll(tasks);
     }
 

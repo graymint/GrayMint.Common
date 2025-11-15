@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+
 namespace GrayMint.Common.AspNetCore;
 
 public static class GrayMintCommonExtension

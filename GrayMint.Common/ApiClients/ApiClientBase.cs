@@ -66,7 +66,8 @@ public class ApiClientBase : ApiClientCommon
 
         try
         {
-            await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+            await using var responseStream =
+                await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
             var typedBody = await JsonSerializer
                 .DeserializeAsync<T>(responseStream, JsonSerializerSettings, cancellationToken).ConfigureAwait(false);
             return new HttpResult<T?> { ResponseMessage = response, Object = typedBody, Text = string.Empty };
@@ -136,7 +137,8 @@ public class ApiClientBase : ApiClientCommon
         Dictionary<string, object?>? parameters = null, object? data = null,
         CancellationToken cancellationToken = default)
     {
-        var res = await HttpSendExAsync<T>(httpMethod, urlPart, parameters, data, cancellationToken).ConfigureAwait(false);
+        var res = await HttpSendExAsync<T>(httpMethod, urlPart, parameters, data, cancellationToken)
+            .ConfigureAwait(false);
         return res.Object;
     }
 
@@ -162,7 +164,8 @@ public class ApiClientBase : ApiClientCommon
     protected async Task<string> HttpSendAsync(string urlPart, Dictionary<string, object?>? parameters,
         HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var res = await HttpSendAsync<HttpNoResult>(urlPart, parameters, request, cancellationToken).ConfigureAwait(false);
+        var res = await HttpSendAsync<HttpNoResult>(urlPart, parameters, request, cancellationToken)
+            .ConfigureAwait(false);
         return res.Text;
     }
 

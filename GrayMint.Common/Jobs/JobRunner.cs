@@ -18,9 +18,11 @@ public class JobRunner
     public static JobRunner FastInstance => FastInstanceLazy.Value;
     public TimeSpan Interval { get; set; }
 
-    public int MaxDegreeOfParallelism {
+    public int MaxDegreeOfParallelism
+    {
         get => _maxDegreeOfParallelism;
-        set {
+        set
+        {
             if (value < 1)
                 throw new ArgumentOutOfRangeException(nameof(value), "MaxDegreeOfParallelism must be greater than 0.");
             _maxDegreeOfParallelism = value;
@@ -38,12 +40,14 @@ public class JobRunner
 
     private async Task RunJobs()
     {
-        while (true) {
+        while (true)
+        {
             await Task.Delay(Interval).ConfigureAwait(false);
 
             // Periodic cleanup of dead jobs based on CleanupTimeSpan
             var now = FastDateTime.Now;
-            if (now - _lastCleanupTime >= _cleanupTimeSpan) {
+            if (now - _lastCleanupTime >= _cleanupTimeSpan)
+            {
                 RemoveDeadCallbacks();
                 _lastCleanupTime = now;
             }
@@ -61,7 +65,8 @@ public class JobRunner
         var jobCallbacks = GetReadyJobs();
 
         // run jobs
-        foreach (var jobCallback in jobCallbacks) {
+        foreach (var jobCallback in jobCallbacks)
+        {
             await _semaphore.WaitAsync().ConfigureAwait(false);
             _ = RunJob(jobCallback);
         }
@@ -69,30 +74,37 @@ public class JobRunner
 
     private async Task RunJob(Job job)
     {
-        try {
+        try
+        {
             await job.RunNow().ConfigureAwait(false);
         }
-        catch (ObjectDisposedException) {
+        catch (ObjectDisposedException)
+        {
             Remove(job);
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
             Logger?.LogCritical(ex, "JobCallback should not throw this exception.");
         }
-        finally {
+        finally
+        {
             _semaphore.Release();
         }
     }
 
     private void RemoveDeadCallbacks()
     {
-        lock (_jobs) {
+        lock (_jobs)
+        {
             var node = _jobs.First;
-            while (node != null) {
+            while (node != null)
+            {
                 // store next before possibly removing current
                 var next = node.Next;
 
                 // if the WeakReference is dead, remove it
-                if (!node.Value.JobReference.TryGetTarget(out _)) {
+                if (!node.Value.JobReference.TryGetTarget(out _))
+                {
                     Logger?.LogDebug(
                         "Removing a dead job. Ensure proper disposal by the caller. JobName: {JobName}",
                         node.Value.Name);
@@ -108,10 +120,13 @@ public class JobRunner
     private List<Job> GetReadyJobs()
     {
         List<Job> jobs;
-        lock (_jobs) {
+        lock (_jobs)
+        {
             jobs = new List<Job>(_jobs.Count);
-            foreach (var jobRef in _jobs) {
-                if (jobRef.JobReference.TryGetTarget(out var target) && target.IsReadyToRun) {
+            foreach (var jobRef in _jobs)
+            {
+                if (jobRef.JobReference.TryGetTarget(out var target) && target.IsReadyToRun)
+                {
                     jobs.Add(target);
                 }
             }
@@ -123,7 +138,8 @@ public class JobRunner
     public void Add(Job job)
     {
         lock (_jobs)
-            _jobs.AddLast(new JobItem {
+            _jobs.AddLast(new JobItem
+            {
                 Name = job.Name,
                 JobReference = new WeakReference<Job>(job)
             });
@@ -131,7 +147,8 @@ public class JobRunner
 
     public void Remove(Job job)
     {
-        lock (_jobs) {
+        lock (_jobs)
+        {
             var item = _jobs.FirstOrDefault(x => x.JobReference.TryGetTarget(out var target) && target == job);
             if (item != null)
                 _jobs.Remove(item);

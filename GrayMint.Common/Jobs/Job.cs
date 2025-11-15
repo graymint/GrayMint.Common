@@ -115,7 +115,8 @@ public class Job : IDisposable
 
     public async Task RunNow(CancellationToken cancellationToken)
     {
-        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cancellationTokenSource.Token);
+        using var linkedCts =
+            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cancellationTokenSource.Token);
 
         // await required for linkedCts to be disposed properly
         await RunInternal(linkedCts.Token).ConfigureAwait(false);

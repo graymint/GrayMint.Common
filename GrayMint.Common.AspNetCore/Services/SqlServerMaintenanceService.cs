@@ -23,6 +23,5 @@ internal class SqlServerMaintenanceService<T>(
         {
             logger.LogError(ex, "Could not complete a Maintenance job. DbContext: {DbContext}", dbContext.GetType());
         }
-
     }
 }
