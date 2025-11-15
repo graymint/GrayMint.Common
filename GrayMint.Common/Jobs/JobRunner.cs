@@ -12,7 +12,6 @@ public class JobRunner
     private readonly List<WeakReference<IJob>> _deadJobs = [];
     private readonly List<IJob> _jobs = [];
     private Timer? _timer;
-    private TimeSpan _interval = TimeSpan.FromSeconds(5);
     public bool IsStarted => _timer != null;
     public int MaxDegreeOfParallelism { get; set; } = 100;
     public static JobRunner Default => DefaultLazy.Value;
@@ -20,15 +19,15 @@ public class JobRunner
 
     public TimeSpan Interval
     {
-        get => _interval;
+        get;
         set
         {
-            _interval = value;
+            field = value;
             if (!IsStarted) return;
             Stop();
             Start();
         }
-    }
+    } = TimeSpan.FromSeconds(5);
 
     public JobRunner(bool start = true, ILogger? logger = null)
     {

@@ -58,32 +58,35 @@ public static class GrayMintCommonExtension
         return app;
     }
 
-    public static IApplicationBuilder ScheduleGrayMintSqlMaintenance<TContext>(this IApplicationBuilder app, TimeSpan interval) where TContext : DbContext
+    extension(IApplicationBuilder app)
     {
-        var maintenanceService = (MaintenanceService)app.ApplicationServices
-            .GetRequiredService<IEnumerable<IHostedService>>()
-            .Single(x=>x is MaintenanceService);
-
-        maintenanceService.SqlMaintenanceJobs.Add(Tuple.Create(typeof(TContext), new JobSection(interval)));
-
-        return app;
-    }
-
-    public static IApplicationBuilder RedirectRoot(this IApplicationBuilder app, string path)
-    {
-        app.Use((context, next) =>
+        public IApplicationBuilder ScheduleGrayMintSqlMaintenance<TContext>(TimeSpan interval) where TContext : DbContext
         {
-            // check if the request is *not* using the HTTPS scheme
-            if (context.Request.Path == "/")
+            var maintenanceService = (MaintenanceService)app.ApplicationServices
+                .GetRequiredService<IEnumerable<IHostedService>>()
+                .Single(x=>x is MaintenanceService);
+
+            maintenanceService.SqlMaintenanceJobs.Add(Tuple.Create(typeof(TContext), new JobSection(interval)));
+
+            return app;
+        }
+
+        public IApplicationBuilder RedirectRoot(string path)
+        {
+            app.Use((context, next) =>
             {
-                context.Response.Redirect(path);
-                return Task.CompletedTask;
-            }
+                // check if the request is *not* using the HTTPS scheme
+                if (context.Request.Path == "/")
+                {
+                    context.Response.Redirect(path);
+                    return Task.CompletedTask;
+                }
 
-            // otherwise continue with the request pipeline
-            return next();
-        });
+                // otherwise continue with the request pipeline
+                return next();
+            });
 
-        return app;
+            return app;
+        }
     }
 }

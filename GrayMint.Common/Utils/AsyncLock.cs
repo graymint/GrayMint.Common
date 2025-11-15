@@ -18,7 +18,7 @@ public sealed class AsyncLock
         public int ReferenceCount { get; set; }
     }
 
-    private class SemaphoreLock(SemaphoreSlimEx semaphoreSlimEx, bool succeeded, string? name)
+    private class LockAsyncResult(SemaphoreSlimEx semaphoreSlimEx, bool succeeded, string? name)
         : ILockAsyncResult
     {
         private bool _disposed;
@@ -44,13 +44,13 @@ public sealed class AsyncLock
     public async Task<ILockAsyncResult> LockAsync(CancellationToken cancellationToken = default)
     {
         await _semaphoreSlimEx.WaitAsync(cancellationToken);
-        return new SemaphoreLock(_semaphoreSlimEx, true, null);
+        return new LockAsyncResult(_semaphoreSlimEx, true, null);
     }
 
     public async Task<ILockAsyncResult> LockAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         var succeeded = await _semaphoreSlimEx.WaitAsync(timeout, cancellationToken);
-        return new SemaphoreLock(_semaphoreSlimEx, succeeded, null);
+        return new LockAsyncResult(_semaphoreSlimEx, succeeded, null);
     }
 
     public static Task<ILockAsyncResult> LockAsync(string name)
@@ -70,7 +70,7 @@ public sealed class AsyncLock
         try
         {
             var succeeded = await semaphoreSlim.WaitAsync(timeout, cancellationToken);
-            return new SemaphoreLock(semaphoreSlim, succeeded, name);
+            return new LockAsyncResult(semaphoreSlim, succeeded, name);
         }
         catch
         {

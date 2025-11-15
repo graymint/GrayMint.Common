@@ -2,9 +2,10 @@
 
 public static class FastDateTime
 {
-    private static readonly object Locker = new();
-    private static DateTime _lastTime = DateTime.Now;
+    private static readonly Lock Locker = new();
     private static int _lastTickCount = Environment.TickCount;
+    private static int _lastTickCountUtc = Environment.TickCount;
+
     public static TimeSpan Precision { get; set; } = TimeSpan.FromSeconds(1);
 
     public static DateTime Now
@@ -14,14 +15,32 @@ public static class FastDateTime
             lock (Locker)
             {
                 var tickCount = Environment.TickCount;
-                if (tickCount - _lastTickCount >= Precision.Milliseconds ||
-                    tickCount < _lastTickCount)
+                if (tickCount - _lastTickCount >= Precision.Milliseconds || tickCount < _lastTickCount)
                 {
-                    _lastTime = DateTime.Now;
+                    field = DateTime.Now;
                     _lastTickCount = tickCount;
                 }
-                return _lastTime;
+
+                return field;
             }
         }
-    }
+    } = DateTime.Now;
+
+    public static DateTime UtcNow
+    {
+        get
+        {
+            lock (Locker)
+            {
+                var tickCount = Environment.TickCount;
+                if (tickCount - _lastTickCountUtc >= Precision.Milliseconds || tickCount < _lastTickCountUtc)
+                {
+                    field = DateTime.UtcNow;
+                    _lastTickCountUtc = tickCount;
+                }
+
+                return field;
+            }
+        }
+    } = DateTime.UtcNow;
 }
