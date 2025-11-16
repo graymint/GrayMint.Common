@@ -16,8 +16,7 @@ public class GrayMinJobService<T> : IHostedService where T : IGrayMintJob
         JobRunner? jobRunner)
     {
         _serviceScopeFactory = serviceScopeFactory;
-        _jobOptions = jobOptions;
-        jobOptions.AutoStart = false; // we will start the job in StartAsync
+        _jobOptions = jobOptions with { AutoStart = false };
         _job = new Job(RunJob, _jobOptions, jobRunner);
     }
 

@@ -1,6 +1,6 @@
 ﻿namespace GrayMint.Common.Jobs;
 
-public class JobOptions
+public record JobOptions
 {
     public static TimeSpan DefaultInterval { get; set; } = TimeSpan.FromSeconds(30);
 
@@ -8,5 +8,5 @@ public class JobOptions
     public string? Name { get; init; }
     public TimeSpan? DueTime { get; init; }
     public int? MaxRetry { get; init; }
-    public bool AutoStart { get; set; } = true;
+    public bool AutoStart { get; init; } = true;
 }

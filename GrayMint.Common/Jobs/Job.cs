@@ -79,7 +79,7 @@ public class Job : IDisposable
     public void Stop()
     {
         if (!IsStarted)
-            throw new InvalidOperationException("Job is not started.");
+            return;
 
         StartedTime = null;
         _currentFailedCount = 0;
