@@ -17,8 +17,8 @@ public class GrayMinJobService<T> : IHostedService where T : IGrayMintJob
     {
         _serviceScopeFactory = serviceScopeFactory;
         _jobOptions = jobOptions;
+        jobOptions.AutoStart = false; // we will start the job in StartAsync
         _job = new Job(RunJob, _jobOptions, jobRunner);
-        _job.Stop();
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
@@ -43,7 +43,9 @@ public class GrayMinJobService<T> : IHostedService where T : IGrayMintJob
             }
         }
 
-        _job.Stop();
+        if (_job.IsStarted) 
+            _job.Stop();
+
         if (_cancellationTokenSource != null)
             await _cancellationTokenSource.TryCancelAsync();
     }
