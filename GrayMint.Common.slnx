@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/Pub/">
+    <File Path="Pub/PubVersion.json" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/TestWebApp/TestWebApp.csproj" />
+  </Folder>
+  <Folder Name="/workflows/">
+    <File Path=".github/workflows/nuget-main.yml" />
+  </Folder>
+  <Project Path="GrayMint.Common.AspNetCore/GrayMint.Common.AspNetCore.csproj" />
+  <Project Path="GrayMint.Common.EntityFrameworkCore/GrayMint.Common.EntityFrameworkCore.csproj" />
+  <Project Path="GrayMint.Common.Swagger/GrayMint.Common.Swagger.csproj" />
+  <Project Path="GrayMint.Common/GrayMint.Common.csproj" />
+</Solution>
