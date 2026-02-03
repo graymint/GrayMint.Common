@@ -2,6 +2,6 @@
 
 public interface IGrayMintApplicationLifetime
 {
-    public Task ApplicationStarted();
-    public Task ApplicationStopping();
+    public Task ApplicationStarted(CancellationToken cancellationToken);
+    public Task ApplicationStopping(CancellationToken cancellationToken);
 }

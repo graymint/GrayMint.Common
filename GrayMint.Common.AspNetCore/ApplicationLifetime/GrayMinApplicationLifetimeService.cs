@@ -1,50 +1,30 @@
 ﻿namespace GrayMint.Common.AspNetCore.ApplicationLifetime;
 
 public class GrayMinApplicationLifetimeService<T>(
-    IServiceScopeFactory serviceScopeFactory,
-    ILogger<GrayMinApplicationLifetimeService<T>> logger,
-    IHostApplicationLifetime hostApplicationLifetime)
+    IServiceScopeFactory scopeFactory,
+    ILogger<GrayMinApplicationLifetimeService<T>> logger)
     : IHostedService where T : IGrayMintApplicationLifetime
 {
-    public Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
-        hostApplicationLifetime.ApplicationStarted.Register(() =>
-        {
-            using var scope = serviceScopeFactory.CreateAsyncScope();
-            var service = scope.ServiceProvider.GetRequiredService<T>();
-            // ReSharper disable once MethodSupportsCancellation
-            service.ApplicationStarted().Wait();
-        });
-
-        return Task.CompletedTask;
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var service = scope.ServiceProvider.GetRequiredService<T>();
+        await service.ApplicationStarted(cancellationToken);
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
-        hostApplicationLifetime.ApplicationStopping.Register(() =>
+        try
         {
-            using var scope = serviceScopeFactory.CreateAsyncScope();
+            await using var scope = scopeFactory.CreateAsyncScope();
             var service = scope.ServiceProvider.GetRequiredService<T>();
+            await service.ApplicationStopping(cancellationToken);
 
-            // ReSharper disable once MethodSupportsCancellation
-            try
-            {
-                service.ApplicationStopping().Wait();
-            }
-            catch (Exception ex)
-            {
-                try
-                {
-                    logger.LogError(ex, "Error occurred while stopping application.");
-                }
-                catch (Exception ex2)
-                {
-                    Console.WriteLine("Error:" + ex);
-                    Console.WriteLine("Error:" + ex2);
-                }
-            }
-        });
-
-        return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            try { logger.LogError(ex, "Error during stopping."); }
+            catch { Console.WriteLine(ex); }
+        }
     }
 }
