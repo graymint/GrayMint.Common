@@ -24,14 +24,14 @@
 		<PackageIcon>GrayMint.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/graymint/GrayMint.Common</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/graymint/GrayMint.Common</RepositoryUrl>
-		<Version>2.1.249</Version>
+		<Version>2.1.246</Version>
 		<FileVersion>$([System.DateTime]::Now.ToString("yyyy.M.d.HHmm"))</FileVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="NSwag.AspNetCore" Version="14.6.3" />
-		<PackageReference Include="Scalar.AspNetCore.Microsoft" Version="2.14.11" />
-		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
+		<PackageReference Include="Scalar.AspNetCore.Microsoft" Version="2.12.30" />
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
 	</ItemGroup>
 
 	<ItemGroup>

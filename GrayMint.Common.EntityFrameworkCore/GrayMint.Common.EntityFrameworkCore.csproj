@@ -19,12 +19,12 @@
     <PackageIcon>GrayMint.png</PackageIcon>
     <PackageProjectUrl>https://github.com/graymint/GrayMint.Common</PackageProjectUrl>
     <RepositoryUrl>https://github.com/graymint/GrayMint.Common</RepositoryUrl>
-    <Version>2.1.249</Version>
+    <Version>2.1.246</Version>
     <FileVersion>$([System.DateTime]::Now.ToString("yyyy.M.d.HHmm"))</FileVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.7" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.7" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.2" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\GrayMint.png" Link="Resources\GrayMint.png">
