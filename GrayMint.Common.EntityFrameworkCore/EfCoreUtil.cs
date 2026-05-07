@@ -2,6 +2,7 @@
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage;
 
 // ReSharper disable UnusedMember.Global
@@ -55,6 +56,26 @@ public static class EfCoreUtil
         }
     }
 
+    private static bool IsPostgres(DatabaseFacade database) =>
+        database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true ||
+        database.ProviderName?.Contains("PostgreSQL", StringComparison.OrdinalIgnoreCase) == true;
+
+    /// <summary>
+    /// Sets a default value on a property. The constraint name is used by SQL Server for named default constraints
+    /// and is ignored by PostgreSQL and other providers that do not support named default constraints.
+    /// </summary>
+    public static PropertyBuilder<TProperty> HasDefaultValueWithConstraintName<TProperty>(
+        this PropertyBuilder<TProperty> propertyBuilder,
+        object? defaultValue,
+        string constraintName)
+    {
+        propertyBuilder.HasDefaultValue(defaultValue);
+        // "Relational:DefaultConstraintName" is the annotation key read by the SQL Server provider at runtime.
+        // Other providers ignore unknown annotations, so no SQL Server NuGet reference is required.
+        propertyBuilder.HasAnnotation("Relational:DefaultConstraintName", constraintName);
+        return propertyBuilder;
+    }
+
     public static async Task EnsureTablesCreated(DatabaseFacade database)
     {
         try
@@ -63,10 +84,12 @@ public static class EfCoreUtil
             await databaseCreator.CreateTablesAsync();
         }
         catch (DbException ex) when (
-            ex.ErrorCode == 2714 ||
+            ex.ErrorCode == 2714 ||                                                           // SQL Server: object already exists
+            ex.SqlState == "42P07" ||                                                         // PostgreSQL: duplicate_table
+            ex.SqlState == "42710" ||                                                         // PostgreSQL: duplicate_object
             ex.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase) ||
             ex.Message.Contains("already an object", StringComparison.OrdinalIgnoreCase) ||
-            ex.Message.Contains("duplicate", StringComparison.OrdinalIgnoreCase)) // already exists exception
+            ex.Message.Contains("duplicate", StringComparison.OrdinalIgnoreCase))
         {
             // ignore
         }
@@ -74,10 +97,20 @@ public static class EfCoreUtil
 
     public static async Task<bool> SqlFunctionExists(DatabaseFacade database, string schema, string functionName)
     {
-        // ReSharper disable StringLiteralTypo
-        var sql = $"SELECT COUNT(1) FROM sys.objects WHERE object_id=OBJECT_ID(N'[{schema}].[{functionName}]') " +
+        string sql;
+        if (IsPostgres(database))
+        {
+            sql = $"SELECT COUNT(1) FROM information_schema.routines " +
+                  $"WHERE routine_schema = '{schema}' AND routine_name = '{functionName}' " +
+                  $"AND routine_type = 'FUNCTION'";
+        }
+        else
+        {
+            // ReSharper disable StringLiteralTypo
+            sql = $"SELECT COUNT(1) FROM sys.objects WHERE object_id=OBJECT_ID(N'[{schema}].[{functionName}]') " +
                   "AND type IN ( N'FN', N'IF', N'TF', N'FS', N'FT' )";
-        // ReSharper restore StringLiteralTypo
+            // ReSharper restore StringLiteralTypo
+        }
 
         var res = await ExecuteScalar(database, sql);
         return res > 0;
@@ -85,10 +118,20 @@ public static class EfCoreUtil
 
     public static async Task<bool> SqlTableExists(DatabaseFacade database, string schema, string tableName)
     {
-        // ReSharper disable StringLiteralTypo
-        var sql = $"SELECT COUNT(1) FROM sys.objects WHERE object_id=OBJECT_ID(N'[{schema}].[{tableName}]') " +
+        string sql;
+        if (IsPostgres(database))
+        {
+            sql = $"SELECT COUNT(1) FROM information_schema.tables " +
+                  $"WHERE table_schema = '{schema}' AND table_name = '{tableName}' " +
+                  $"AND table_type = 'BASE TABLE'";
+        }
+        else
+        {
+            // ReSharper disable StringLiteralTypo
+            sql = $"SELECT COUNT(1) FROM sys.objects WHERE object_id=OBJECT_ID(N'[{schema}].[{tableName}]') " +
                   "AND type IN ( N'U' )";
-        // ReSharper restore StringLiteralTypo
+            // ReSharper restore StringLiteralTypo
+        }
 
         var res = await ExecuteScalar(database, sql);
         return res > 0;
@@ -106,7 +149,8 @@ public static class EfCoreUtil
 
         await using var command = connection.CreateCommand();
         command.CommandText = sql;
-        var res = (int)(await command.ExecuteScalarAsync())!;
+        var scalar = (await command.ExecuteScalarAsync())!;
+        var res = Convert.ToInt32(scalar);
         return res;
     }
 }
