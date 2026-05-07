@@ -2,7 +2,6 @@
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage;
 
 // ReSharper disable UnusedMember.Global
@@ -59,22 +58,6 @@ public static class EfCoreUtil
     private static bool IsPostgres(DatabaseFacade database) =>
         database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true ||
         database.ProviderName?.Contains("PostgreSQL", StringComparison.OrdinalIgnoreCase) == true;
-
-    /// <summary>
-    /// Sets a default value on a property. The constraint name is used by SQL Server for named default constraints
-    /// and is ignored by PostgreSQL and other providers that do not support named default constraints.
-    /// </summary>
-    public static PropertyBuilder<TProperty> HasDefaultValueWithConstraintName<TProperty>(
-        this PropertyBuilder<TProperty> propertyBuilder,
-        object? defaultValue,
-        string constraintName)
-    {
-        propertyBuilder.HasDefaultValue(defaultValue);
-        // "Relational:DefaultConstraintName" is the annotation key read by the SQL Server provider at runtime.
-        // Other providers ignore unknown annotations, so no SQL Server NuGet reference is required.
-        propertyBuilder.HasAnnotation("Relational:DefaultConstraintName", constraintName);
-        return propertyBuilder;
-    }
 
     public static async Task EnsureTablesCreated(DatabaseFacade database)
     {
