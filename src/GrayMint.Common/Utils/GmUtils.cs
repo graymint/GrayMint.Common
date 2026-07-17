@@ -1,7 +1,8 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using GrayMint.Common.Extensions;
 
 namespace GrayMint.Common.Utils;
 
@@ -11,20 +12,25 @@ public static class GmUtils
         CancellationToken cancellationToken)
     {
         var tasks = new List<Task>();
-        foreach (var t in source)
-        {
+        foreach (var t in source) {
             cancellationToken.ThrowIfCancellationRequested();
 
             tasks.Add(body(t));
-            if (tasks.Count == maxDegreeOfParallelism)
-            {
-                await Task.WhenAny(tasks);
+            if (tasks.Count == maxDegreeOfParallelism) {
+                await Task.WhenAny(tasks).Vhc();
                 foreach (var completedTask in tasks.Where(x => x.IsCompleted).ToArray())
                     tasks.Remove(completedTask);
             }
         }
 
-        await Task.WhenAll(tasks);
+        await Task.WhenAll(tasks).Vhc();
+    }
+
+    public static bool JsonEquals(object? obj1, object? obj2)
+    {
+        if (obj1 == null && obj2 == null) return true;
+        if (obj1 == null || obj2 == null) return false;
+        return JsonSerializer.Serialize(obj1) == JsonSerializer.Serialize(obj2);
     }
 
     public static T JsonDeserialize<T>(string json, JsonSerializerOptions? options = null)
@@ -33,14 +39,15 @@ public static class GmUtils
                throw new InvalidDataException($"{typeof(T)} could not be deserialized!");
     }
 
-    public static T JsonClone<T>(object obj, JsonSerializerOptions? options = null)
+    public static T JsonClone<T>(T obj, JsonSerializerOptions? options = null)
     {
-        var json = JsonSerializer.Serialize(obj);
+        var json = JsonSerializer.Serialize(obj, options);
         return JsonDeserialize<T>(json, options);
     }
 
     public static byte[] GenerateKey()
     {
+        // ReSharper disable once IntroduceOptionalParameters.Global
         return GenerateKey(128);
     }
 
@@ -54,9 +61,16 @@ public static class GmUtils
 
     public static string RedactJsonValue(string json, string[] keys)
     {
-        foreach (var key in keys)
-        {
-            var pattern = "(?<=\"key\":)[^,|}|\r]+(?=,|}|\r)".Replace("key", key);
+        foreach (var key in keys) {
+            // array
+            var jsonLength = json.Length;
+            var pattern = @"""key""\s*:\s*\[[^\]]*\]".Replace("key", key);
+            json = Regex.Replace(json, pattern, $"\"{key}\": [\"***\"]");
+            if (jsonLength != json.Length)
+                continue;
+
+            // single
+            pattern = "(?<=\"key\":)[^,|}|\r]+(?=,|}|\r)".Replace("key", key);
             json = Regex.Replace(json, pattern, " \"***\"");
         }
 
@@ -82,24 +96,20 @@ public static class GmUtils
 
     public static async Task TryInvokeAsync(string? actionName, Func<ValueTask> task)
     {
-        try
-        {
-            await task().ConfigureAwait(false);
+        try {
+            await task().Vhc();
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             LogInvokeError(ex, actionName);
         }
     }
 
     public static async Task TryInvokeAsync(string? actionName, Func<Task> task)
     {
-        try
-        {
-            await task().ConfigureAwait(false);
+        try {
+            await task().Vhc();
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             LogInvokeError(ex, actionName);
         }
     }
@@ -107,12 +117,10 @@ public static class GmUtils
     public static async ValueTask<T?> TryInvokeAsync<T>(string? actionName, Func<ValueTask<T>> task,
         T? defaultValue = default)
     {
-        try
-        {
-            return await task().ConfigureAwait(false);
+        try {
+            return await task().Vhc();
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             LogInvokeError(ex, actionName);
             return defaultValue;
         }
@@ -120,12 +128,10 @@ public static class GmUtils
 
     public static async Task<T?> TryInvokeAsync<T>(string? actionName, Func<Task<T>> task, T? defaultValue = default)
     {
-        try
-        {
-            return await task().ConfigureAwait(false);
+        try {
+            return await task().Vhc();
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             LogInvokeError(ex, actionName);
             return defaultValue;
         }
@@ -138,12 +144,10 @@ public static class GmUtils
 
     public static void TryInvoke(string? actionName, Action action)
     {
-        try
-        {
+        try {
             action.Invoke();
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             LogInvokeError(ex, actionName);
         }
     }
@@ -153,12 +157,10 @@ public static class GmUtils
 
     public static T? TryInvoke<T>(string? actionName, Func<T> func, T? defaultValue = default)
     {
-        try
-        {
+        try {
             return func();
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             LogInvokeError(ex, actionName);
             return defaultValue;
         }

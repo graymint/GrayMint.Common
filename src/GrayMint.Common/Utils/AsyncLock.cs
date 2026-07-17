@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
+using GrayMint.Common.Extensions;
 
 namespace GrayMint.Common.Utils;
 
@@ -18,7 +19,7 @@ public sealed class AsyncLock
         public int ReferenceCount { get; set; }
     }
 
-    private class LockAsyncResult(SemaphoreSlimEx semaphoreSlimEx, bool succeeded, string? name)
+    private class SemaphoreLock(SemaphoreSlimEx semaphoreSlimEx, bool succeeded, string? name)
         : ILockAsyncResult
     {
         private bool _disposed;
@@ -32,8 +33,7 @@ public sealed class AsyncLock
             if (Succeeded)
                 semaphoreSlimEx.Release();
 
-            lock (SemaphoreSlims)
-            {
+            lock (SemaphoreSlims) {
                 semaphoreSlimEx.ReferenceCount--;
                 if (semaphoreSlimEx.ReferenceCount == 0 && name != null)
                     SemaphoreSlims.TryRemove(name, out _);
@@ -41,41 +41,45 @@ public sealed class AsyncLock
         }
     }
 
+    public bool IsLocked => _semaphoreSlimEx.CurrentCount == 0;
+
     public async Task<ILockAsyncResult> LockAsync(CancellationToken cancellationToken = default)
     {
-        await _semaphoreSlimEx.WaitAsync(cancellationToken);
-        return new LockAsyncResult(_semaphoreSlimEx, true, null);
+        await _semaphoreSlimEx.WaitAsync(cancellationToken).Vhc();
+        return new SemaphoreLock(_semaphoreSlimEx, true, null);
     }
 
     public async Task<ILockAsyncResult> LockAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
     {
-        var succeeded = await _semaphoreSlimEx.WaitAsync(timeout, cancellationToken);
-        return new LockAsyncResult(_semaphoreSlimEx, succeeded, null);
+        var succeeded = await _semaphoreSlimEx.WaitAsync(timeout, cancellationToken).Vhc();
+        return new SemaphoreLock(_semaphoreSlimEx, succeeded, null);
     }
 
-    public static Task<ILockAsyncResult> LockAsync(string name)
+    public static Task<ILockAsyncResult> LockAsync(string name, CancellationToken cancellationToken = default)
     {
-        return LockAsync(name, Timeout.InfiniteTimeSpan);
+        return LockAsync(name, Timeout.InfiniteTimeSpan, cancellationToken);
     }
 
-    public static async Task<ILockAsyncResult> LockAsync(string name, TimeSpan timeout,
-        CancellationToken cancellationToken = default)
+
+    public static async Task<ILockAsyncResult> LockAsync(string name, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         SemaphoreSlimEx semaphoreSlim;
-        lock (SemaphoreSlims)
-        {
+        lock (SemaphoreSlims) {
             semaphoreSlim = SemaphoreSlims.GetOrAdd(name, _ => new SemaphoreSlimEx(1, 1));
             semaphoreSlim.ReferenceCount++;
         }
 
-        try
-        {
-            var succeeded = await semaphoreSlim.WaitAsync(timeout, cancellationToken);
-            return new LockAsyncResult(semaphoreSlim, succeeded, name);
+        try {
+            var succeeded = await semaphoreSlim.WaitAsync(timeout, cancellationToken).Vhc();
+            return new SemaphoreLock(semaphoreSlim, succeeded, name);
         }
-        catch
-        {
-            semaphoreSlim.ReferenceCount--;
+        catch {
+            lock (SemaphoreSlims) {
+                semaphoreSlim.ReferenceCount--;
+                if (semaphoreSlim.ReferenceCount == 0)
+                    SemaphoreSlims.TryRemove(name, out _);
+            }
+
             throw;
         }
     }

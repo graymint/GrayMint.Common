@@ -1,4 +1,5 @@
-﻿using GrayMint.Common.Utils;
+using GrayMint.Common.Extensions;
+using GrayMint.Common.Utils;
 using Microsoft.Extensions.Logging;
 
 namespace GrayMint.Common.Jobs;
@@ -11,7 +12,7 @@ public class Job : IDisposable
     private readonly TimeSpan _dueTime;
     private readonly int? _maxRetry;
     private long _currentFailedCount;
-    private int _isDisposed;
+    private bool _disposed;
     private readonly JobRunner _jobRunner;
     public TimeSpan Interval { get; set; }
     public long SucceededCount { get; private set; }
@@ -21,7 +22,10 @@ public class Job : IDisposable
     public DateTime? LastExecutedTime { get; private set; }
     public string Name { get; init; }
 
-    public Job(Func<CancellationToken, ValueTask> jobFunc, JobOptions options, JobRunner? jobRunner = null)
+    public Job(
+        Func<CancellationToken, ValueTask> jobFunc,
+        JobOptions options,
+        JobRunner? jobRunner = null)
     {
         _jobFunc = jobFunc;
         _dueTime = options.DueTime ?? options.Interval;
@@ -32,12 +36,10 @@ public class Job : IDisposable
             Start();
 
         // initialize job runner based on the period
-        if (jobRunner != null)
-        {
+        if (jobRunner != null) {
             _jobRunner = jobRunner;
         }
-        else
-        {
+        else {
             _jobRunner = options.Interval >= JobRunner.SlowInstance.Interval
                 ? JobRunner.SlowInstance
                 : JobRunner.FastInstance;
@@ -47,8 +49,7 @@ public class Job : IDisposable
     }
 
     public Job(Func<CancellationToken, ValueTask> jobFunc, TimeSpan period, string? name = null)
-        : this(jobFunc, new JobOptions
-        {
+        : this(jobFunc, new JobOptions {
             Interval = period,
             Name = name,
             DueTime = TimeSpan.Zero
@@ -57,8 +58,7 @@ public class Job : IDisposable
     }
 
     public Job(Func<CancellationToken, ValueTask> jobFunc, string? name = null)
-        : this(jobFunc, new JobOptions
-        {
+        : this(jobFunc, new JobOptions {
             Name = name,
             DueTime = TimeSpan.Zero
         })
@@ -67,7 +67,7 @@ public class Job : IDisposable
 
     public void Start()
     {
-        if (_isDisposed != 0)
+        if (_disposed)
             throw new ObjectDisposedException(nameof(Job));
 
         if (IsStarted)
@@ -79,16 +79,14 @@ public class Job : IDisposable
     public void Stop()
     {
         if (!IsStarted)
-            return;
+            throw new InvalidOperationException("Job is not started.");
 
         StartedTime = null;
         _currentFailedCount = 0;
     }
 
-    public bool IsReadyToRun
-    {
-        get
-        {
+    public bool IsReadyToRun {
+        get {
             // job is not started
             if (StartedTime is null)
                 return false;
@@ -99,7 +97,7 @@ public class Job : IDisposable
 
             var now = FastDateTime.Now;
 
-            // first time execution after due time 
+            // first time execution after due time
             if (LastExecutedTime is null)
                 return now - StartedTime >= _dueTime;
 
@@ -119,35 +117,31 @@ public class Job : IDisposable
             CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cancellationTokenSource.Token);
 
         // await required for linkedCts to be disposed properly
-        await RunInternal(linkedCts.Token).ConfigureAwait(false);
+        await RunInternal(linkedCts.Token).Vhc();
     }
 
     private async Task RunInternal(CancellationToken cancellationToken)
     {
-        if (_isDisposed != 0)
+        if (_disposed)
             throw new ObjectDisposedException(nameof(Job));
 
         // wait until we can run the job
-        await _jobSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await _jobSemaphore.WaitAsync(cancellationToken).Vhc();
 
-        try
-        {
-            await _jobFunc(cancellationToken).ConfigureAwait(false);
+        try {
+            await _jobFunc(cancellationToken).Vhc();
             _currentFailedCount = 0;
             SucceededCount++;
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
             // job was cancelled and no logging is needed
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             FailedCount++;
             _currentFailedCount++;
 
             // stop the job if it has failed too many times
-            if (_currentFailedCount > _maxRetry)
-            {
+            if (_currentFailedCount > _maxRetry) {
                 _jobRunner.Logger?.LogError(ex,
                     "Job failed too many times and stopped. " +
                     "JobName: {JobName}, FailedCount: {FailedCount}, TotalErrorCount: {TotalFailedCount}",
@@ -158,8 +152,7 @@ public class Job : IDisposable
 
             throw;
         }
-        finally
-        {
+        finally {
             LastExecutedTime = FastDateTime.Now;
             GmUtils.TryInvoke(() => _jobSemaphore.Release()); // semaphore may be already disposed
         }
@@ -167,7 +160,7 @@ public class Job : IDisposable
 
     public void Dispose()
     {
-        if (Interlocked.Exchange(ref _isDisposed, 1) == 1)
+        if (Interlocked.Exchange(ref _disposed, true))
             return;
 
         _cancellationTokenSource.TryCancel();

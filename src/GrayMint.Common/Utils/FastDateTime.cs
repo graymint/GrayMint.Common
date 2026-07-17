@@ -1,46 +1,51 @@
-﻿namespace GrayMint.Common.Utils;
+namespace GrayMint.Common.Utils;
 
 public static class FastDateTime
 {
-    private static readonly Lock Locker = new();
-    private static int _lastTickCount = Environment.TickCount;
-    private static int _lastTickCountUtc = Environment.TickCount;
+    private static readonly Lock RefreshLocker = new();
+    private static long _nowTicks = DateTime.Now.Ticks;
+    private static long _utcNowTicks = DateTime.UtcNow.Ticks;
+    private static long _lastTickCount = Environment.TickCount64;
+    private static long _lastTickCountUtc = Environment.TickCount64;
 
     public static TimeSpan Precision { get; set; } = TimeSpan.FromSeconds(1);
 
-    public static DateTime Now
-    {
-        get
-        {
-            lock (Locker)
-            {
-                var tickCount = Environment.TickCount;
-                if (tickCount - _lastTickCount >= Precision.Milliseconds || tickCount < _lastTickCount)
-                {
-                    field = DateTime.Now;
-                    _lastTickCount = tickCount;
+    // Hot paths call this several times across all threads, so the within-Precision fast path
+    // takes no lock. The refresh slow path is locked so that sampling and publishing are atomic
+    // against other refreshers: a stalled refresher blocks the next one instead of racing it, and
+    // the cached clock can never roll backward from a stale sample. It still follows system clock
+    // changes in both directions
+    public static DateTime Now {
+        get {
+            var tickCount = Environment.TickCount64;
+            if (tickCount - Volatile.Read(ref _lastTickCount) >= Precision.TotalMilliseconds) {
+                lock (RefreshLocker) {
+                    tickCount = Environment.TickCount64;
+                    if (tickCount - Volatile.Read(ref _lastTickCount) >= Precision.TotalMilliseconds) {
+                        Volatile.Write(ref _nowTicks, DateTime.Now.Ticks);
+                        Volatile.Write(ref _lastTickCount, tickCount);
+                    }
                 }
-
-                return field;
             }
-        }
-    } = DateTime.Now;
 
-    public static DateTime UtcNow
-    {
-        get
-        {
-            lock (Locker)
-            {
-                var tickCount = Environment.TickCount;
-                if (tickCount - _lastTickCountUtc >= Precision.Milliseconds || tickCount < _lastTickCountUtc)
-                {
-                    field = DateTime.UtcNow;
-                    _lastTickCountUtc = tickCount;
+            return new DateTime(Volatile.Read(ref _nowTicks), DateTimeKind.Local);
+        }
+    }
+
+    public static DateTime UtcNow {
+        get {
+            var tickCount = Environment.TickCount64;
+            if (tickCount - Volatile.Read(ref _lastTickCountUtc) >= Precision.TotalMilliseconds) {
+                lock (RefreshLocker) {
+                    tickCount = Environment.TickCount64;
+                    if (tickCount - Volatile.Read(ref _lastTickCountUtc) >= Precision.TotalMilliseconds) {
+                        Volatile.Write(ref _utcNowTicks, DateTime.UtcNow.Ticks);
+                        Volatile.Write(ref _lastTickCountUtc, tickCount);
+                    }
                 }
-
-                return field;
             }
+
+            return new DateTime(Volatile.Read(ref _utcNowTicks), DateTimeKind.Utc);
         }
-    } = DateTime.UtcNow;
+    }
 }

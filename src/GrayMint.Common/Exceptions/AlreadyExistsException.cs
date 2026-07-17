@@ -1,4 +1,4 @@
-﻿namespace GrayMint.Common.Exceptions;
+namespace GrayMint.Common.Exceptions;
 
 public sealed class AlreadyExistsException : Exception
 {
@@ -8,6 +8,14 @@ public sealed class AlreadyExistsException : Exception
         CollectionName = collectionName;
         Data["HttpStatusCode"] = 409;
     }
+
+    public AlreadyExistsException(string collectionName, Exception innerException) :
+        base($"Object already exists in {collectionName}.", innerException)
+    {
+        CollectionName = collectionName;
+        Data["HttpStatusCode"] = 409;
+    }
+
 
     public string CollectionName { get; }
 

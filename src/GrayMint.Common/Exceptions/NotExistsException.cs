@@ -1,4 +1,4 @@
-﻿namespace GrayMint.Common.Exceptions;
+namespace GrayMint.Common.Exceptions;
 
 public sealed class NotExistsException : Exception
 {
@@ -7,6 +7,13 @@ public sealed class NotExistsException : Exception
     {
         Data["HttpStatusCode"] = 404;
     }
+
+    public NotExistsException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+        Data["HttpStatusCode"] = 404;
+    }
+
 
     public static bool Is(Exception ex)
     {
