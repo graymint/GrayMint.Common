@@ -1,6 +1,6 @@
+using Microsoft.Extensions.Logging;
 using GrayMint.Common.Extensions;
 using GrayMint.Common.Utils;
-using Microsoft.Extensions.Logging;
 
 namespace GrayMint.Common.Jobs;
 
@@ -97,7 +97,7 @@ public class Job : IDisposable
 
             var now = FastDateTime.Now;
 
-            // first time execution after due time
+            // first time execution after due time 
             if (LastExecutedTime is null)
                 return now - StartedTime >= _dueTime;
 

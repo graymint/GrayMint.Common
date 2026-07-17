@@ -27,7 +27,7 @@ public static class TestUtil
         return actualValue;
     }
 
-    private static async Task<TValue> WaitForValue<TValue>(TValue expectedValue,
+    private static async Task<TValue> WaitForValue<TValue>(TValue expectedValue, 
         Func<Task<TValue>> valueFactory, TimeSpan timeout, CancellationToken cancellationToken)
     {
         const int waitTime = 100;
@@ -44,6 +44,7 @@ public static class TestUtil
         return actualValue;
     }
 
+
     private static void AssertEquals(object? expected, object? actual, string? message)
     {
         message ??= "Unexpected Value";
@@ -52,7 +53,7 @@ public static class TestUtil
     }
 
     public static async Task AssertEqualsWait<TValue>(TValue expectedValue, Func<TValue> valueFactory,
-        string? message = null, int timeout = 5000, bool noTimeoutOnDebugger = true,
+        string? message = null, int timeout = 5000, bool noTimeoutOnDebugger = true, 
         CancellationToken cancellationToken = default)
     {
         var timeoutSpan = noTimeoutOnDebugger && Debugger.IsAttached
@@ -64,7 +65,7 @@ public static class TestUtil
     }
 
     public static async Task AssertEqualsWait<TValue>(TValue expectedValue, Func<Task<TValue>> valueFactory,
-        string? message = null, int timeout = 5000, bool noTimeoutOnDebugger = true,
+        string? message = null, int timeout = 5000, bool noTimeoutOnDebugger = true, 
         CancellationToken cancellationToken = default)
     {
         var timeoutSpan = noTimeoutOnDebugger && Debugger.IsAttached
@@ -76,7 +77,7 @@ public static class TestUtil
     }
 
     public static async Task AssertEqualsWait<TValue>(TValue expectedValue, Task<TValue> task,
-        string? message = null, int timeout = 5000, bool noTimeoutOnDebugger = true,
+        string? message = null, int timeout = 5000, bool noTimeoutOnDebugger = true, 
         CancellationToken cancellationToken = default)
     {
         var timeoutSpan = noTimeoutOnDebugger && Debugger.IsAttached

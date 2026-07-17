@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Microsoft.Extensions.Logging;
 
 namespace GrayMint.Common.Extensions;
 
@@ -11,29 +12,40 @@ public static class TaskExtensions
     /// onto a captured <see cref="SynchronizationContext"/>.
     /// </summary>
     /// <remarks>
-    /// This exists so all library/background awaits can be flipped from one place. Setting this to <c>true</c>
-    /// once — e.g. for a diagnostic run, or a host that installs a context we deliberately want continuations
-    /// to flow back onto — changes every <c>.Vhc()</c> call site at once, instead of editing hundreds of
+    /// This exists so all library/background awaits can be flipped from one place. Library hot paths run in
+    /// contexts with no UI and often no <see cref="SynchronizationContext"/> at all, where continuing on the
+    /// captured context is at best pointless overhead and at worst a deadlock. Setting this to <c>true</c> once
+    /// — e.g. for a diagnostic run, or a host that installs a context we deliberately want continuations to
+    /// flow back onto — changes every <c>.Vhc()</c> call site at once, instead of editing hundreds of
     /// individual awaits.
     /// </remarks>
     public static bool DefaultContinueOnCapturedContext { get; set; }
 
     /// <summary>
-    /// Use <c>.Vhc()</c> on every non-UI await in library and background code in place of
-    /// <c>.ConfigureAwait(false)</c>. It routes through the shared
+    /// The shared <c>ConfigureAwait</c>. Use <c>.Vhc()</c> on every non-UI await in library and background code
+    /// in place of <c>.ConfigureAwait(false)</c>. It routes through the shared
     /// <see cref="DefaultContinueOnCapturedContext"/> switch, so the whole codebase's context-capture behaviour
     /// is controlled from a single place rather than baked into each call site.
     /// </summary>
     /// <remarks>
     /// <para>
     /// With the default switch (<c>false</c>) this is identical to <c>.ConfigureAwait(false)</c> — the correct
-    /// choice for code that has no affinity to a UI/synchronization context.
+    /// choice for code that has no affinity to a UI/synchronization context, which is essentially all
+    /// library and background code.
     /// </para>
     /// <para>
-    /// Do <b>not</b> use <c>.Vhc()</c> when an await must have a fixed, non-toggleable behaviour: code that
-    /// <b>must</b> get off the captured context should hardcode <c>.ConfigureAwait(false)</c>, and code that
-    /// <b>must</b> resume on the captured (e.g. UI) context should use a bare <c>await</c>.
+    /// Do <b>not</b> use <c>.Vhc()</c> when an await must have a fixed, non-toggleable behaviour:
     /// </para>
+    /// <list type="bullet">
+    ///   <item>
+    ///     Code running on a UI thread that <b>must</b> get off the captured context (so it can never be flipped
+    ///     back on) should hardcode <c>.ConfigureAwait(false)</c>.
+    ///   </item>
+    ///   <item>
+    ///     Code that <b>must</b> resume on the captured (e.g. UI) context should use a bare <c>await</c> or
+    ///     <c>.ConfigureAwait(true)</c>.
+    ///   </item>
+    /// </list>
     /// <para>Overloads cover <see cref="Task"/>, <see cref="Task{T}"/>, <see cref="ValueTask"/>,
     /// <see cref="ValueTask{T}"/> and <see cref="IAsyncEnumerable{T}"/> (for <c>await foreach</c>).</para>
     /// </remarks>
@@ -78,27 +90,25 @@ public static class TaskExtensions
 
     extension(CancellationTokenSource cancellationTokenSource)
     {
-        public Exception? TryCancel()
+        public void TryCancel()
         {
             try {
                 if (!cancellationTokenSource.IsCancellationRequested)
                     cancellationTokenSource.Cancel();
-                return null;
             }
             catch (Exception ex) {
-                return ex;
+                _ = ex; // not critical; GrayMint.Common has no logger to report it
             }
         }
 
-        public async Task<Exception?> TryCancelAsync()
+        public async Task TryCancelAsync()
         {
             try {
                 if (!cancellationTokenSource.IsCancellationRequested)
                     await cancellationTokenSource.CancelAsync().Vhc();
-                return null;
             }
             catch (Exception ex) {
-                return ex;
+                _ = ex; // not critical; GrayMint.Common has no logger to report it
             }
         }
     }

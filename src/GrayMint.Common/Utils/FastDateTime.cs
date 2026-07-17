@@ -10,11 +10,11 @@ public static class FastDateTime
 
     public static TimeSpan Precision { get; set; } = TimeSpan.FromSeconds(1);
 
-    // Hot paths call this several times across all threads, so the within-Precision fast path
-    // takes no lock. The refresh slow path is locked so that sampling and publishing are atomic
-    // against other refreshers: a stalled refresher blocks the next one instead of racing it, and
-    // the cached clock can never roll backward from a stale sample. It still follows system clock
-    // changes in both directions
+    // Hot packet paths call this several times per packet across all threads, so the
+    // within-Precision fast path takes no lock. The refresh slow path is locked so that
+    // sampling and publishing are atomic against other refreshers: a stalled refresher
+    // blocks the next one instead of racing it, and the cached clock can never roll
+    // backward from a stale sample. It still follows system clock changes in both directions
     public static DateTime Now {
         get {
             var tickCount = Environment.TickCount64;

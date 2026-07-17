@@ -22,23 +22,8 @@ public static class GrayMintExceptionHandlerExtension
             }
             catch (ApiException ex)
             {
-                var apiError = new ApiError(ex.ExceptionTypeName ?? nameof(ApiException), ex.Message)
-                {
-                    TypeFullName = ex.ExceptionTypeFullName,
-                    InnerMessage = ex.InnerException?.Message
-                };
-
-                foreach (var key in ex.Data)
-                {
-                    if (key is string keyStr)
-                        apiError.Data.TryAdd(keyStr, ex.Data[keyStr]?.ToString());
-                    apiError.Data.TryAdd("InnerStatusCode", ex.StatusCode.ToString());
-                }
-
-                if (!string.IsNullOrEmpty(appExceptionOptions.Value.RootNamespace))
-                    apiError.TypeFullName =
-                        apiError.TypeFullName?.Replace(nameof(GrayMint), appExceptionOptions.Value.RootNamespace);
-
+                var apiError = ex.ToApiError();
+                apiError = ApplyRootNamespace(apiError, appExceptionOptions.Value.RootNamespace);
 
                 var errorJson = apiError.ToJson();
                 context.Response.ContentType = MediaTypeNames.Application.Json;
@@ -61,18 +46,32 @@ public static class GrayMintExceptionHandlerExtension
                 else context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
 
                 // create Api Error
-                var apiError = new ApiError(ex);
-                if (!string.IsNullOrEmpty(appExceptionOptions.Value.RootNamespace))
-                    apiError.TypeFullName =
-                        apiError.TypeFullName?.Replace(nameof(GrayMint), appExceptionOptions.Value.RootNamespace);
+                var apiError = ex.ToApiError();
+                apiError = ApplyRootNamespace(apiError, appExceptionOptions.Value.RootNamespace);
 
-                // write son
+                // write json
                 var errorJson = apiError.ToJson();
                 context.Response.ContentType = MediaTypeNames.Application.Json;
                 await context.Response.WriteAsync(errorJson);
 
                 logger.LogError(ex, "{Message}. ErrorInfo: {ErrorInfo}", ex.Message, errorJson);
             }
+        }
+
+        // ApiError properties are init-only, so the RootNamespace rewrite produces a new instance.
+        private static ApiError ApplyRootNamespace(ApiError apiError, string? rootNamespace)
+        {
+            if (string.IsNullOrEmpty(rootNamespace))
+                return apiError;
+
+            return new ApiError
+            {
+                TypeName = apiError.TypeName,
+                TypeFullName = apiError.TypeFullName?.Replace(nameof(GrayMint), rootNamespace),
+                Message = apiError.Message,
+                InnerMessage = apiError.InnerMessage,
+                Data = apiError.Data
+            };
         }
     }
 

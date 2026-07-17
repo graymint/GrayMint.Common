@@ -1,4 +1,4 @@
-﻿namespace GrayMint.Common.Utils;
+namespace GrayMint.Common.Generics;
 
 public class IdName<T>(T id, string name)
 {

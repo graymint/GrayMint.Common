@@ -1,6 +1,6 @@
+using Microsoft.Extensions.Logging;
 using GrayMint.Common.Extensions;
 using GrayMint.Common.Utils;
-using Microsoft.Extensions.Logging;
 
 namespace GrayMint.Common.Jobs;
 

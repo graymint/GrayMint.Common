@@ -1,4 +1,4 @@
-﻿namespace GrayMint.Common.Jobs;
+namespace GrayMint.Common.Jobs;
 
 public record JobOptions
 {

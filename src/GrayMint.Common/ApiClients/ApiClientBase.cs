@@ -4,9 +4,9 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.Json;
-using GrayMint.Common.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using GrayMint.Common.Extensions;
 
 
 // ReSharper disable UnusedMember.Global
@@ -14,9 +14,9 @@ namespace GrayMint.Common.ApiClients;
 
 public class ApiClientBase : ApiClientCommon
 {
-    protected class HttpNoResult;
+    private class HttpNoResult;
 
-    protected class HttpResult<T>
+    protected readonly struct HttpResult<T>
     {
         public required HttpResponseMessage ResponseMessage { get; init; }
         public required T Object { get; init; }
@@ -42,6 +42,8 @@ public class ApiClientBase : ApiClientCommon
         var settings = new JsonSerializerOptions();
         return settings;
     }
+
+    public bool ReadResponseAsString { get; set; }
 
     protected virtual async Task<HttpResult<T?>> ReadObjectResponseAsync<T>(HttpResponseMessage response,
         IReadOnlyDictionary<string, IEnumerable<string>> headers, CancellationToken cancellationToken)
@@ -86,8 +88,9 @@ public class ApiClientBase : ApiClientCommon
                     }
                 }
 
-                var converted = Convert.ToString(Convert.ChangeType(value,
-                    Enum.GetUnderlyingType(value.GetType()), cultureInfo));
+                var converted =
+                    Convert.ToString(Convert.ChangeType(value, Enum.GetUnderlyingType(value.GetType()), cultureInfo));
+
                 return converted ?? "";
             }
         }
@@ -147,7 +150,7 @@ public class ApiClientBase : ApiClientCommon
         return res.Text;
     }
 
-    protected async Task<HttpResult<T>> HttpSendAsync<T>(string urlPart,
+    protected virtual async Task<HttpResult<T>> HttpSendAsync<T>(string urlPart,
         Dictionary<string, object?>? parameters,
         HttpRequestMessage request, CancellationToken cancellationToken)
     {
@@ -174,8 +177,8 @@ public class ApiClientBase : ApiClientCommon
         }
     }
 
-    private async Task<HttpResult<T>> HttpSendAsyncImpl<T>(string urlPart,
-        Dictionary<string, object?>? parameters, HttpRequestMessage request, CancellationToken cancellationToken)
+    private async Task<HttpResult<T>> HttpSendAsyncImpl<T>(string urlPart, Dictionary<string, object?>? parameters,
+        HttpRequestMessage request, CancellationToken cancellationToken)
     {
         parameters ??= new Dictionary<string, object?>();
 
@@ -190,7 +193,7 @@ public class ApiClientBase : ApiClientCommon
                     .Append('&');
             }
 
-            urlBuilder.Length--; // remove the last '&'
+            urlBuilder.Length--;
         }
 
         var client = HttpClient ?? throw new Exception("HttpClient has not been set.");

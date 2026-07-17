@@ -29,7 +29,7 @@ public class GmUtilsTest
     public void JsonClone_should_deep_copy()
     {
         var source = new Dto { Name = "foo", Age = 10 };
-        var clone = GmUtils.JsonClone<Dto>(source);
+        var clone = GmUtils.JsonClone(source);
         Assert.AreNotSame(source, clone);
         Assert.AreEqual(source.Name, clone.Name);
         Assert.AreEqual(source.Age, clone.Age);
@@ -58,7 +58,7 @@ public class GmUtilsTest
     [TestMethod]
     public void IsNullOrEmpty_should_handle_nulls_and_items()
     {
-        Assert.IsTrue(GmUtils.IsNullOrEmpty((int[]?)null));
+        Assert.IsTrue(GmUtils.IsNullOrEmpty<int>(null));
         Assert.IsTrue(GmUtils.IsNullOrEmpty(Array.Empty<int>()));
         Assert.IsFalse(GmUtils.IsNullOrEmpty([1]));
     }

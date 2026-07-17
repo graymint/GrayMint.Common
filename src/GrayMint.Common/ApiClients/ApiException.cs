@@ -45,8 +45,10 @@ public sealed class ApiException : Exception
 
     public ApiError ToApiError()
     {
-        var apiError = new ApiError(ExceptionTypeName ?? GetType().Name, Message) {
+        var apiError = new ApiError {
+            TypeName = ExceptionTypeName ?? GetType().Name,
             TypeFullName = ExceptionTypeFullName ?? GetType().FullName,
+            Message = Message,
             InnerMessage = InnerException?.Message
         };
         apiError.ImportData(Data);

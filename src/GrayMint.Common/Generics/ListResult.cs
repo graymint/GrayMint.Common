@@ -1,7 +1,7 @@
-﻿namespace GrayMint.Common.Generics;
+namespace GrayMint.Common.Generics;
 
-public class ListResult<T>
+public sealed class ListResult<T>
 {
-    public required long? TotalCount { get; set; }
-    public required IEnumerable<T> Items { get; set; }
+    public required IReadOnlyList<T> Items { get; init; }
+    public required int TotalCount { get; init; }
 }

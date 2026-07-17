@@ -23,6 +23,11 @@ All packages share a single version, sourced from `pub/PubVersion.json`.
   to nuget.org; a daily job updates all NuGet dependencies to the latest versions and republishes
   when tests pass. Failures notify by email; nothing ships when tests fail.
 
+Some classes (`ApiClients/*`, `Exceptions/*`, `Jobs/*`, `Generics/*`, `Extensions/TaskExtensions.cs`,
+`Utils/AsyncLock.cs`, `Utils/FastDateTime.cs`, `Utils/TestUtil.cs`) are exact copies shared with an
+upstream toolkit — only their namespaces differ. Update them by re-copying from the source
+(`Update-ToolkitClasses.ps1`); never edit them by hand here.
+
 See [docs/versioning-and-nuget-updates.md](docs/versioning-and-nuget-updates.md) for how the
 versioning/publish/auto-update mechanism works and how to reuse it in another repo.
 

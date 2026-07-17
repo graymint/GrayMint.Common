@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using GrayMint.Common.Exceptions;
 
 namespace GrayMint.Common.ApiClients;
@@ -9,44 +8,20 @@ namespace GrayMint.Common.ApiClients;
 public class ApiError : ICloneable, IEquatable<ApiError>
 {
     public const string Flag = "IsApiError";
-    public string TypeName { get; set; }
-    public string? TypeFullName { get; set; }
-    public string Message { get; set; }
-    public Dictionary<string, string?> Data { get; set; } = new();
+    public required string TypeName { get; init; }
+    public string? TypeFullName { get; init; }
+    public required string Message { get; init; }
+    public Dictionary<string, string?> Data { get; init; } = new();
+    public string? InnerMessage { get; init; }
 
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public string? InnerMessage { get; set; }
-
-    [JsonConstructor]
-    public ApiError(string typeName, string message)
-    {
-        TypeName = typeName;
-        Message = message;
-    }
-
-    public ApiError(Exception ex)
-    {
-        var exceptionType = GetExceptionType(ex);
-
-        TypeName = exceptionType.Name;
-        TypeFullName = exceptionType.FullName;
-        Message = ex.Message;
-        InnerMessage = ex.InnerException?.Message;
-        ImportData(ex.Data);
-    }
-
-    private static Type GetExceptionType(Exception ex)
-    {
-        if (AlreadyExistsException.Is(ex)) return typeof(AlreadyExistsException);
-        if (NotExistsException.Is(ex)) return typeof(NotExistsException);
-        return ex.GetType();
-    }
-
-    public object Clone() => new ApiError(TypeName, Message) {
+    public object Clone() => new ApiError {
+        TypeName = TypeName,
         TypeFullName = TypeFullName,
+        Message = Message,
         Data = new Dictionary<string, string?>(Data),
         InnerMessage = InnerMessage
     };
+
 
     public static bool TryParse(string value, [NotNullWhen(true)] out ApiError? apiError)
     {
