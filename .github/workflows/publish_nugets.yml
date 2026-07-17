@@ -1,0 +1,67 @@
+name: Publish NuGets
+
+# Builds and tests the solution, bumps the version (pub/Invoke-VersionBump.ps1: PubVersion.json +
+# src/Directory.Build.props, committed and pushed), then packs and pushes every packable project
+# to nuget.org at the new version.
+#
+# Triggers:
+#   - push to main: every merged change publishes a new patch version.
+#   - workflow_dispatch: manual (re)publish, and the chain target of update_nugets.yml (a push made
+#     with GITHUB_TOKEN does not retrigger workflows, so the updater dispatches this explicitly).
+#
+# Order matters: build + test run BEFORE the bump, so a broken build never burns a version or
+# pushes a bump commit. Any failed step fails the run and GitHub notifies by email.
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write # push the bump commit to main
+
+jobs:
+  publish-nugets:
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_NOLOGO: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      BUILD_CONFIG: Release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true # so the bump push uses github.token
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration $BUILD_CONFIG
+
+      - name: Test
+        run: dotnet test --no-build --configuration $BUILD_CONFIG
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version + push
+        shell: pwsh
+        run: ./pub/Invoke-VersionBump.ps1
+
+      - name: Pack
+        # No --no-build here: the bump just changed <Version>, so pack must rebuild at the new version.
+        run: dotnet pack --configuration $BUILD_CONFIG
+
+      - name: Push to nuget.org
+        run: dotnet nuget push "**/*.nupkg" --source "https://api.nuget.org/v3/index.json" --api-key ${{ secrets.NUGET_API_KEY }}

@@ -1,0 +1,67 @@
+name: Update NuGets
+
+# Daily dependency updater. Upgrades every PackageReference under src/ and tests/ to the most
+# recent version on nuget.org (pub/lib/Update-NugetPackages.ps1, dotnet-outdated based), validates the
+# upgrade with a full build + test run, commits, pushes to main, and then dispatches the
+# "Publish NuGets" workflow so the updated packages ship immediately (a push made with
+# GITHUB_TOKEN does not retrigger workflows by itself, so the dispatch is explicit).
+#
+# There is deliberately NO fallback: if the update, the build, the tests, or the push fail, the
+# run fails and GitHub notifies by email. Nothing is committed unless the tests pass.
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # daily at 02:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write # push the update commit to main
+  actions: write  # dispatch the publish workflow
+
+jobs:
+  update-nugets:
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_NOLOGO: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      BUILD_CONFIG: Release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true # so the push uses github.token
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Update packages to latest
+        id: update
+        shell: pwsh
+        run: ./pub/lib/Update-NugetPackages.ps1
+
+      - name: Build
+        if: steps.update.outputs.updated == 'true'
+        run: dotnet build --configuration $BUILD_CONFIG
+
+      - name: Test
+        if: steps.update.outputs.updated == 'true'
+        run: dotnet test --no-build --configuration $BUILD_CONFIG
+
+      - name: Commit & push
+        if: steps.update.outputs.updated == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: update NuGet packages to latest"
+          git push origin HEAD:main
+
+      - name: Dispatch publish workflow
+        if: steps.update.outputs.updated == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run publish_nugets.yml --repo "${{ github.repository }}" --ref main

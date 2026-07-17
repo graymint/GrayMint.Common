@@ -1,18 +1,28 @@
 <Solution>
-  <Folder Name="/Pub/">
-    <File Path="Pub/PubVersion.json" />
+  <Folder Name="/pub/">
+    <File Path="pub/Invoke-VersionBump.ps1" />
+    <File Path="pub/PubVersion.json" />
+    <File Path="pub/lib/Update-NugetPackages.ps1" />
+    <File Path="pub/lib/Update-VersionFile.ps1" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
+    <File Path="src/Directory.Build.props" />
+    <File Path="src/Directory.Build.targets" />
+    <File Path="tests/Directory.Build.props" />
   </Folder>
-  <Folder Name="/Tests/">
-    <Project Path="Tests/TestWebApp/TestWebApp.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src/GrayMint.Common/GrayMint.Common.csproj" />
+    <Project Path="src/GrayMint.Common.AspNetCore/GrayMint.Common.AspNetCore.csproj" />
+    <Project Path="src/GrayMint.Common.EntityFrameworkCore/GrayMint.Common.EntityFrameworkCore.csproj" />
+    <Project Path="src/GrayMint.Common.Swagger/GrayMint.Common.Swagger.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GrayMint.Common.Test/GrayMint.Common.Test.csproj" />
+    <Project Path="tests/TestWebApp/TestWebApp.csproj" />
   </Folder>
   <Folder Name="/workflows/">
-    <File Path=".github/workflows/nuget-main.yml" />
+    <File Path=".github/workflows/publish_nugets.yml" />
+    <File Path=".github/workflows/update_nugets.yml" />
   </Folder>
-  <Project Path="GrayMint.Common.AspNetCore/GrayMint.Common.AspNetCore.csproj" />
-  <Project Path="GrayMint.Common.EntityFrameworkCore/GrayMint.Common.EntityFrameworkCore.csproj" />
-  <Project Path="GrayMint.Common.Swagger/GrayMint.Common.Swagger.csproj" />
-  <Project Path="GrayMint.Common/GrayMint.Common.csproj" />
 </Solution>
