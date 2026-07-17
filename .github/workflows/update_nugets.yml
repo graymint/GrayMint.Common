@@ -1,18 +1,25 @@
 name: Update NuGets
 
 # Daily dependency updater. Upgrades every PackageReference under src/ and tests/ to the most
-# recent version on nuget.org (pub/lib/Update-NugetPackages.ps1, dotnet-outdated based), validates the
-# upgrade with a full build + test run, commits, pushes to main, and then dispatches the
-# "Publish NuGets" workflow so the updated packages ship immediately (a push made with
+# recent version on nuget.org (pub/lib/Update-NugetPackages.ps1, dotnet-outdated based), validates
+# the upgrade with a full build + test run, commits, pushes to main, and then dispatches the
+# target repo's publish_nugets.yml so the updated packages ship immediately (a push made with
 # GITHUB_TOKEN does not retrigger workflows by itself, so the dispatch is explicit).
+#
+# REUSABLE: other repos call this via `workflow_call` from a thin wrapper that carries its own
+# `schedule` trigger (cron only fires in the repo hosting the workflow file). The target repo is
+# checked out into repo/; the scripts always come from THIS repo's checkout in tools/. Callers
+# must pass `secrets: inherit` and grant `contents: write` + `actions: write`. The caller's thin
+# publish wrapper MUST be named publish_nugets.yml — that's what the dispatch step targets.
 #
 # There is deliberately NO fallback: if the update, the build, the tests, or the push fail, the
 # run fails and GitHub notifies by email. Nothing is committed unless the tests pass.
 
 on:
   schedule:
-    - cron: "0 2 * * *" # daily at 02:00 UTC
+    - cron: "0 2 * * *" # daily at 02:00 UTC (this repo; callers bring their own schedule)
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: write # push the update commit to main
@@ -25,13 +32,24 @@ jobs:
       DOTNET_NOLOGO: "1"
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
       BUILD_CONFIG: Release
+    defaults:
+      run:
+        working-directory: repo
 
     steps:
-      - name: Checkout
+      - name: Checkout target repo
         uses: actions/checkout@v5
         with:
           ref: main
+          path: repo
           persist-credentials: true # so the push uses github.token
+
+      - name: Checkout build tools (GrayMint.Common)
+        uses: actions/checkout@v5
+        with:
+          repository: graymint/GrayMint.Common
+          ref: main
+          path: tools
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
@@ -41,7 +59,8 @@ jobs:
       - name: Update packages to latest
         id: update
         shell: pwsh
-        run: ./pub/lib/Update-NugetPackages.ps1
+        run: |
+          & "$env:GITHUB_WORKSPACE/tools/pub/lib/Update-NugetPackages.ps1" -repoDir "$env:GITHUB_WORKSPACE/repo"
 
       - name: Build
         if: steps.update.outputs.updated == 'true'

@@ -104,18 +104,61 @@ don't arrive; scheduled-run failure emails go to the user who last modified the 
 
 [dotnet-outdated]: https://github.com/dotnet-outdated/dotnet-outdated
 
-## Adopting this in another repo
+## Adopting this in another repo (reusable workflows)
 
-1. Lay the repo out as shown above (`src/`, `tests/`, `pub/`).
-2. Copy `pub/` verbatim — the scripts are path-relative and contain nothing repo-specific. Reset
-   `pub/PubVersion.json` to the project's current version.
-3. Copy `src/Directory.Build.props` / `src/Directory.Build.targets` /
+Both workflows are **reusable** (`workflow_call`): another repo carries no scripts and no CI
+logic — only its version file and two thin wrappers that call this repo. The reusable workflow
+checks the caller's repo out into `repo/` and always takes the scripts from this repo's `tools/`
+checkout, so every consumer runs the same, single copy of the logic.
+
+1. Lay the repo out as shown above (`src/`, `tests/`) plus `pub/PubVersion.json` — no `pub`
+   scripts needed.
+2. Copy `src/Directory.Build.props` / `src/Directory.Build.targets` /
    `tests/Directory.Build.props` and change only the package-metadata block (authors, license,
    icon, URLs) in `src/Directory.Build.props`. Set its `<Version>` to match `PubVersion.json`.
-4. Strip every csproj down to `Description` + `TargetFramework` + references (delete `Version`,
+3. Strip every csproj down to `Description` + `TargetFramework` + references (delete `Version`,
    `FileVersion`, metadata, icon items — the props own them now).
-5. Copy both workflows from `.github/workflows/`; adjust the branch name if the default branch
-   isn't `main`.
-6. Add the `NUGET_API_KEY` secret.
-7. Make sure there is at least one test project under `tests/` — the updater and the publisher
+4. Add the two thin wrappers. They MUST be named `publish_nugets.yml` and `update_nugets.yml`
+   (the updater dispatches the publish wrapper by that name):
+
+   ```yaml
+   # .github/workflows/publish_nugets.yml
+   name: Publish NuGets
+   on:
+     push:
+       branches: [ "main" ]
+     workflow_dispatch:
+   permissions:
+     contents: write
+   jobs:
+     publish-nugets:
+       uses: graymint/GrayMint.Common/.github/workflows/publish_nugets.yml@main
+       secrets: inherit
+   ```
+
+   ```yaml
+   # .github/workflows/update_nugets.yml
+   name: Update NuGets
+   on:
+     schedule:
+       - cron: "0 2 * * *"
+     workflow_dispatch:
+   permissions:
+     contents: write
+     actions: write
+   jobs:
+     update-nugets:
+       uses: graymint/GrayMint.Common/.github/workflows/update_nugets.yml@main
+       secrets: inherit
+   ```
+
+5. Make sure the `NUGET_API_KEY` secret is available (org secret or repo secret).
+6. Make sure there is at least one test project under `tests/` — the updater and the publisher
    both refuse to ship when tests fail, which is the whole safety net.
+
+To bump or update such a repo manually from a local clone of this repo:
+
+```powershell
+./pub/Invoke-VersionBump.ps1 -repoDir C:\path\to\other-repo -noPush
+./pub/lib/Update-NugetPackages.ps1 -repoDir C:\path\to\other-repo
+```
