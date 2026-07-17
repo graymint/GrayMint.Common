@@ -2,7 +2,7 @@
 
   <!--
     Shared build/pack settings for every library under src/. MSBuild imports the nearest
-    Directory.Build.props walking up from each csproj, so this covers all of src/ but NOT the
+    Directory.Build.props walking up from each csproj, so this covers all src/ but NOT the
     tests/ projects (tests/ has its own Directory.Build.props, which stops the upward search).
 
     The single product version lives in pub/PubVersion.json (the source of truth the bump edits)

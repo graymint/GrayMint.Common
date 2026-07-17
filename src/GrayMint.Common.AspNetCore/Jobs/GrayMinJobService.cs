@@ -1,6 +1,5 @@
 using GrayMint.Common.Extensions;
 using GrayMint.Common.Jobs;
-using GrayMint.Common.Utils;
 
 namespace GrayMint.Common.AspNetCore.Jobs;
 
