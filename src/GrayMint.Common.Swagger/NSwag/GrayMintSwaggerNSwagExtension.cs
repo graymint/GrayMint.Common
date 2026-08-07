@@ -12,10 +12,15 @@ internal static class GrayMintSwaggerNSwagExtension
     public static IServiceCollection AddGrayMintNSwag(this IServiceCollection services, string? title)
     {
         services.AddEndpointsApiExplorer();
-        services.AddSwaggerDocument(configure =>
+
+        // OpenApi3 (not Swagger2) so that nullability of required-but-nullable members survives
+        // into the generated client.
+        services.AddOpenApiDocument(configure =>
         {
             if (title != null) configure.Title = title;
             configure.RequireParametersWithoutDefault = true;
+            configure.SchemaSettings.IgnoreObsoleteProperties = true;
+            configure.SchemaSettings.SchemaProcessors.Add(new RequireNonNullablePropertiesSchemaProcessor());
             configure.SchemaSettings.TypeMappers = new List<ITypeMapper>
             {
                 new PrimitiveTypeMapper(typeof(IPAddress), s => { s.Type = JsonObjectType.String; }),

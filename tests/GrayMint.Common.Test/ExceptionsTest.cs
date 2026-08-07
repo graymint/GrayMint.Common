@@ -12,8 +12,13 @@ public class ExceptionsTest
         Assert.IsTrue(AlreadyExistsException.Is(new AlreadyExistsException("Users")));
 
         // SQL Server style: HelpLink.EvtID carries the native error number
-        var sqlServerEx = new Exception("Cannot insert duplicate key row.");
-        sqlServerEx.Data["HelpLink.EvtID"] = "2601";
+        var sqlServerEx = new Exception("Cannot insert duplicate key row.")
+        {
+            Data =
+            {
+                ["HelpLink.EvtID"] = "2601"
+            }
+        };
         Assert.IsTrue(AlreadyExistsException.Is(sqlServerEx));
 
         // SQLite style: message carries the constraint failure (error 19)

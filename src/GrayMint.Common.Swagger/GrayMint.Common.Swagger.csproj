@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="NSwag.AspNetCore" Version="14.7.1" />
-    <PackageReference Include="Scalar.AspNetCore.Microsoft" Version="2.16.17" />
+    <PackageReference Include="Scalar.AspNetCore.Microsoft" Version="2.16.18" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
   </ItemGroup>
 </Project>
