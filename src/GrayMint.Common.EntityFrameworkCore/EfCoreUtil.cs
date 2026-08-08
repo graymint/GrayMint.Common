@@ -55,12 +55,22 @@ public static class EfCoreUtil
         }
     }
 
+    private static bool IsSqlite(DatabaseFacade database) =>
+        database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) == true;
+
     private static bool IsPostgres(DatabaseFacade database) =>
         database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true ||
         database.ProviderName?.Contains("PostgreSQL", StringComparison.OrdinalIgnoreCase) == true;
 
     public static async Task EnsureTablesCreated(DatabaseFacade database)
     {
+        // Creating unconditionally and swallowing the "already exists" error makes EF log a failed
+        // DbCommand on every start once the tables are there, which reads like a real fault in the
+        // log. Probe first and only emit DDL when a table is actually missing. The catch below is
+        // kept as a backstop for the probe being unavailable and for start-up races.
+        if (await AllTablesExist(database))
+            return;
+
         try
         {
             var databaseCreator = (RelationalDatabaseCreator)database.GetService<IDatabaseCreator>();
@@ -76,6 +86,84 @@ public static class EfCoreUtil
         {
             // ignore
         }
+    }
+
+    // True when every table of this context's model is already present. Deliberately not
+    // RelationalDatabaseCreator.HasTables(), which answers "does the database hold any table at
+    // all" — several contexts share one database here, so the first one to create its tables would
+    // make all the others skip. The probe itself is issued as a plain DbCommand rather than through
+    // EF, so it never reaches EF's command log; any failure returns false and falls back to
+    // create-and-catch.
+    private static async Task<bool> AllTablesExist(DatabaseFacade database)
+    {
+        try
+        {
+            var tables = database.GetService<ICurrentDbContext>().Context.Model
+                .GetRelationalModel().Tables.ToArray();
+
+            if (tables.Length == 0)
+                return true; // nothing to create
+
+            // Open through the facade, not the raw connection, so EF keeps its own open-count
+            // straight and we hand the connection back exactly as we found it.
+            var connection = database.GetDbConnection();
+            var wasClosed = connection.State != ConnectionState.Open;
+            if (wasClosed)
+                await database.OpenConnectionAsync();
+
+            try
+            {
+                var isSqlite = IsSqlite(database);
+
+                foreach (var table in tables)
+                {
+                    await using var command = connection.CreateCommand();
+
+                    if (isSqlite)
+                    {
+                        // SQLite has no INFORMATION_SCHEMA and no schemas at all
+                        command.CommandText =
+                            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = @name";
+                        AddParameter(command, "@name", table.Name);
+                    }
+                    else
+                    {
+                        command.CommandText =
+                            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES " +
+                            "WHERE TABLE_NAME = @name AND (@schema IS NULL OR TABLE_SCHEMA = @schema)";
+                        AddParameter(command, "@name", table.Name);
+                        AddParameter(command, "@schema", table.Schema);
+                    }
+
+                    var count = Convert.ToInt32(await command.ExecuteScalarAsync() ?? 0);
+                    if (count == 0)
+                        return false;
+                }
+
+                return true;
+            }
+            finally
+            {
+                if (wasClosed)
+                    await database.CloseConnectionAsync();
+            }
+        }
+        catch
+        {
+            // provider we cannot probe, or the probe failed for any other reason
+            return false;
+        }
+    }
+
+    private static void AddParameter(DbCommand command, string name, string? value)
+    {
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = name;
+        // DbType must be explicit: PostgreSQL cannot infer the type of an untyped null and fails
+        // the whole statement with 42P08 (could not determine data type of parameter).
+        parameter.DbType = DbType.String;
+        parameter.Value = (object?)value ?? DBNull.Value;
+        command.Parameters.Add(parameter);
     }
 
     public static async Task<bool> SqlFunctionExists(DatabaseFacade database, string schema, string functionName)
