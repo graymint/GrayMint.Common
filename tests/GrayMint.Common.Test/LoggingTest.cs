@@ -3,6 +3,7 @@ using GrayMint.Common.AspNetCore.Jobs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -45,11 +46,12 @@ public class LoggingTest
         await using var serviceProvider = new ServiceCollection()
             .AddLogging(builder => builder.AddProvider(new CapturingLoggerProvider(logger)))
             .AddScoped<FailingJob>()
+            .AddGrayMintJob<FailingJob>(new GrayMintJobOptions { ExecuteOnShutdown = true })
             .BuildServiceProvider();
 
-        // a job that has not started runs once at the stop
-        var jobService = new GrayMinJobService<FailingJob>(serviceProvider.GetRequiredService<IServiceScopeFactory>(),
-            new GrayMintJobOptions { ExecuteOnShutdown = true }, jobRunner: null);
+        // the job runs once at the stop
+        var jobService = serviceProvider.GetRequiredService<IHostedService>();
+        await jobService.StartAsync(CancellationToken.None);
         await jobService.StopAsync(CancellationToken.None);
 
         Assert.AreEqual(LogLevel.Error, logger.Level);

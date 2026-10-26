@@ -13,7 +13,8 @@ public static class GrayMintJobExtensions
         services.AddHostedService(serviceProvider =>
         {
             var serviceScopeFactory = serviceProvider.GetRequiredService<IServiceScopeFactory>();
-            return new GrayMinJobService<T>(serviceScopeFactory, jobOptions, jobRunner);
+            var logger = serviceProvider.GetRequiredService<ILogger<T>>();
+            return new GrayMinJobService<T>(serviceScopeFactory, logger, jobOptions, jobRunner);
         });
 
         return services;
