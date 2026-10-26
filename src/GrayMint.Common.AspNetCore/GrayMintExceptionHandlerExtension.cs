@@ -20,7 +20,8 @@ public static class GrayMintExceptionHandlerExtension
             {
                 await next.Invoke(context);
             }
-            catch (ApiException ex)
+            // a started response can't take a status any more, so the server logs the exception and aborts it
+            catch (ApiException ex) when (!context.Response.HasStarted)
             {
                 var apiError = ex.ToApiError();
                 apiError = ApplyRootNamespace(apiError, appExceptionOptions.Value.RootNamespace);
@@ -30,20 +31,12 @@ public static class GrayMintExceptionHandlerExtension
                 context.Response.StatusCode = ex.StatusCode;
                 await context.Response.WriteAsync(errorJson);
 
-                logger.LogError(ex, "{Message}. ErrorInfo: {ErrorInfo}", ex.Message, errorJson);
+                logger.Log(GetLogLevel(ex.StatusCode), ex, "{Message}. ErrorInfo: {ErrorInfo}", ex.Message, errorJson);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!context.Response.HasStarted)
             {
-                // set correct https status code depends on exception
-                if (NotExistsException.Is(ex)) context.Response.StatusCode = (int)HttpStatusCode.NotFound;
-                else if (AlreadyExistsException.Is(ex)) context.Response.StatusCode = (int)HttpStatusCode.Conflict;
-                else if (ex is UnauthorizedAccessException || ex.InnerException is UnauthorizedAccessException)
-                    context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-                else if (ex is AuthenticationException || ex.InnerException is AuthenticationException)
-                    context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                else if (ex.Data.Contains("HttpStatusCode"))
-                    context.Response.StatusCode = (int)ex.Data["HttpStatusCode"]!;
-                else context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                var statusCode = GetStatusCode(ex);
+                context.Response.StatusCode = statusCode ?? (int)HttpStatusCode.BadRequest;
 
                 // create Api Error
                 var apiError = ex.ToApiError();
@@ -54,8 +47,26 @@ public static class GrayMintExceptionHandlerExtension
                 context.Response.ContentType = MediaTypeNames.Application.Json;
                 await context.Response.WriteAsync(errorJson);
 
-                logger.LogError(ex, "{Message}. ErrorInfo: {ErrorInfo}", ex.Message, errorJson);
+                logger.Log(GetLogLevel(statusCode), ex, "{Message}. ErrorInfo: {ErrorInfo}", ex.Message, errorJson);
             }
+        }
+
+        // null for an exception the app doesn't name a status for, which answers 400
+        private static int? GetStatusCode(Exception ex)
+        {
+            if (NotExistsException.Is(ex)) return (int)HttpStatusCode.NotFound;
+            if (AlreadyExistsException.Is(ex)) return (int)HttpStatusCode.Conflict;
+            if (ex is UnauthorizedAccessException || ex.InnerException is UnauthorizedAccessException)
+                return (int)HttpStatusCode.Forbidden;
+            if (ex is AuthenticationException || ex.InnerException is AuthenticationException)
+                return (int)HttpStatusCode.Unauthorized;
+            return ex.Data["HttpStatusCode"] is int statusCode ? statusCode : null;
+        }
+
+        // a client's error the app names (not found, unauthorized, a status it set) is routine; any other may be a bug
+        private static LogLevel GetLogLevel(int? statusCode)
+        {
+            return statusCode is >= 400 and < 500 ? LogLevel.Information : LogLevel.Error;
         }
 
         // ApiError properties are init-only, so the RootNamespace rewrite produces a new instance.

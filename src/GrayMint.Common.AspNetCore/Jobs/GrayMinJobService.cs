@@ -57,7 +57,17 @@ public class GrayMinJobService<T> : IHostedService where T : IGrayMintJob
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken,
             _cancellationTokenSource?.Token ?? CancellationToken.None);
         await using var scope = _serviceScopeFactory.CreateAsyncScope();
-        var service = scope.ServiceProvider.GetRequiredService<T>();
-        await service.RunJob(linkedCts.Token);
+        try
+        {
+            var service = scope.ServiceProvider.GetRequiredService<T>();
+            await service.RunJob(linkedCts.Token);
+        }
+        // the job runner has no logger of its own, so a failed job would pass unseen
+        catch (Exception ex) when (!linkedCts.IsCancellationRequested)
+        {
+            scope.ServiceProvider.GetRequiredService<ILogger<T>>()
+                .LogError(ex, "Job failed. JobName: {JobName}", typeof(T).Name);
+            throw;
+        }
     }
 }
