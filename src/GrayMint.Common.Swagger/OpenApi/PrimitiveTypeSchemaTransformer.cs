@@ -18,19 +18,19 @@ public class PrimitiveTypeSchemaTransformer : IOpenApiSchemaTransformer
         {
             schema.Type = JsonSchemaType.String;
             schema.Format = "ip"; // supports both IPv4 and IPv6
-            schema.Example = JsonValue.Create("192.168.1.10 or 2001:db8::1");
+            schema.Examples = [JsonValue.Create("192.168.1.10 or 2001:db8::1")];
         }
         else if (type == typeof(IPEndPoint))
         {
             schema.Type = JsonSchemaType.String;
             schema.Format = "ip:port"; // mixed form
-            schema.Example = JsonValue.Create("192.168.1.10:8080 or [2001:db8::1]:443");
+            schema.Examples = [JsonValue.Create("192.168.1.10:8080 or [2001:db8::1]:443")];
         }
         else if (type == typeof(Version))
         {
             schema.Type = JsonSchemaType.String;
             schema.Format = "semver";
-            schema.Example = JsonValue.Create("1.2.3.4");
+            schema.Examples = [JsonValue.Create("1.2.3.4")];
         }
         else
         {

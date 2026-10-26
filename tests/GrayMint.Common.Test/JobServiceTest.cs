@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using GrayMint.Common.AspNetCore.Jobs;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -90,7 +91,8 @@ public class JobServiceTest
         await jobService.StartAsync(CancellationToken.None);
         await runs.FirstStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
         using var shutdownCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
-        await jobService.StopAsync(shutdownCts.Token).WaitAsync(TimeSpan.FromSeconds(10));
+        // not the shutdown token for the wait: it is the one under test
+        await jobService.StopAsync(shutdownCts.Token).WaitAsync(TimeSpan.FromSeconds(10), CancellationToken.None);
 
         Assert.AreEqual(LogLevel.Warning, logger.Level);
         runs.Release.SetResult();
@@ -99,12 +101,12 @@ public class JobServiceTest
     [TestMethod]
     public async Task A_zero_interval_or_a_negative_due_time_is_refused()
     {
-        var runs = new JobRuns();
-        await using var serviceProvider = CreateServiceProvider<QuickJob>(runs);
+        await using var serviceProvider = CreateServiceProvider<QuickJob>(new JobRuns());
+        var serviceScopeFactory = serviceProvider.GetRequiredService<IServiceScopeFactory>();
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => CreateJobService(serviceProvider,
+        Assert.Throws<ArgumentOutOfRangeException>(() => new GrayMinJobService<QuickJob>(serviceScopeFactory,
             NullLogger<QuickJob>.Instance, new GrayMintJobOptions { Interval = TimeSpan.Zero }));
-        Assert.Throws<ArgumentOutOfRangeException>(() => CreateJobService(serviceProvider,
+        Assert.Throws<ArgumentOutOfRangeException>(() => new GrayMinJobService<QuickJob>(serviceScopeFactory,
             NullLogger<QuickJob>.Instance, new GrayMintJobOptions { DueTime = TimeSpan.FromSeconds(-1) }));
     }
 
@@ -122,7 +124,10 @@ public class JobServiceTest
         Assert.HasCount(2, serviceProvider.GetServices<IHostedService>());
     }
 
-    private static ServiceProvider CreateServiceProvider<TJob>(JobRuns runs) where TJob : class, IGrayMintJob
+    // the container creates the job, as AddScoped's own type parameter says
+    private static ServiceProvider CreateServiceProvider<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TJob>(JobRuns runs)
+        where TJob : class, IGrayMintJob
     {
         return new ServiceCollection()
             .AddSingleton(runs)
