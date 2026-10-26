@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using GrayMint.Common.AspNetCore.Jobs;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -105,6 +106,20 @@ public class JobServiceTest
             NullLogger<QuickJob>.Instance, new GrayMintJobOptions { Interval = TimeSpan.Zero }));
         Assert.Throws<ArgumentOutOfRangeException>(() => CreateJobService(serviceProvider,
             NullLogger<QuickJob>.Instance, new GrayMintJobOptions { DueTime = TimeSpan.FromSeconds(-1) }));
+    }
+
+    [TestMethod]
+    public async Task Each_job_type_is_a_job_of_its_own_and_can_be_added_only_once()
+    {
+        var services = new ServiceCollection()
+            .AddLogging()
+            .AddGrayMintJob<QuickJob>(new GrayMintJobOptions())
+            .AddGrayMintJob<FailingJob>(new GrayMintJobOptions());
+
+        Assert.Throws<InvalidOperationException>(() =>
+            services.AddGrayMintJob<QuickJob>(new GrayMintJobOptions { Interval = TimeSpan.FromMinutes(1) }));
+        await using var serviceProvider = services.BuildServiceProvider();
+        Assert.HasCount(2, serviceProvider.GetServices<IHostedService>());
     }
 
     private static ServiceProvider CreateServiceProvider<TJob>(JobRuns runs) where TJob : class, IGrayMintJob
