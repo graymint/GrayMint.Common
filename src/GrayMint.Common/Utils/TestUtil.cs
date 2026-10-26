@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net;
 using GrayMint.Common.ApiClients;
 using GrayMint.Common.Exceptions;
+using GrayMint.Common.Extensions;
 
 namespace GrayMint.Common.Utils;
 
@@ -20,7 +21,7 @@ public static class TestUtil
             if (Equals(expectedValue, actualValue))
                 return actualValue;
 
-            await Task.Delay(waitTime, cancellationToken);
+            await Task.Delay(waitTime, cancellationToken).Vhc();
             actualValue = valueFactory();
         }
 
@@ -32,13 +33,13 @@ public static class TestUtil
     {
         const int waitTime = 100;
         CancellationTokenSource cancellationTokenSource = new(timeout);
-        var actualValue = await valueFactory();
+        var actualValue = await valueFactory().Vhc();
         while (!cancellationTokenSource.IsCancellationRequested) {
             if (Equals(expectedValue, actualValue))
                 return actualValue;
 
-            await Task.Delay(waitTime, cancellationToken);
-            actualValue = await valueFactory();
+            await Task.Delay(waitTime, cancellationToken).Vhc();
+            actualValue = await valueFactory().Vhc();
         }
 
         return actualValue;
@@ -60,7 +61,7 @@ public static class TestUtil
             ? TimeSpan.FromDays(1)
             : TimeSpan.FromMilliseconds(timeout);
 
-        var actualValue = await WaitForValue(expectedValue, valueFactory, timeoutSpan, cancellationToken);
+        var actualValue = await WaitForValue(expectedValue, valueFactory, timeoutSpan, cancellationToken).Vhc();
         AssertEquals(expectedValue, actualValue, message);
     }
 
@@ -72,7 +73,7 @@ public static class TestUtil
             ? TimeSpan.FromDays(1)
             : TimeSpan.FromMilliseconds(timeout);
 
-        var actualValue = await WaitForValue(expectedValue, valueFactory, timeoutSpan, cancellationToken);
+        var actualValue = await WaitForValue(expectedValue, valueFactory, timeoutSpan, cancellationToken).Vhc();
         AssertEquals(expectedValue, actualValue, message);
     }
 
@@ -84,7 +85,7 @@ public static class TestUtil
             ? TimeSpan.FromDays(1)
             : TimeSpan.FromMilliseconds(timeout);
 
-        var actualValue = await WaitForValue(expectedValue, () => task, timeoutSpan, cancellationToken);
+        var actualValue = await WaitForValue(expectedValue, () => task, timeoutSpan, cancellationToken).Vhc();
         AssertEquals(expectedValue, actualValue, message);
     }
 
@@ -104,7 +105,7 @@ public static class TestUtil
         string? message = null, string? contains = null)
     {
         try {
-            await task;
+            await task.Vhc();
             throw new AssertException($"Expected {expectedStatusCode} but the actual was OK. {message}");
         }
         catch (ApiException ex) {
@@ -125,7 +126,7 @@ public static class TestUtil
         string? message = null, string? contains = null)
     {
         try {
-            await task;
+            await task.Vhc();
             throw new AssertException($"Expected {expectedExceptionType} exception but was OK. {message}");
         }
         catch (ApiException ex) {
@@ -150,7 +151,7 @@ public static class TestUtil
         string? contains = null)
     {
         try {
-            await task;
+            await task.Vhc();
             throw new AssertException($"Expected kind of {nameof(NotExistsException)} but was OK. {message}");
         }
         catch (ApiException ex) {
@@ -175,7 +176,7 @@ public static class TestUtil
         string? contains = null)
     {
         try {
-            await task;
+            await task.Vhc();
             throw new AssertException($"Expected kind of {nameof(AlreadyExistsException)} but was OK. {message}");
         }
         catch (ApiException ex) {

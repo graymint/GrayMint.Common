@@ -96,7 +96,7 @@ public static class TaskExtensions
                     cancellationTokenSource.Cancel();
             }
             catch (Exception ex) {
-                _ = ex; // not critical; GrayMint.Common has no logger to report it
+                _ = ex; // a callback that throws is a bug, but GrayMint.Common has no logger to report it
             }
         }
 
@@ -107,7 +107,7 @@ public static class TaskExtensions
                     await cancellationTokenSource.CancelAsync().Vhc();
             }
             catch (Exception ex) {
-                _ = ex; // not critical; GrayMint.Common has no logger to report it
+                _ = ex; // a callback that throws is a bug, but GrayMint.Common has no logger to report it
             }
         }
     }

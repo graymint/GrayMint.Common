@@ -63,7 +63,7 @@ if (!scope2.Succeeded) return;
 await GmUtils.ForEachAsync(items, ProcessItemAsync, maxDegreeOfParallelism: 8, ct);
 ```
 
-`FastDateTime.Now` / `FastDateTime.UtcNow` serve a cached clock with configurable precision (1s by default) — built for hot paths that read the time thousands of times per second, where `DateTime.UtcNow` syscall overhead actually shows up.
+`FastDateTime.UtcNow` serves a cached UTC clock with configurable precision (1s by default) — built for hot paths that read the time thousands of times per second, where `DateTime.UtcNow` syscall overhead actually shows up.
 
 ### One `Program.cs` for all your services
 

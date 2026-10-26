@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -48,6 +49,22 @@ public class ApiClientBase : ApiClientCommon
     protected virtual async Task<HttpResult<T?>> ReadObjectResponseAsync<T>(HttpResponseMessage response,
         IReadOnlyDictionary<string, IEnumerable<string>> headers, CancellationToken cancellationToken)
     {
+        // a reply that is not JSON is read as it stands - a log as text, an image as bytes - because
+        // there is nothing to deserialize; the content type is what says so, since the same C# type
+        // can come back either way (a JSON string is quoted, a text/plain one is not)
+        var mediaType = response.Content.Headers.ContentType?.MediaType;
+        if (mediaType != null && !mediaType.Contains("json", StringComparison.OrdinalIgnoreCase)) {
+            if (typeof(T) == typeof(string)) {
+                var plainText = await response.Content.ReadAsStringAsync(cancellationToken).Vhc();
+                return new HttpResult<T?> { ResponseMessage = response, Object = (T)(object)plainText, Text = plainText };
+            }
+
+            if (typeof(T) == typeof(byte[])) {
+                var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken).Vhc();
+                return new HttpResult<T?> { ResponseMessage = response, Object = (T)(object)bytes, Text = string.Empty };
+            }
+        }
+
         if (ReadResponseAsString) {
             var responseText = await response.Content.ReadAsStringAsync(cancellationToken).Vhc();
             try {
@@ -133,9 +150,8 @@ public class ApiClientBase : ApiClientCommon
         request.Method = httpMethod;
         request.Headers.Accept.Add(MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
-        // only the methods that carry a body get one; a DELETE used to be sent with a
-        // literal "null" payload, which some servers and proxies reject outright
-        if (httpMethod == HttpMethod.Post || httpMethod == HttpMethod.Put || httpMethod == HttpMethod.Patch) {
+        // A body only when there is data: no data is no body, not the JSON null.
+        if (data != null) {
             var content = new StringContent(JsonSerializer.Serialize(data, JsonSerializerSettings));
             content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
             request.Content = content;
@@ -165,6 +181,12 @@ public class ApiClientBase : ApiClientCommon
                 request.Method, request.RequestUri, ret.ResponseMessage.StatusCode);
 
             return ret;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+            // the caller's own cancellation is no failure; a timeout, which it did not ask for, logs as one below
+            Logger.LogDebug(LoggerEventId, "API Called. Method: {Method}, Uri: {RequestUri}, Cancelled.",
+                request.Method, request.RequestUri);
+            throw;
         }
         catch (ApiException ex) {
             Logger.LogError(LoggerEventId, ex,
@@ -217,7 +239,8 @@ public class ApiClientBase : ApiClientCommon
 
         var status = (int)response.StatusCode;
         if (status is >= 200 and < 300) {
-            if (typeof(T) == typeof(HttpNoResult))
+            // 204 says there is no body; a typed caller gets default for it rather than a parse failure
+            if (typeof(T) == typeof(HttpNoResult) || status == (int)HttpStatusCode.NoContent)
                 return new HttpResult<T> { ResponseMessage = response, Object = default!, Text = string.Empty };
 
             var objectResponse =
@@ -241,7 +264,25 @@ public class ApiClientBase : ApiClientCommon
         // through the ApiException constructor's own parsing, as before.
         var problemError = TryConvertProblemDetails(response, responseData);
         if (problemError != null)
-            throw new ApiException(problemError.Message, status, problemError.ToJson(), headers, null);
+            throw ToException(problemError) ??
+                  new ApiException(problemError.Message, status, problemError.ToJson(), headers, null);
+
+        // an ApiError body names the exception the server threw; whether this client can rebuild
+        // that type is the client's own answer (ToException), since the toolkit cannot see its
+        // types. Read with this client's own settings - a camelCase server writes "typeName"
+        if (!string.IsNullOrWhiteSpace(responseData)) {
+            ApiError? apiError = null;
+            try {
+                apiError = JsonSerializer.Deserialize<ApiError>(responseData, JsonSerializerSettings);
+            }
+            catch (JsonException) {
+                // not an ApiError body
+            }
+
+            var named = apiError?.TypeName != null ? ToException(apiError) : null;
+            if (named != null)
+                throw named;
+        }
 
         throw new ApiException("The HTTP status code of the response was not expected (" + status + ").", status,
             responseData, headers, null);
@@ -270,6 +311,17 @@ public class ApiClientBase : ApiClientCommon
             };
             if (code != null)
                 apiError.Data["Code"] = code;
+
+            // RFC 9457 extension members (e.g. a conflict's existingCodeSuffix) ride
+            // beside the standard fields; carry the scalar ones so callers can branch
+            // on them the same way they branch on Data["Code"].
+            foreach (var member in problem.RootElement.EnumerateObject()) {
+                if (member.Name is "type" or "title" or "status" or "code" or "detail" or "instance")
+                    continue;
+                if (member.Value.ValueKind is JsonValueKind.String or JsonValueKind.Number
+                    or JsonValueKind.True or JsonValueKind.False)
+                    apiError.Data[member.Name] = member.Value.ToString();
+            }
             return apiError;
         }
         catch (JsonException) {
@@ -282,6 +334,19 @@ public class ApiClientBase : ApiClientCommon
         return element.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.String
             ? property.GetString()
             : null;
+    }
+
+    /// <summary>
+    /// The exception an ApiError body names, so a caller catches the same type it would have caught
+    /// in process. Null - the default - leaves the failure as a plain ApiException, which carries
+    /// the name in <see cref="ApiException.ExceptionTypeName" /> either way. A client whose server
+    /// throws types the toolkit cannot see overrides this; <see cref="ApiError.ToException" />
+    /// covers the ones it can.
+    /// </summary>
+    protected virtual Exception? ToException(ApiError apiError)
+    {
+        _ = apiError;
+        return null;
     }
 
     protected virtual Task<HttpResponseMessage> HttpClientSendAsync(HttpClient client, HttpRequestMessage request,
