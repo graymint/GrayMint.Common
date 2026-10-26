@@ -1,85 +1,73 @@
-using GrayMint.Common.Extensions;
-using GrayMint.Common.Jobs;
-using GrayMint.Common.Utils;
-
 namespace GrayMint.Common.AspNetCore.Jobs;
 
-public class GrayMinJobService<T> : IHostedService where T : IGrayMintJob
+// each job runs on its own schedule, apart from the app's other jobs: the next run starts an interval after the
+// last one ended, and the wait between runs holds a timer, not a thread
+public class GrayMinJobService<T> : BackgroundService where T : IGrayMintJob
 {
-    private readonly CancellationTokenSource _cancellationTokenSource = new();
-    private readonly AsyncLock _runLock = new();
-    private readonly Job _job;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ILogger<T> _logger;
     private readonly GrayMintJobOptions _jobOptions;
+    private readonly string _jobName;
 
     public GrayMinJobService(
         IServiceScopeFactory serviceScopeFactory,
         ILogger<T> logger,
-        GrayMintJobOptions jobOptions,
-        JobRunner? jobRunner)
+        GrayMintJobOptions jobOptions)
     {
+        // a zero interval would run the job back to back
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(jobOptions.Interval, TimeSpan.Zero);
+        ArgumentOutOfRangeException.ThrowIfLessThan(jobOptions.DueTime ?? TimeSpan.Zero, TimeSpan.Zero);
         _serviceScopeFactory = serviceScopeFactory;
         _logger = logger;
-        _jobOptions = jobOptions with { AutoStart = false };
-        _job = new Job(RunJob, _jobOptions, jobRunner);
+        _jobOptions = jobOptions;
+        _jobName = jobOptions.Name ?? typeof(T).Name;
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _job.Start();
-        return Task.CompletedTask;
+        await Task.Delay(_jobOptions.DueTime ?? _jobOptions.Interval, stoppingToken);
+        var failedCount = 0;
+        while (true)
+        {
+            failedCount = await RunService(stoppingToken) ? 0 : failedCount + 1;
+            if (failedCount > _jobOptions.MaxRetry && !stoppingToken.IsCancellationRequested)
+            {
+                _logger.LogError("Job failed too many times and stopped. JobName: {JobName}, FailedCount: {FailedCount}",
+                    _jobName, failedCount);
+                return;
+            }
+
+            await Task.Delay(_jobOptions.Interval, stoppingToken);
+        }
     }
 
-    // the host disposes the app's services after the stop, so the stop cancels the run in progress and waits for it
-    public async Task StopAsync(CancellationToken cancellationToken)
+    // the host disposes the app's services after the stop, so the base stop cancels the run in progress and waits
+    // for it, within the host's shutdown time
+    public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        if (_job.IsStarted)
-            _job.Stop();
+        await base.StopAsync(cancellationToken);
+        if (_jobOptions.ExecuteOnShutdown && !cancellationToken.IsCancellationRequested)
+            await RunService(cancellationToken);
 
-        await _cancellationTokenSource.TryCancelAsync();
+        if (cancellationToken.IsCancellationRequested)
+            _logger.LogWarning("Job did not end within the host's shutdown time. JobName: {JobName}", _jobName);
+    }
+
+    // false when the run failed, which is logged unless the stop has cut it
+    private async Task<bool> RunService(CancellationToken cancellationToken)
+    {
         try
         {
-            using var runLock = await _runLock.LockAsync(cancellationToken);
-            if (_jobOptions.ExecuteOnShutdown)
-                await RunService(cancellationToken);
-        }
-        catch (Exception) when (cancellationToken.IsCancellationRequested)
-        {
-            _logger.LogWarning("Job did not end within the host's shutdown time. JobName: {JobName}", typeof(T).Name);
-        }
-        catch
-        {
-            // RunService has logged it, and an exception would fail the host's stop
-        }
-    }
-
-    private async ValueTask RunJob(CancellationToken cancellationToken)
-    {
-        using var runLock = await _runLock.LockAsync(cancellationToken);
-
-        // the runner may still start a run it took just before the stop
-        if (_cancellationTokenSource.IsCancellationRequested)
-            return;
-
-        using var linkedCts =
-            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cancellationTokenSource.Token);
-        await RunService(linkedCts.Token);
-    }
-
-    private async Task RunService(CancellationToken cancellationToken)
-    {
-        await using var scope = _serviceScopeFactory.CreateAsyncScope();
-        try
-        {
+            await using var scope = _serviceScopeFactory.CreateAsyncScope();
             var service = scope.ServiceProvider.GetRequiredService<T>();
             await service.RunJob(cancellationToken);
+            return true;
         }
-        // the job runner has no logger of its own, so a failed job would pass unseen
-        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+        catch (Exception ex)
         {
-            _logger.LogError(ex, "Job failed. JobName: {JobName}", typeof(T).Name);
-            throw;
+            if (!cancellationToken.IsCancellationRequested)
+                _logger.LogError(ex, "Job failed. JobName: {JobName}", _jobName);
+            return false;
         }
     }
 }

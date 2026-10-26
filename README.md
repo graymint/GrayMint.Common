@@ -35,7 +35,7 @@ var job = new Job(async ct => await CleanupExpiredSessions(ct),
     });
 ```
 
-In ASP.NET Core, implement `IGrayMintJob` and register it — the job resolves from a DI scope on every run:
+In ASP.NET Core, implement `IGrayMintJob` and register it — the job runs as a hosted service on its own schedule, resolves from a DI scope on every run, and the app's stop cancels a run in progress and waits for it:
 
 ```csharp
 public class SessionCleanupJob(AppDbContext db) : IGrayMintJob

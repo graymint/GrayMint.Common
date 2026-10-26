@@ -1,6 +1,5 @@
 using GrayMint.Common.AspNetCore;
 using GrayMint.Common.AspNetCore.Jobs;
-using GrayMint.Common.Jobs;
 using GrayMint.Common.Swagger;
 using TestWebApp.Services;
 
@@ -10,8 +9,6 @@ public class Program
 {
     public static Task Main(string[] args)
     {
-        JobRunner.FastInstance.MaxDegreeOfParallelism = 2;
-
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddGrayMintCommonServices(new RegisterServicesOptions());
