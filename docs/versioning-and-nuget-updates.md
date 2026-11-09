@@ -12,7 +12,8 @@ The scripts assume this standard layout (the only assumption they make):
 ```text
 <repoRoot>/
 ├── .github/workflows/
-│   ├── publish_nugets.yml     # build → test → bump → pack → push to nuget.org
+│   ├── pack_nugets.yml        # reusable: build → test → bump → pack → `nupkgs` artifact
+│   ├── publish_nugets.yml     # calls pack_nugets.yml, then pushes to nuget.org
 │   └── update_nugets.yml      # daily: update packages → test → commit → publish
 ├── src/                       # packable libraries, one folder per project
 │   ├── Directory.Build.props  # single <Version> + shared pack metadata
@@ -78,9 +79,29 @@ Runs on every push to `main` (and on manual dispatch). Order matters:
    or published, so it never burns a version.
 2. `pub/Invoke-VersionBump.ps1` — bump + push the version commit (a push with `GITHUB_TOKEN`
    does not retrigger workflows, so this cannot loop).
-3. `dotnet pack` (rebuilds at the new version) → `dotnet nuget push` to nuget.org.
+3. `dotnet pack` (rebuilds at the new version) → the `nupkgs` artifact.
+4. A second job in `publish_nugets.yml` itself signs in to nuget.org and pushes the artifact.
 
-Requires one repo/org secret: **`NUGET_API_KEY`**.
+Steps 1–3 are the reusable `pack_nugets.yml`; step 4 stays in each repo's own
+`publish_nugets.yml`.
+
+### nuget.org Trusted Publishing
+
+There is no stored API key. The push job asks GitHub for an OIDC token (`id-token: write`),
+`NuGet/login` exchanges it for a key valid for one hour, and the push uses that key. nuget.org
+accepts the token only when a Trusted Publishing policy matches the workflow that requested it,
+which is why the push job lives in each repo's `publish_nugets.yml` and not in the reusable
+workflow.
+
+- **One policy per repo** on nuget.org (signed-in profile → Trusted Publishing → Create):
+  package owner `graymint`, repository owner `graymint`, repository = the repo, workflow file
+  `publish_nugets.yml`, scope "Push new packages and package versions", globs = the repo's
+  package ids (`GrayMint.Common` and `GrayMint.Common.*`). Renaming the repo or the workflow file
+  breaks publishing until the policy is recreated.
+- **Org secret `NUGET_USER`**: the nuget.org profile name of the member who created the policies.
+  It is a secret only to keep the name out of the public workflow files.
+- Create a new repo's policy **before** its `publish_nugets.yml` reaches `main`: the bump is
+  pushed before the push job signs in, so a missing policy burns a version.
 
 ## Daily NuGet updates (`update_nugets.yml`)
 
@@ -106,8 +127,9 @@ don't arrive; scheduled-run failure emails go to the user who last modified the 
 
 ## Adopting this in another repo (reusable workflows)
 
-Both workflows are **reusable** (`workflow_call`): another repo carries no scripts and no CI
-logic — only its version file and two thin wrappers that call this repo. The reusable workflow
+`pack_nugets.yml` and `update_nugets.yml` are **reusable** (`workflow_call`): another repo
+carries no scripts — only its version file and two thin wrappers that call this repo (the publish
+wrapper adds the nuget.org push job). The reusable workflow
 checks the caller's repo out into `repo/` and always takes the scripts from this repo's `tools/`
 checkout, so every consumer runs the same, single copy of the logic.
 
@@ -131,9 +153,24 @@ checkout, so every consumer runs the same, single copy of the logic.
    permissions:
      contents: write
    jobs:
-     publish-nugets:
-       uses: graymint/GrayMint.Common/.github/workflows/publish_nugets.yml@main
-       secrets: inherit
+     pack-nugets:
+       uses: graymint/GrayMint.Common/.github/workflows/pack_nugets.yml@main
+
+     push-nugets:
+       needs: pack-nugets
+       runs-on: ubuntu-latest
+       permissions:
+         id-token: write
+       steps:
+         - uses: actions/download-artifact@v8
+           with:
+             name: nupkgs
+             path: nupkgs
+         - uses: NuGet/login@v1
+           id: nuget-login
+           with:
+             user: ${{ secrets.NUGET_USER }}
+         - run: dotnet nuget push "nupkgs/*.nupkg" --source "https://api.nuget.org/v3/index.json" --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}"
    ```
 
    ```yaml
@@ -152,7 +189,8 @@ checkout, so every consumer runs the same, single copy of the logic.
        secrets: inherit
    ```
 
-5. Make sure the `NUGET_API_KEY` secret is available (org secret or repo secret).
+5. Create the repo's Trusted Publishing policy on nuget.org (see above) before the wrapper
+   reaches `main`.
 6. Make sure there is at least one test project under `tests/` — the updater and the publisher
    both refuse to ship when tests fail, which is the whole safety net.
 

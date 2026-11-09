@@ -1,94 +1,48 @@
 name: Publish NuGets
 
-# Builds and tests the solution, bumps the version (pub/Invoke-VersionBump.ps1: PubVersion.json +
-# src/Directory.Build.props, committed and pushed), then packs and pushes every packable project
-# to nuget.org at the new version.
+# Build -> test -> bump -> pack run in the reusable pack_nugets.yml; this file only pushes the
+# packages to nuget.org. Every GrayMint repo carries this same file (only the pack job's `uses:`
+# differs: other repos reference graymint/GrayMint.Common/...@main).
 #
-# REUSABLE: other repos with the same layout (src/ + tests/ + pub/PubVersion.json) call this via
-# `workflow_call` from a thin wrapper — they carry NO scripts of their own. The target repo is
-# checked out into repo/ (the caller's repo when called, this repo when triggered directly) and
-# the scripts always come from THIS repo's checkout in tools/. Callers must pass secrets with
-# `secrets: inherit` and grant `contents: write`.
+# nuget.org Trusted Publishing, no stored key: a policy on nuget.org names this repo and this
+# file's NAME, so renaming the file breaks publishing. The NuGet profile that owns the policy comes
+# from the org secret NUGET_USER. See docs/versioning-and-nuget-updates.md.
 #
 # Triggers:
-#   - push to main: every merged change of THIS repo publishes a new patch version.
+#   - push to main: every merged change publishes a new patch version.
 #   - workflow_dispatch: manual (re)publish, and the chain target of update_nugets.yml (a push made
 #     with GITHUB_TOKEN does not retrigger workflows, so the updater dispatches this explicitly).
-#   - workflow_call: the reusable entry for other repos.
-#
-# Order matters: build + test run BEFORE the bump, so a broken build never burns a version or
-# pushes a bump commit. Any failed step fails the run and GitHub notifies by email.
 
 on:
   push:
     branches: [ "main" ]
   workflow_dispatch:
-  workflow_call:
-    inputs:
-      runs-on:
-        description: "Runner image (callers whose tests need Windows-only pieces such as LocalDB pass windows-latest)"
-        type: string
-        required: false
-        default: ubuntu-latest
 
 permissions:
   contents: write # push the bump commit to main
 
 jobs:
-  publish-nugets:
-    runs-on: ${{ inputs.runs-on || 'ubuntu-latest' }}
-    env:
-      DOTNET_NOLOGO: "1"
-      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
-      BUILD_CONFIG: Release
-    defaults:
-      run:
-        working-directory: repo
-        shell: bash # same step syntax on every runner OS
+  pack-nugets:
+    uses: ./.github/workflows/pack_nugets.yml
 
+  push-nugets:
+    needs: pack-nugets
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # OIDC token for nuget.org Trusted Publishing
     steps:
-      - name: Checkout target repo
-        uses: actions/checkout@v5
+      - name: Download packages
+        uses: actions/download-artifact@v8
         with:
-          ref: main
-          path: repo
-          fetch-depth: 0
-          persist-credentials: true # so the bump push uses github.token
+          name: nupkgs
+          path: nupkgs
 
-      - name: Checkout build tools (GrayMint.Common)
-        uses: actions/checkout@v5
+      # The key is valid for one hour, so it is requested right before the push.
+      - name: NuGet login (Trusted Publishing)
+        uses: NuGet/login@v1
+        id: nuget-login
         with:
-          repository: graymint/GrayMint.Common
-          ref: main
-          path: tools
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: 10.0.x
-
-      - name: Restore
-        run: dotnet restore
-
-      - name: Build
-        run: dotnet build --no-restore --configuration $BUILD_CONFIG
-
-      - name: Test
-        run: dotnet test --no-build --configuration $BUILD_CONFIG
-
-      - name: Configure git identity
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-      - name: Bump version + push
-        shell: pwsh
-        run: |
-          & "$env:GITHUB_WORKSPACE/tools/pub/Invoke-VersionBump.ps1" -repoDir "$env:GITHUB_WORKSPACE/repo"
-
-      - name: Pack
-        # No --no-build here: the bump just changed <Version>, so pack must rebuild at the new version.
-        run: dotnet pack --configuration $BUILD_CONFIG
+          user: ${{ secrets.NUGET_USER }}
 
       - name: Push to nuget.org
-        run: dotnet nuget push "**/*.nupkg" --source "https://api.nuget.org/v3/index.json" --api-key ${{ secrets.NUGET_API_KEY }}
+        run: dotnet nuget push "nupkgs/*.nupkg" --source "https://api.nuget.org/v3/index.json" --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}"

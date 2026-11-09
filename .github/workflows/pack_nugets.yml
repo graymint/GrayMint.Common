@@ -1,0 +1,89 @@
+name: Pack NuGets
+
+# Builds and tests the solution, bumps the version (pub/Invoke-VersionBump.ps1: PubVersion.json +
+# src/Directory.Build.props, committed and pushed), then packs every packable project at the new
+# version and uploads the packages as the `nupkgs` artifact.
+#
+# REUSABLE ONLY: every repo's own publish_nugets.yml (this repo's too) calls it, then pushes the
+# artifact to nuget.org in a job of its own. The push cannot live here: nuget.org Trusted Publishing
+# matches the workflow that requests the OIDC token, and a policy names the publishing repo and its
+# publish_nugets.yml. The target repo is checked out into repo/ and the scripts always come from
+# THIS repo's checkout in tools/. Callers must grant `contents: write`.
+#
+# Order matters: build + test run BEFORE the bump, so a broken build never burns a version or
+# pushes a bump commit. Any failed step fails the run and GitHub notifies by email.
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: "Runner image (callers whose tests need Windows-only pieces such as LocalDB pass windows-latest)"
+        type: string
+        required: false
+        default: ubuntu-latest
+
+permissions:
+  contents: write # push the bump commit to main
+
+jobs:
+  pack-nugets:
+    runs-on: ${{ inputs.runs-on }}
+    env:
+      DOTNET_NOLOGO: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      BUILD_CONFIG: Release
+    defaults:
+      run:
+        working-directory: repo
+        shell: bash # same step syntax on every runner OS
+
+    steps:
+      - name: Checkout target repo
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          path: repo
+          fetch-depth: 0
+          persist-credentials: true # so the bump push uses github.token
+
+      - name: Checkout build tools (GrayMint.Common)
+        uses: actions/checkout@v5
+        with:
+          repository: graymint/GrayMint.Common
+          ref: main
+          path: tools
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration $BUILD_CONFIG
+
+      - name: Test
+        run: dotnet test --no-build --configuration $BUILD_CONFIG
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version + push
+        shell: pwsh
+        run: |
+          & "$env:GITHUB_WORKSPACE/tools/pub/Invoke-VersionBump.ps1" -repoDir "$env:GITHUB_WORKSPACE/repo"
+
+      - name: Pack
+        # No --no-build here: the bump just changed <Version>, so pack must rebuild at the new version.
+        run: dotnet pack --configuration $BUILD_CONFIG --output "$GITHUB_WORKSPACE/nupkgs"
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: nupkgs
+          path: nupkgs/
+          if-no-files-found: error
