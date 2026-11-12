@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NSwag.AspNetCore" Version="14.7.1" />
+    <PackageReference Include="NSwag.AspNetCore" Version="14.8.0" />
     <PackageReference Include="Scalar.AspNetCore.Microsoft" Version="2.20.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.15" />
   </ItemGroup>
