@@ -99,7 +99,10 @@ workflow.
   package ids (`GrayMint.Common` and `GrayMint.Common.*`). Renaming the repo or the workflow file
   breaks publishing until the policy is recreated.
 - **Org secret `NUGET_USER`**: the nuget.org profile name of the member who created the policies.
-  It is a secret only to keep the name out of the public workflow files.
+  It is a secret only to keep the name out of the public workflow files. On the organization's
+  free plan, org secrets don't reach private repositories: a private repository gets a repository
+  secret of the same name and value, or its push job fails with "Input required and not supplied:
+  user" after the bump.
 - Create a new repo's policy **before** its `publish_nugets.yml` reaches `main`: the bump is
   pushed before the push job signs in, so a missing policy burns a version.
 
