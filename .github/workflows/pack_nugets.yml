@@ -64,6 +64,13 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration $BUILD_CONFIG
 
+      # A repo whose tests need services (a database, a mail server) lists them in a compose.yaml at
+      # its root; --wait returns once every service is running and each one with a health check says
+      # healthy, so the tests never meet a database that is still starting.
+      - name: Start test services
+        if: hashFiles('repo/compose.yaml') != ''
+        run: docker compose up --detach --wait --wait-timeout 180
+
       - name: Test
         run: dotnet test --no-build --configuration $BUILD_CONFIG
 

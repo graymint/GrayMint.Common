@@ -193,6 +193,10 @@ checkout, so every consumer runs the same, single copy of the logic.
    reaches `main`.
 6. Make sure there is at least one test project under `tests/` — the updater and the publisher
    both refuse to ship when tests fail, which is the whole safety net.
+7. If the tests need services (a database, a mail server), list them in a `compose.yaml` at the
+   repo root. Both reusable workflows start it with `docker compose up --wait` before the tests,
+   so give each service that takes a while to accept connections a health check; `--wait` waits
+   only for those. This needs a Linux runner (the default `runs-on`).
 
 To bump or update such a repo manually from a local clone of this repo:
 

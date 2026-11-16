@@ -73,6 +73,11 @@ jobs:
         if: steps.update.outputs.updated == 'true'
         run: dotnet build --configuration $BUILD_CONFIG
 
+      # the services a repo's tests need, from the compose.yaml at its root (see pack_nugets.yml)
+      - name: Start test services
+        if: steps.update.outputs.updated == 'true' && hashFiles('repo/compose.yaml') != ''
+        run: docker compose up --detach --wait --wait-timeout 180
+
       - name: Test
         if: steps.update.outputs.updated == 'true'
         run: dotnet test --no-build --configuration $BUILD_CONFIG
