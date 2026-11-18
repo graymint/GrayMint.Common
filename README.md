@@ -1,6 +1,6 @@
 # GrayMint.Common
 
-**Common best practices and utilities for .NET and ASP.NET Core** — async utilities, background jobs, a ready-to-go startup pipeline, EF Core helpers, and OpenAPI/Swagger integration. Battle-tested in production GrayMint services and published as small, focused NuGet packages so you can pull in exactly what you need.
+**Common best practices and utilities for .NET and ASP.NET Core** — async utilities, background jobs, a ready-to-go startup pipeline, EF Core helpers, and OpenAPI integration. Battle-tested in production GrayMint services and published as small, focused NuGet packages so you can pull in exactly what you need.
 
 [![NuGet](https://img.shields.io/nuget/v/GrayMint.Common.svg)](https://www.nuget.org/packages/GrayMint.Common)
 [![License](https://img.shields.io/github/license/graymint/GrayMint.Common.svg)](LICENSE)
@@ -10,9 +10,9 @@
 | [GrayMint.Common](https://www.nuget.org/packages/GrayMint.Common) | Core utilities: recurring jobs, `AsyncLock`, `FastDateTime`, `Patch<T>`, typed API client base, canonical exceptions. No framework dependencies. |
 | [GrayMint.Common.AspNetCore](https://www.nuget.org/packages/GrayMint.Common.AspNetCore) | One-call service registration and pipeline setup, JSON exception handling middleware, DI-friendly background jobs, graceful lifetime hooks. |
 | [GrayMint.Common.EntityFrameworkCore](https://www.nuget.org/packages/GrayMint.Common.EntityFrameworkCore) | Enum lookup-table sync, safe table creation, provider-aware schema checks (SQL Server & PostgreSQL). |
-| [GrayMint.Common.OpenApi](https://www.nuget.org/packages/GrayMint.Common.OpenApi) | NSwag, OpenAPI, and Scalar UI wired up with bearer-token auth in two calls. |
+| [GrayMint.Common.OpenApi](https://www.nuget.org/packages/GrayMint.Common.OpenApi) | ASP.NET Core's own OpenAPI document and the Scalar UI, with bearer-token auth, in two calls; a client generated from the document keeps NSwag's names and types. Formerly GrayMint.Common.Swagger. |
 
-All packages target `net10.0` and ship under a single shared version.
+All packages target `net10.0` and ship under a single shared version; GrayMint.Common.OpenApi targets `net11.0` too, as each .NET has its own OpenAPI generator.
 
 ```sh
 dotnet add package GrayMint.Common
@@ -72,11 +72,11 @@ await GmUtils.ForEachAsync(items, ProcessItemAsync, maxDegreeOfParallelism: 8, c
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddGrayMintCommonServices(new RegisterServicesOptions());
-builder.Services.AddGrayMintSwagger(new AddSwaggerOptions { Title = "My API" });
+builder.Services.AddGrayMintOpenApi(new AddOpenApiOptions { Title = "My API" });
 
 var app = builder.Build();
 app.UseGrayMintCommonServices(new UseServicesOptions());
-app.UseGrayMintSwagger();
+app.UseGrayMintOpenApi();
 
 await app.Services.UseGrayMintDatabaseCommand<AppDbContext>(args); // /recreateDb, EnsureCreated
 await GrayMintApp.RunAsync(app, args);                             // honors /initOnly
@@ -127,9 +127,36 @@ builder.Property(x => x.IsEnabled)
     .HasDefaultValueWithConstraintName(true, "DF_Device_IsEnabled");
 ```
 
-### OpenAPI, NSwag & Scalar in two lines
+### OpenAPI & Scalar in two lines
 
-`AddGrayMintSwagger` / `UseGrayMintSwagger` set up NSwag and/or the .NET OpenAPI generator with the Scalar UI, register a bearer-token security scheme, fix primitive-type schemas, and optionally redirect `/` to the docs UI — so every service exposes consistent, client-generation-ready API docs. The Scalar page loads nothing from Scalar's servers: no fonts from its CDN, and its telemetry is off.
+`AddGrayMintOpenApi` / `UseGrayMintOpenApi` set up ASP.NET Core's own OpenAPI document at `/openapi/v1.json` with the Scalar UI, register a bearer-token security scheme, fix primitive-type schemas, and optionally redirect `/` to the docs UI. The Scalar page loads nothing from Scalar's servers: no fonts from its CDN, and its telemetry is off.
+
+The document says what NSwag's own document said, so a client generated from it keeps NSwag's names and types: a `{Controller}Client` class per controller with an `{Action}Async` method per action, a body parameter by its C# name, a generic type by NSwag's name (`PatchOfNullableInteger`), a file for an `IActionResult` or a `FileResult`, and a property required when it is never null or declared `required`.
+
+### Clients with no running service
+
+Microsoft's build-time generator writes the document to a file when the API project builds:
+
+```xml
+<!-- the API project -->
+<PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="11.0.0" PrivateAssets="all" />
+<PropertyGroup>
+  <OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)/../MyApi.Client</OpenApiDocumentsDirectory>
+</PropertyGroup>
+```
+
+It runs the app's startup with a stand-in server to read the endpoints, so skip what needs a real one, such as a database, while `Assembly.GetEntryAssembly()?.GetName().Name == "GetDocument.Insider"`. The tool of the app's own .NET loads that .NET's OpenAPI generator, which is why this package targets both .NET 10 and .NET 11.
+
+A client project then names the file, and its build generates the client:
+
+```xml
+<!-- the client project -->
+<PackageReference Include="NSwag.ApiDescription.Client" Version="14.8.0" PrivateAssets="all" />
+<OpenApiReference Include="MyApi.json" CodeGenerator="NSwagCSharp" Namespace="MyApi.Client"
+                  ClassName="{controller}Client" Options="/JsonLibrary:SystemTextJson" />
+```
+
+`CodeGenerator="NSwagTypeScript"` makes a TypeScript client the same way.
 
 ## Development
 

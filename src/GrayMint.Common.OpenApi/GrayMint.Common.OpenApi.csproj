@@ -1,17 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <!-- Version, language and package metadata come from src/Directory.Build.props. -->
   <PropertyGroup>
-    <Description>NSwag utils</Description>
-    <TargetFramework>net10.0</TargetFramework>
+    <Description>ASP.NET Core's own OpenAPI document, shaped for client generators, with a bearer scheme and the Scalar UI</Description>
+    <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
     <OutputType>Library</OutputType>
     <IsPackable>true</IsPackable>
-    <!-- Enable OpenAPI source generator interceptors for .NET 10 -->
-    <InterceptorsNamespaces>$(InterceptorsNamespaces);Microsoft.AspNetCore.OpenApi.Generated</InterceptorsNamespaces>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NSwag.AspNetCore" Version="14.8.0" />
-    <PackageReference Include="Scalar.AspNetCore.Microsoft" Version="3.0.0" />
+    <!-- the core package: this one serves only Scalar's page, and Scalar.AspNetCore.Microsoft would add nothing but
+         its own pin on Microsoft.AspNetCore.OpenApi -->
+    <PackageReference Include="Scalar.AspNetCore" Version="3.0.0" />
+  </ItemGroup>
+
+  <!-- each .NET has its own OpenAPI generator, .NET 10's on Microsoft.OpenApi 2 and .NET 11's on Microsoft.OpenApi 3, and
+       an app can run only the one of its own .NET, as Microsoft's build-time document tool loads it too -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.15" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="11.0.0" />
   </ItemGroup>
 </Project>

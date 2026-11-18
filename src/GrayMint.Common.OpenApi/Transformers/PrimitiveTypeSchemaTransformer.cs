@@ -32,6 +32,14 @@ public class PrimitiveTypeSchemaTransformer : IOpenApiSchemaTransformer
             schema.Format = "semver";
             schema.Examples = [JsonValue.Create("1.2.3.4")];
         }
+        else if ((Nullable.GetUnderlyingType(type) ?? type) == typeof(TimeSpan))
+        {
+            // a string, whatever converter writes it, in the format client generators read as a TimeSpan
+            schema.Type = type == typeof(TimeSpan) ? JsonSchemaType.String : JsonSchemaType.String | JsonSchemaType.Null;
+            schema.Format = "time-span";
+            schema.Pattern = null;
+            schema.Examples = [JsonValue.Create("01:30:00")];
+        }
         else
         {
             return Task.CompletedTask;

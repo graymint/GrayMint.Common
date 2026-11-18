@@ -56,7 +56,10 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 10.0.x
+          # both: a repo's global.json picks its SDK, and a package that targets .NET 11 needs SDK 11
+          dotnet-version: |
+            10.0.x
+            11.0.x
 
       - name: Restore
         run: dotnet restore

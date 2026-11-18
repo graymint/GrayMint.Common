@@ -12,7 +12,7 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddGrayMintCommonServices(new RegisterServicesOptions());
-        builder.Services.AddGrayMintSwagger();
+        builder.Services.AddGrayMintOpenApi();
         builder.Services.AddGrayMintJob<MyJobService>(new GrayMintJobOptions
             { Interval = TimeSpan.FromSeconds(5), DueTime = TimeSpan.Zero, Name = "MyJobService" });
         builder.Services.AddGrayMintJob<MyJobService2>(new GrayMintJobOptions { Interval = TimeSpan.FromSeconds(10) });
@@ -21,7 +21,7 @@ public class Program
 
         var app = builder.Build();
         app.UseGrayMintCommonServices(new UseServicesOptions());
-        app.UseGrayMintSwagger(new UseSwaggerOptions { RedirectRootToSwaggerUi = true });
+        app.UseGrayMintOpenApi(new UseOpenApiOptions { RedirectRootToUi = true });
 
 
         return app.RunAsync();
