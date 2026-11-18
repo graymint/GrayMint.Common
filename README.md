@@ -129,7 +129,7 @@ builder.Property(x => x.IsEnabled)
 
 ### OpenAPI, NSwag & Scalar in two lines
 
-`AddGrayMintSwagger` / `UseGrayMintSwagger` set up NSwag and/or the .NET OpenAPI generator with the Scalar UI, register a bearer-token security scheme, fix primitive-type schemas, and optionally redirect `/` to the docs UI — so every service exposes consistent, client-generation-ready API docs.
+`AddGrayMintSwagger` / `UseGrayMintSwagger` set up NSwag and/or the .NET OpenAPI generator with the Scalar UI, register a bearer-token security scheme, fix primitive-type schemas, and optionally redirect `/` to the docs UI — so every service exposes consistent, client-generation-ready API docs. The Scalar page loads nothing from Scalar's servers: no fonts from its CDN, and its telemetry is off.
 
 ## Development
 

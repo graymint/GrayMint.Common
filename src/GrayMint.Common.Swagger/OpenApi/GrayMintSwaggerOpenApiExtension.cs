@@ -23,6 +23,10 @@ internal static class GrayMintSwaggerOpenApiExtension
             if (!string.IsNullOrEmpty(title))
                 options.WithTitle(title);
             options.WithClassicLayout();
+
+            // a reader's browser calls only this service: no fonts from Scalar's CDN, no telemetry to Scalar
+            options.DisableDefaultFonts();
+            options.DisableTelemetry();
         });
         return app;
     }
