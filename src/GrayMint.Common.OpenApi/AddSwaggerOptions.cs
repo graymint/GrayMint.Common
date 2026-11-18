@@ -1,4 +1,4 @@
-﻿namespace GrayMint.Common.Swagger;
+﻿namespace GrayMint.Common.OpenApi;
 
 public class AddSwaggerOptions
 {

@@ -15,7 +15,7 @@
     <Project Path="src/GrayMint.Common/GrayMint.Common.csproj" />
     <Project Path="src/GrayMint.Common.AspNetCore/GrayMint.Common.AspNetCore.csproj" />
     <Project Path="src/GrayMint.Common.EntityFrameworkCore/GrayMint.Common.EntityFrameworkCore.csproj" />
-    <Project Path="src/GrayMint.Common.Swagger/GrayMint.Common.Swagger.csproj" />
+    <Project Path="src/GrayMint.Common.OpenApi/GrayMint.Common.OpenApi.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/GrayMint.Common.Test/GrayMint.Common.Test.csproj" />

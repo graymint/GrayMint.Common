@@ -1,7 +1,7 @@
 using NJsonSchema;
 using NJsonSchema.Generation;
 
-namespace GrayMint.Common.Swagger.NSwag;
+namespace GrayMint.Common.OpenApi.NSwag;
 
 // OpenApi3 marks a property required only when C# declares it 'required', so members that are
 // merely non-nullable (computed properties, value types) become optional in the generated client.

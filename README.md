@@ -10,7 +10,7 @@
 | [GrayMint.Common](https://www.nuget.org/packages/GrayMint.Common) | Core utilities: recurring jobs, `AsyncLock`, `FastDateTime`, `Patch<T>`, typed API client base, canonical exceptions. No framework dependencies. |
 | [GrayMint.Common.AspNetCore](https://www.nuget.org/packages/GrayMint.Common.AspNetCore) | One-call service registration and pipeline setup, JSON exception handling middleware, DI-friendly background jobs, graceful lifetime hooks. |
 | [GrayMint.Common.EntityFrameworkCore](https://www.nuget.org/packages/GrayMint.Common.EntityFrameworkCore) | Enum lookup-table sync, safe table creation, provider-aware schema checks (SQL Server & PostgreSQL). |
-| [GrayMint.Common.Swagger](https://www.nuget.org/packages/GrayMint.Common.Swagger) | NSwag, OpenAPI, and Scalar UI wired up with bearer-token auth in two calls. |
+| [GrayMint.Common.OpenApi](https://www.nuget.org/packages/GrayMint.Common.OpenApi) | NSwag, OpenAPI, and Scalar UI wired up with bearer-token auth in two calls. |
 
 All packages target `net10.0` and ship under a single shared version.
 

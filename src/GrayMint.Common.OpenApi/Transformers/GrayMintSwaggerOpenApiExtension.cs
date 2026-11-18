@@ -1,6 +1,6 @@
 ﻿using Scalar.AspNetCore;
 
-namespace GrayMint.Common.Swagger.OpenApi;
+namespace GrayMint.Common.OpenApi.Transformers;
 
 internal static class GrayMintSwaggerOpenApiExtension
 {

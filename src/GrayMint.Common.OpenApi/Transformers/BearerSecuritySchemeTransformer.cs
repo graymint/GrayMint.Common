@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
-namespace GrayMint.Common.Swagger.OpenApi;
+namespace GrayMint.Common.OpenApi.Transformers;
 
 public class BearerSecuritySchemeTransformer : IOpenApiDocumentTransformer
 {

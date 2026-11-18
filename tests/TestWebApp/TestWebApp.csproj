@@ -7,6 +7,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\GrayMint.Common.AspNetCore\GrayMint.Common.AspNetCore.csproj" />
-    <ProjectReference Include="..\..\src\GrayMint.Common.Swagger\GrayMint.Common.Swagger.csproj" />
+    <ProjectReference Include="..\..\src\GrayMint.Common.OpenApi\GrayMint.Common.OpenApi.csproj" />
   </ItemGroup>
 </Project>

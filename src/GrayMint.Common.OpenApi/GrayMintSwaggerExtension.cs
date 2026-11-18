@@ -1,7 +1,7 @@
-﻿using GrayMint.Common.Swagger.NSwag;
-using GrayMint.Common.Swagger.OpenApi;
+﻿using GrayMint.Common.OpenApi.NSwag;
+using GrayMint.Common.OpenApi.Transformers;
 
-namespace GrayMint.Common.Swagger;
+namespace GrayMint.Common.OpenApi;
 
 public static class GrayMintSwaggerExtension
 {

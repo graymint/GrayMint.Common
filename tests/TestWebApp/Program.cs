@@ -1,6 +1,6 @@
 using GrayMint.Common.AspNetCore;
 using GrayMint.Common.AspNetCore.Jobs;
-using GrayMint.Common.Swagger;
+using GrayMint.Common.OpenApi;
 using TestWebApp.Services;
 
 namespace TestWebApp;

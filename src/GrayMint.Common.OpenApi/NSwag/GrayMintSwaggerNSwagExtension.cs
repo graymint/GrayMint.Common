@@ -4,7 +4,7 @@ using NJsonSchema.Generation.TypeMappers;
 using NSwag;
 using NSwag.Generation.Processors.Security;
 
-namespace GrayMint.Common.Swagger.NSwag;
+namespace GrayMint.Common.OpenApi.NSwag;
 
 internal static class GrayMintSwaggerNSwagExtension
 {

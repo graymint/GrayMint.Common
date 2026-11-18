@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "GrayMint.Common.Swagger": {
+    "GrayMint.Common.OpenApi": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
