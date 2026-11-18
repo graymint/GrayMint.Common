@@ -10,7 +10,7 @@
   <ItemGroup>
     <!-- the core package: this one serves only Scalar's page, and Scalar.AspNetCore.Microsoft would add nothing but
          its own pin on Microsoft.AspNetCore.OpenApi -->
-    <PackageReference Include="Scalar.AspNetCore" Version="3.0.0" />
+    <PackageReference Include="Scalar.AspNetCore" Version="3.0.1" />
   </ItemGroup>
 
   <!-- each .NET has its own OpenAPI generator, .NET 10's on Microsoft.OpenApi 2 and .NET 11's on Microsoft.OpenApi 3, and
