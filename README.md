@@ -10,7 +10,7 @@
 | [GrayMint.Common](https://www.nuget.org/packages/GrayMint.Common) | Core utilities: recurring jobs, `AsyncLock`, `FastDateTime`, `Patch<T>`, typed API client base, canonical exceptions. No framework dependencies. |
 | [GrayMint.Common.AspNetCore](https://www.nuget.org/packages/GrayMint.Common.AspNetCore) | One-call service registration and pipeline setup, JSON exception handling middleware, DI-friendly background jobs, graceful lifetime hooks. |
 | [GrayMint.Common.EntityFrameworkCore](https://www.nuget.org/packages/GrayMint.Common.EntityFrameworkCore) | Enum lookup-table sync, safe table creation, provider-aware schema checks (SQL Server & PostgreSQL). |
-| [GrayMint.Common.OpenApi](https://www.nuget.org/packages/GrayMint.Common.OpenApi) | ASP.NET Core's own OpenAPI document and the Scalar UI, with bearer-token auth, in two calls; a client generated from the document keeps NSwag's names and types. Formerly GrayMint.Common.Swagger. |
+| [GrayMint.Common.OpenApi](https://www.nuget.org/packages/GrayMint.Common.OpenApi) | ASP.NET Core's own OpenAPI document, worded from the app's doc comments, and the Scalar UI, with bearer-token auth, in two calls; a client generated from the document keeps NSwag's names and types. Formerly GrayMint.Common.Swagger. |
 
 All packages target `net10.0` and ship under a single shared version; GrayMint.Common.OpenApi targets `net11.0` too, as each .NET has its own OpenAPI generator.
 
@@ -132,6 +132,28 @@ builder.Property(x => x.IsEnabled)
 `AddGrayMintOpenApi` / `UseGrayMintOpenApi` set up ASP.NET Core's own OpenAPI document at `/openapi/v1.json` with the Scalar UI, register a bearer-token security scheme, fix primitive-type schemas, and optionally redirect `/` to the docs UI. The Scalar page loads nothing from Scalar's servers: the service itself serves Scalar's fonts, Inter and JetBrains Mono (SIL Open Font License), at `/scalar/fonts/`, and Scalar's telemetry is off.
 
 The document says what NSwag's own document said, so a client generated from it keeps NSwag's names and types: a `{Controller}Client` class per controller with an `{Action}Async` method per action, a body parameter by its C# name, a generic type by NSwag's name (`PatchOfNullableInteger`), a file for an `IActionResult` or a `FileResult`, and a property required when it is never null or declared `required`.
+
+#### Its words come from the doc comments
+
+The document takes its words from the app's doc comments and its packages': an action's summary, remarks, parameters, body and `<returns>`; a type's and a property's summary, and an enum's values with theirs; and a section's, a controller's summary and remarks. ASP.NET Core's own reader of them works only for an `AddOpenApi` call in the app's project, which this package makes for it. An action with `[AllowAnonymous]` asks for no token.
+
+```csharp
+builder.Services.AddGrayMintOpenApi(new AddOpenApiOptions {
+    Title = "My API",
+    Description = "The introduction, in Markdown.",
+    Version = typeof(Program).Assembly.GetName().Version?.ToString(3)
+});
+```
+
+`[ApiSection("Orders", 10)]` on a controller gives its section the name a reader sees and its place: sections with a place come first, by it. The tag keeps the controller's name, which the clients are named by. The app ships its comments, and copies its packages' beside it:
+
+```xml
+<GenerateDocumentationFile>true</GenerateDocumentationFile>
+<CopyDocumentationFilesFromPackages>true</CopyDocumentationFilesFromPackages>
+<NoWarn>$(NoWarn);CS1591</NoWarn>
+```
+
+A word of the app's own, such as who may call an action, comes from an operation transformer it adds to the `"v1"` document after `AddGrayMintOpenApi`, which runs after this package's.
 
 ### Clients with no running service
 

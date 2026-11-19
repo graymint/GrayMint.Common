@@ -12,7 +12,12 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddGrayMintCommonServices(new RegisterServicesOptions());
-        builder.Services.AddGrayMintOpenApi();
+        builder.Services.AddGrayMintOpenApi(new AddOpenApiOptions
+        {
+            Title = "Test Shop",
+            Description = "The shop's API, for its tests.",
+            Version = "1.2.3"
+        });
         builder.Services.AddGrayMintJob<MyJobService>(new GrayMintJobOptions
             { Interval = TimeSpan.FromSeconds(5), DueTime = TimeSpan.Zero, Name = "MyJobService" });
         builder.Services.AddGrayMintJob<MyJobService2>(new GrayMintJobOptions { Interval = TimeSpan.FromSeconds(10) });

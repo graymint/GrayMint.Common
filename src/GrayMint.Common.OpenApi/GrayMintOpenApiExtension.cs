@@ -9,7 +9,8 @@ public static class GrayMintOpenApiExtension
     private static AddOpenApiOptions? _options;
 
     // ASP.NET Core's own OpenAPI document, at /openapi/v1.json, saying what NSwag's did, so a client generated from it
-    // keeps its names and types
+    // keeps its names and types, with the words of the app's doc comments. An app's own transformers, added to the
+    // "v1" document after this call, run after these.
     public static IServiceCollection AddGrayMintOpenApi(
         this IServiceCollection services,
         AddOpenApiOptions? options = null)
@@ -20,10 +21,14 @@ public static class GrayMintOpenApiExtension
         services.AddOpenApi(openApiOptions =>
         {
             openApiOptions.CreateSchemaReferenceId = ClientSchemaNames.CreateSchemaReferenceId;
-            openApiOptions.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+            openApiOptions.AddOperationTransformer<BearerSecuritySchemeTransformer>();
             openApiOptions.AddOperationTransformer<ClientOperationTransformer>();
+            openApiOptions.AddOperationTransformer<XmlDocsOperationTransformer>();
             openApiOptions.AddSchemaTransformer<PrimitiveTypeSchemaTransformer>();
             openApiOptions.AddSchemaTransformer<ClientSchemaTransformer>();
+            openApiOptions.AddSchemaTransformer<XmlDocsSchemaTransformer>();
+            openApiOptions.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+            openApiOptions.AddDocumentTransformer(new ApiDocsDocumentTransformer(options));
         });
 
         return services;

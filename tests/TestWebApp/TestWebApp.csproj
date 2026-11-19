@@ -3,6 +3,10 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- the API's description takes its words from the doc comments, the app's and its packages' -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <CopyDocumentationFilesFromPackages>true</CopyDocumentationFilesFromPackages>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,7 +1,11 @@
 ﻿namespace GrayMint.Common.Utils;
 
+/// <summary>
+/// A change to one field, as `{ "value": ... }`. Leave the field out to keep its value.
+/// </summary>
 public class Patch<T>(T value)
 {
+    /// <summary>The field's new value.</summary>
     public T Value { get; } = value;
 
     public override int GetHashCode()
