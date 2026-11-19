@@ -169,7 +169,45 @@ Microsoft's build-time generator writes the document to a file when the API proj
 
 It runs the app's startup with a stand-in server to read the endpoints, so skip what needs a real one, such as a database, while `Assembly.GetEntryAssembly()?.GetName().Name == "GetDocument.Insider"`. The tool of the app's own .NET loads that .NET's OpenAPI generator, which is why this package targets both .NET 10 and .NET 11.
 
-A client project then names the file, and its build generates the client:
+To write the file only when you ask, set `<OpenApiGenerateDocumentsOnBuild>false</OpenApiGenerateDocumentsOnBuild>` and build with `-p:OpenApiGenerateDocumentsOnBuild=true`.
+
+#### With NSwag's CLI, as before
+
+An `.nswag` file that made the clients from the running app keeps its code generators. Only its document generator changes, from `aspNetCoreToOpenApi` to `fromDocument` on the written file, and the clients come out with the same classes, methods and types:
+
+```json
+{
+  "runtime": "Net100",
+  "documentGenerator": {
+    "fromDocument": { "url": "MyApi.json" }
+  },
+  "codeGenerators": {
+    "openApiToCSharpClient": {
+      "className": "{controller}Client",
+      "operationGenerationMode": "MultipleClientsFromOperationId",
+      "jsonLibrary": "SystemTextJson",
+      "namespace": "MyApi.Client",
+      "output": "MyApi.Client.cs"
+    },
+    "openApiToTypeScriptClient": {
+      "className": "{controller}Client",
+      "operationGenerationMode": "MultipleClientsFromOperationId",
+      "output": "MyApi.Client.ts"
+    }
+  }
+}
+```
+
+```shell
+dotnet build MyApi -p:OpenApiGenerateDocumentsOnBuild=true
+dotnet tool run nswag run MyApi.nswag
+```
+
+`{controller}Client` with `MultipleClientsFromOperationId` gives one client per controller, as the document's operation ids are `{Controller}_{Action}`. Your other settings stay as they are. Two things can differ from before: a body is nullable where the action declares it so, and a derived class carries its base class's properties itself, as the document has no inheritance for a type that is not polymorphic.
+
+#### With the client project's build
+
+A client project names the file, and its build generates the client:
 
 ```xml
 <!-- the client project -->
