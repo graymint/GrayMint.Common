@@ -129,7 +129,7 @@ builder.Property(x => x.IsEnabled)
 
 ### OpenAPI & Scalar in two lines
 
-`AddGrayMintOpenApi` / `UseGrayMintOpenApi` set up ASP.NET Core's own OpenAPI document at `/openapi/v1.json` with the Scalar UI, register a bearer-token security scheme, fix primitive-type schemas, and optionally redirect `/` to the docs UI. The Scalar page loads nothing from Scalar's servers: no fonts from its CDN, and its telemetry is off.
+`AddGrayMintOpenApi` / `UseGrayMintOpenApi` set up ASP.NET Core's own OpenAPI document at `/openapi/v1.json` with the Scalar UI, register a bearer-token security scheme, fix primitive-type schemas, and optionally redirect `/` to the docs UI. The Scalar page loads nothing from Scalar's servers: the service itself serves Scalar's fonts, Inter and JetBrains Mono (SIL Open Font License), at `/scalar/fonts/`, and Scalar's telemetry is off.
 
 The document says what NSwag's own document said, so a client generated from it keeps NSwag's names and types: a `{Controller}Client` class per controller with an `{Action}Async` method per action, a body parameter by its C# name, a generic type by NSwag's name (`PatchOfNullableInteger`), a file for an `IActionResult` or a `FileResult`, and a property required when it is never null or declared `required`.
 

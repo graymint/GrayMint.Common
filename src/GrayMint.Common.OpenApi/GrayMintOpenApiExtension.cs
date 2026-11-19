@@ -5,6 +5,7 @@ namespace GrayMint.Common.OpenApi;
 
 public static class GrayMintOpenApiExtension
 {
+    private const string ScalarPrefix = "/scalar";
     private static AddOpenApiOptions? _options;
 
     // ASP.NET Core's own OpenAPI document, at /openapi/v1.json, saying what NSwag's did, so a client generated from it
@@ -44,19 +45,22 @@ public static class GrayMintOpenApiExtension
             return;
 
         var title = _options.Title;
-        app.MapScalarApiReference(scalarOptions =>
+        app.MapScalarApiReference(ScalarPrefix, scalarOptions =>
         {
             if (!string.IsNullOrEmpty(title))
                 scalarOptions.WithTitle(title);
             scalarOptions.WithClassicLayout();
 
-            // a reader's browser calls only this service: no fonts from Scalar's CDN, no telemetry to Scalar
+            // a reader's browser calls only this service: Scalar's fonts come from it, not from Scalar's CDN, and no
+            // telemetry goes to Scalar
             scalarOptions.DisableDefaultFonts();
+            scalarOptions.WithCustomCss(ScalarFonts.Css);
             scalarOptions.DisableTelemetry();
         });
+        app.MapScalarFonts(ScalarPrefix);
 
         if (options.RedirectRootToUi)
-            app.RedirectRootToUrl("/scalar");
+            app.RedirectRootToUrl(ScalarPrefix);
     }
 
     private static void RedirectRootToUrl(this IApplicationBuilder app, string url)
