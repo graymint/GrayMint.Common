@@ -12,9 +12,9 @@
   <ItemGroup>
     <!-- the core package: this one serves only Scalar's page, and Scalar.AspNetCore.Microsoft would add nothing but
          its own pin on Microsoft.AspNetCore.OpenApi -->
-    <PackageReference Include="Scalar.AspNetCore" Version="3.0.1" />
+    <PackageReference Include="Scalar.AspNetCore" Version="3.0.2" />
     <!-- reads the doc comments an app ships beside its assemblies, for the document's words -->
-    <PackageReference Include="Namotion.Reflection" Version="3.5.0" />
+    <PackageReference Include="Namotion.Reflection" Version="3.5.1" />
   </ItemGroup>
 
   <!-- Scalar's fonts, served by the service itself (ScalarFonts), with their licenses beside them in the package -->
