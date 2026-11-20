@@ -121,11 +121,10 @@ await EfCoreUtil.EnsureTablesCreated(db.Database);
 
 // Provider-aware existence checks
 bool hasFn = await EfCoreUtil.SqlFunctionExists(db.Database, "dbo", "fnCalcUsage");
-
-// Named default constraints (SQL Server) that stay portable
-builder.Property(x => x.IsEnabled)
-    .HasDefaultValueWithConstraintName(true, "DF_Device_IsEnabled");
 ```
+
+Named default constraints come from EF Core itself: `modelBuilder.Model.UseNamedDefaultConstraints(true)` names
+each default `DF_<table>_<column>` where the database names one (SQL Server), on any provider.
 
 ### OpenAPI & Scalar in two lines
 
