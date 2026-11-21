@@ -1,4 +1,6 @@
 ﻿using GrayMint.Common.OpenApi.Transformers;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Scalar.AspNetCore;
 
 namespace GrayMint.Common.OpenApi;
@@ -18,6 +20,7 @@ public static class GrayMintOpenApiExtension
         options ??= new AddOpenApiOptions();
         _options = options;
 
+        services.TryAddEnumerable(ServiceDescriptor.Transient<IApiDescriptionProvider, JsonAliasApiDescriptionProvider>());
         services.AddOpenApi(openApiOptions =>
         {
             var schemaRegistry = new ClientSchemaRegistry();

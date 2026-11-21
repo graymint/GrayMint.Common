@@ -7,6 +7,13 @@ namespace GrayMint.Common.OpenApi.Transformers;
 
 public class PrimitiveTypeSchemaTransformer : IOpenApiSchemaTransformer
 {
+    // the classes described here as a value, which the serializer may write as an object of their fields
+    internal static bool IsValue(Type type)
+    {
+        return typeof(IFormFile).IsAssignableFrom(type) || type == typeof(IPAddress) || type == typeof(IPEndPoint) ||
+               type == typeof(Version);
+    }
+
     public Task TransformAsync(
         OpenApiSchema schema,
         OpenApiSchemaTransformerContext context,

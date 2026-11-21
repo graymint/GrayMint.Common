@@ -1,5 +1,7 @@
 using System.Text.Json.Nodes;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GrayMint.Common.Test;
 
@@ -156,6 +158,22 @@ public class ClientDocumentTest
     public void Response_without_words_has_none()
     {
         Assert.AreEqual("", (string?)Operation("/api/orders/total", "get")["responses"]?["200"]?["description"]);
+    }
+
+    [TestMethod]
+    public async Task Json_body_is_described_once_not_once_per_alias()
+    {
+        // the framework makes a body's schema for each media type the API's description gives it, so the description
+        // the document is made from gives JSON alone, as the document does
+        await using var factory = new WebApplicationFactory<TestWebApp.Program>();
+        var create = factory.Services.GetRequiredService<IApiDescriptionGroupCollectionProvider>().ApiDescriptionGroups.Items
+            .SelectMany(x => x.Items)
+            .Single(x => x.HttpMethod == "POST" && x.RelativePath == "api/items");
+
+        CollectionAssert.AreEqual(new[] { "application/json" },
+            create.SupportedRequestFormats.Select(x => x.MediaType).ToArray());
+        CollectionAssert.AreEqual(new[] { "application/json" },
+            create.SupportedResponseTypes.Single(x => x.StatusCode == 200).ApiResponseFormats.Select(x => x.MediaType).ToArray());
     }
 
     private static JsonObject ResponseSchema(string path, string method)

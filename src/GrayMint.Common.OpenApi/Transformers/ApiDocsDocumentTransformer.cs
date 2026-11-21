@@ -13,8 +13,10 @@ internal sealed class ApiDocsDocumentTransformer(AddOpenApiOptions options) : IO
     // a tag's name for readers, which Scalar shows in place of the tag's own (ApiSectionAttribute)
     private const string DisplayNameKey = "x-displayName";
 
+    internal const string JsonContentType = "application/json";
+
     // the same JSON body under other names the framework accepts and answers, which only lengthen the reference
-    private static readonly string[] JsonAliases = ["text/json", "application/*+json", "text/plain"];
+    internal static readonly string[] JsonAliases = ["text/json", "application/*+json", "text/plain"];
 
     public Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context,
         CancellationToken cancellationToken)
@@ -101,7 +103,7 @@ internal sealed class ApiDocsDocumentTransformer(AddOpenApiOptions options) : IO
     // generic, as Microsoft.OpenApi 2 (.NET 10) holds a media type as a class and 3 (.NET 11) as IOpenApiMediaType
     private static void RemoveJsonAliases<TMediaType>(IDictionary<string, TMediaType> content)
     {
-        if (!content.ContainsKey("application/json"))
+        if (!content.ContainsKey(JsonContentType))
             return;
 
         foreach (var alias in JsonAliases)

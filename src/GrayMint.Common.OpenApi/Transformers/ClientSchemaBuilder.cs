@@ -158,9 +158,14 @@ internal sealed class ClientSchemaBuilder(
         if (!Schemas.TryGetValue(name, out var existing))
         {
             // the framework's own schema for a value, such as an enum or a class written as a string (IPAddress); a
-            // class's fields are built here, as the framework's schema holds its references' whole schemas
-            var framework = await context.GetOrCreateSchemaAsync(type, null, cancellationToken);
-            if (framework is OpenApiSchema frameworkSchema && IsObject(frameworkSchema))
+            // class's fields are built here, as the framework's schema holds its references' whole schemas. A class
+            // the serializer writes as an object of its fields is one without asking the framework, which would write
+            // out the whole tree of its references, and of a class with references back up tens of thousands of
+            // schemas, to be thrown away here.
+            var framework = IsPlainObject(typeInfo)
+                ? null
+                : await context.GetOrCreateSchemaAsync(type, null, cancellationToken);
+            if (framework == null || framework is OpenApiSchema frameworkSchema && IsObject(frameworkSchema))
             {
                 var schema = new OpenApiSchema();
                 document.AddComponent(name, schema);
@@ -266,6 +271,14 @@ internal sealed class ClientSchemaBuilder(
     private static JsonSchemaType NullFlag(bool nullable)
     {
         return nullable ? JsonSchemaType.Null : 0;
+    }
+
+    // an object of its fields, as the serializer writes it: no converter of its own, no derived types, and none of the
+    // classes PrimitiveTypeSchemaTransformer describes as a value
+    private static bool IsPlainObject(JsonTypeInfo typeInfo)
+    {
+        return typeInfo is { Kind: JsonTypeInfoKind.Object, PolymorphismOptions: null } &&
+               !PrimitiveTypeSchemaTransformer.IsValue(typeInfo.Type);
     }
 
     private static bool IsObject(OpenApiSchema schema)
