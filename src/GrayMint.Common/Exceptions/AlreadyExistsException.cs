@@ -1,3 +1,5 @@
+using System.Data.Common;
+
 namespace GrayMint.Common.Exceptions;
 
 public sealed class AlreadyExistsException : Exception
@@ -26,6 +28,10 @@ public sealed class AlreadyExistsException : Exception
 
         // SQL Server: unique index / unique constraint violation
         if (ex.Data.Contains("HelpLink.EvtID") && ex.Data["HelpLink.EvtID"]?.ToString() is "2601" or "2627")
+            return true;
+
+        // PostgreSQL, and any provider that reports the SQLSTATE: 23505 is a unique/primary-key violation
+        if (ex is DbException { SqlState: "23505" })
             return true;
 
         // SQLite: unique/primary-key violation (error 19)
