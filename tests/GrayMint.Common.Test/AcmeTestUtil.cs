@@ -27,13 +27,23 @@ internal static class AcmeTestUtil
         return certificate.Export(X509ContentType.Pkcs12);
     }
 
-    /// <summary>A certificate of the domain signed by a CA of its own, each as PEM, as an authority sends them.</summary>
+    /// <summary>A certificate of the domain and the intermediate that signed it, each as PEM, as an authority sends them:
+    /// the intermediate's root stays out.</summary>
     public static (string CertificatePem, string IssuerPem, string KeyPem) CreateChain(string domain)
     {
+        // The intermediate is signed by a root, as an authority's is: a self-signed one is a root, which Linux rightly
+        // leaves out of the chain a server sends.
+        using var rootKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var rootRequest = new CertificateRequest("CN=Test Root", rootKey, HashAlgorithmName.SHA256);
+        rootRequest.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, true));
+        using var root = rootRequest.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-2), DateTimeOffset.UtcNow.AddDays(730));
+
         using var caKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
         var caRequest = new CertificateRequest("CN=Test Intermediate", caKey, HashAlgorithmName.SHA256);
-        caRequest.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, true));
-        using var ca = caRequest.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(365));
+        caRequest.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, true, 0, true));
+        using var caCertificate = caRequest.Create(root, DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(365),
+            RandomNumberGenerator.GetBytes(16));
+        using var ca = caCertificate.CopyWithPrivateKey(caKey);
 
         using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
         var request = new CertificateRequest($"CN={domain}", key, HashAlgorithmName.SHA256);
