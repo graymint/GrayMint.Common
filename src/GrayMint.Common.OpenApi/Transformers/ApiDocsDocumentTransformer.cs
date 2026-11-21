@@ -88,11 +88,12 @@ internal sealed class ApiDocsDocumentTransformer(AddOpenApiOptions options) : IO
         var schemas = document.Components?.Schemas?.Values.OfType<OpenApiSchema>() ?? [];
         foreach (var property in schemas.SelectMany(x => x.Properties?.Values.OfType<OpenApiSchema>() ?? []))
         {
+            // the field's own words, which the reference holds; its Description falls back to the type's
             if (property.Description != null || property.OneOf?.OfType<OpenApiSchemaReference>()
-                    .FirstOrDefault(x => x.Description != null) is not { } wrapped)
+                    .FirstOrDefault(x => x.Reference.Description != null) is not { } wrapped)
                 continue;
 
-            property.Description = wrapped.Description;
+            property.Description = wrapped.Reference.Description;
             wrapped.Description = null;
         }
     }

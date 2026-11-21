@@ -20,7 +20,8 @@ public static class GrayMintOpenApiExtension
 
         services.AddOpenApi(openApiOptions =>
         {
-            openApiOptions.CreateSchemaReferenceId = ClientSchemaNames.CreateSchemaReferenceId;
+            var schemaRegistry = new ClientSchemaRegistry();
+            openApiOptions.CreateSchemaReferenceId = schemaRegistry.CreateSchemaReferenceId;
             openApiOptions.AddOperationTransformer<BearerSecuritySchemeTransformer>();
             openApiOptions.AddOperationTransformer<ClientOperationTransformer>();
             openApiOptions.AddOperationTransformer<XmlDocsOperationTransformer>();
@@ -29,6 +30,7 @@ public static class GrayMintOpenApiExtension
             openApiOptions.AddSchemaTransformer<XmlDocsSchemaTransformer>();
             openApiOptions.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
             openApiOptions.AddDocumentTransformer(new ApiDocsDocumentTransformer(options));
+            openApiOptions.AddDocumentTransformer(new ClientDocumentTransformer(schemaRegistry));
         });
 
         return services;

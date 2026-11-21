@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
@@ -33,6 +34,19 @@ public class ClientSchemaTransformer : IOpenApiSchemaTransformer
             schema.Type = values.Any(x => x == null)
                 ? JsonSchemaType.String | JsonSchemaType.Null
                 : JsonSchemaType.String;
+
+        // a dictionary of any value says it has values, or a client takes it for a plain object
+        if (context.JsonTypeInfo.Kind == JsonTypeInfoKind.Dictionary && schema.AdditionalProperties == null)
+            schema.AdditionalProperties = new OpenApiSchema();
+
+        // a property of any value that may be null: an empty schema allows null already, but NSwag's TypeScript says
+        // so only for OpenAPI 3.0's nullable, which it reads in any document
+        if (context.JsonTypeInfo.Type == typeof(object) && context.JsonPropertyInfo is { } anyProperty &&
+            IsNullable(anyProperty.PropertyType, anyProperty.AttributeProvider as MemberInfo, new NullabilityInfoContext()))
+        {
+            schema.Extensions ??= new Dictionary<string, IOpenApiExtension>();
+            schema.Extensions["nullable"] = new JsonNodeExtension(JsonValue.Create(true));
+        }
 
         // an object's schema, whether the generator met its type first by itself or as a property's type
         if (context.JsonTypeInfo.Kind != JsonTypeInfoKind.Object)
@@ -67,7 +81,7 @@ public class ClientSchemaTransformer : IOpenApiSchemaTransformer
         return Task.CompletedTask;
     }
 
-    private static bool IsNullable(Type type, MemberInfo? member, NullabilityInfoContext nullabilityContext)
+    internal static bool IsNullable(Type type, MemberInfo? member, NullabilityInfoContext nullabilityContext)
     {
         if (type.IsValueType)
             return Nullable.GetUnderlyingType(type) != null;

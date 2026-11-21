@@ -14,12 +14,17 @@ namespace GrayMint.Common.OpenApi.Transformers;
 // document did:
 // - the operation named Controller_Action, a ControllerClient class with an ActionAsync method;
 // - a parameter without a default value required, and a string parameter a string, whatever its route constraint;
-// - the body by its parameter's C# name, and a form as multipart/form-data, a method parameter per field;
-// - an action that answers an IActionResult or a FileResult answering a file.
+// - the body by its parameter's C# name, and a form as multipart/form-data, a method parameter per field, a file
+//   among them optional;
+// - each parameter and the body at its place among the action's described parameters (x-position), which orders a
+//   method's parameters;
+// - an action that answers a result it writes itself (an IActionResult) answering a file;
+// - a nullable value answered as the value's schema, and a nullable collection's items nullable, as NSwag read them.
 public class ClientOperationTransformer : IOpenApiOperationTransformer
 {
     private const string FormContentType = "application/x-www-form-urlencoded";
     private const string MultipartContentType = "multipart/form-data";
+    private const string PositionKey = "x-position";
 
     public Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context,
         CancellationToken cancellationToken)
@@ -29,13 +34,17 @@ public class ClientOperationTransformer : IOpenApiOperationTransformer
 
         operation.OperationId = $"{action.ControllerName}_{action.ActionName}";
 
+        // NSwag's place of each parameter, from 1, among those the action is described with (x-position): a client's
+        // method orders its parameters by it, the body among them
+        var position = 0;
         foreach (var description in context.Description.ParameterDescriptions)
         {
+            position++;
             var parameterInfo = (description.ParameterDescriptor as ControllerParameterDescriptor)?.ParameterInfo;
             if (description.Source == BindingSource.Body)
-                TransformBody(operation, description, parameterInfo);
+                TransformBody(operation, description, parameterInfo, position);
             else if (FindParameter(operation, description) is { } parameter)
-                TransformParameter(parameter, description, parameterInfo);
+                TransformParameter(parameter, description, parameterInfo, position);
         }
 
         if (operation.RequestBody is OpenApiRequestBody { Content: { } content } &&
@@ -45,27 +54,115 @@ public class ClientOperationTransformer : IOpenApiOperationTransformer
             content[MultipartContentType] = form;
         }
 
+        if (operation.RequestBody is OpenApiRequestBody { Content: { } formContent } &&
+            formContent.TryGetValue(MultipartContentType, out var multipart) && multipart.Schema is OpenApiSchema fields)
+            TransformFormFiles(fields);
+
         if (IsFileResult(action.MethodInfo.ReturnType))
             AddFileResponse(operation);
 
+        TransformResponses(operation, action.MethodInfo);
         return Task.CompletedTask;
     }
 
+    // a form's file as NSwag had it: a file a client may leave out, whatever the model says, so its method takes it
+    // as an optional file
+    private static void TransformFormFiles(OpenApiSchema fields)
+    {
+        foreach (var (name, field) in fields.Properties?.ToArray() ?? [])
+        {
+            var isFile = field is OpenApiSchemaReference { Target: { Format: "binary" } } ||
+                         field is OpenApiSchema { Format: "binary" };
+            if (!isFile)
+                continue;
+
+            fields.Properties![name] = new OpenApiSchema
+            {
+                Type = JsonSchemaType.String | JsonSchemaType.Null,
+                Format = "binary"
+            };
+            fields.Required?.Remove(name);
+        }
+    }
+
+    private static void TransformResponses(OpenApiOperation operation, MethodInfo method)
+    {
+        var nullableItems = ReturnsNullableCollection(method);
+        var mediaTypes = (operation.Responses?.Values.AsEnumerable() ?? [])
+            .OfType<OpenApiResponse>()
+            .SelectMany(x => x.Content?.Values.OfType<OpenApiMediaType>() ?? []);
+
+        foreach (var mediaType in mediaTypes)
+        {
+            // a nullable value is the value's schema, nullable, without the oneOf the framework puts around it, which
+            // a client would take for a type of its own
+            if (mediaType.Schema is OpenApiSchema
+                {
+                    OneOf: [OpenApiSchema { Type: JsonSchemaType.Null }, OpenApiSchema { Type: { } valueType } value]
+                })
+            {
+                value.Type = valueType | JsonSchemaType.Null;
+                mediaType.Schema = value;
+            }
+
+            // NSwag read a nullable collection's items as nullable too
+            if (nullableItems && mediaType.Schema is OpenApiSchema { Items: OpenApiSchemaReference items } array)
+                array.Items = new OpenApiSchema { OneOf = [new OpenApiSchema { Type = JsonSchemaType.Null }, items] };
+        }
+    }
+
+    // a collection of objects the action may answer null for, such as Task<Item[]?>
+    private static bool ReturnsNullableCollection(MethodInfo method)
+    {
+        var type = method.ReturnType;
+        var nullability = new NullabilityInfoContext().Create(method.ReturnParameter);
+        while (type.IsGenericType && type.GetGenericTypeDefinition() is var definition &&
+               (definition == typeof(Task<>) || definition == typeof(ValueTask<>) ||
+                definition == typeof(ActionResult<>)))
+        {
+            type = type.GenericTypeArguments[0];
+            nullability = nullability.GenericTypeArguments[0];
+        }
+
+        var elementType = type.IsArray
+            ? type.GetElementType()
+            : type.IsGenericType && typeof(System.Collections.IEnumerable).IsAssignableFrom(type) &&
+              type.GenericTypeArguments.Length == 1
+                ? type.GenericTypeArguments[0]
+                : null;
+
+        return nullability.ReadState == NullabilityState.Nullable && elementType is { IsValueType: false } &&
+               elementType != typeof(string);
+    }
+
     private static void TransformBody(OpenApiOperation operation, ApiParameterDescription description,
-        ParameterInfo? parameterInfo)
+        ParameterInfo? parameterInfo, int position)
     {
         if (operation.RequestBody is not OpenApiRequestBody requestBody)
             return;
 
         requestBody.Extensions ??= new Dictionary<string, IOpenApiExtension>();
         requestBody.Extensions["x-name"] = new JsonNodeExtension(JsonValue.Create(description.Name));
+        requestBody.Extensions[PositionKey] = new JsonNodeExtension(JsonValue.Create(position));
         if (parameterInfo is { HasDefaultValue: false })
             requestBody.Required = true;
+
+        // a body a client may leave out is not required, not nullable, as NSwag had it; a client would also take null
+        foreach (var mediaType in requestBody.Content?.Values.OfType<OpenApiMediaType>() ?? [])
+        {
+            if (mediaType.Schema is OpenApiSchema { OneOf: [OpenApiSchema { Type: JsonSchemaType.Null }, var value] })
+                mediaType.Schema = value;
+            else if (mediaType.Schema is OpenApiSchema { Type: { } type } schema)
+                schema.Type = type & ~JsonSchemaType.Null;
+        }
     }
 
     private static void TransformParameter(OpenApiParameter parameter, ApiParameterDescription description,
-        ParameterInfo? parameterInfo)
+        ParameterInfo? parameterInfo, int position)
     {
+        parameter.Extensions ??= new Dictionary<string, IOpenApiExtension>();
+        parameter.Extensions[PositionKey] = new JsonNodeExtension(JsonValue.Create(position));
+
         // a model's property is required by its own metadata; only a parameter of the action is required for having
         // no default value
         if (parameterInfo != null && description.ModelMetadata?.MetadataKind == ModelMetadataKind.Parameter)
@@ -132,7 +229,7 @@ public class ClientOperationTransformer : IOpenApiOperationTransformer
             (definition == typeof(Task<>) || definition == typeof(ValueTask<>)))
             returnType = returnType.GenericTypeArguments[0];
 
-        return returnType == typeof(IActionResult) || returnType == typeof(ActionResult) ||
-               typeof(FileResult).IsAssignableFrom(returnType);
+        // any result an action writes itself, as a ContentResult or a RedirectResult, but not an ActionResult<T>
+        return typeof(IActionResult).IsAssignableFrom(returnType);
     }
 }

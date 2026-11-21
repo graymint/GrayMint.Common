@@ -14,7 +14,20 @@ public class PrimitiveTypeSchemaTransformer : IOpenApiSchemaTransformer
     {
         var type = context.JsonTypeInfo.Type;
 
-        if (type == typeof(IPAddress))
+        // the framework says double, and a client would then read a decimal as a double
+        if ((Nullable.GetUnderlyingType(type) ?? type) == typeof(decimal))
+        {
+            schema.Format = "decimal";
+            return Task.CompletedTask;
+        }
+
+        if (typeof(IFormFile).IsAssignableFrom(type))
+        {
+            // a file, which a client sends as one
+            schema.Type = JsonSchemaType.String;
+            schema.Format = "binary";
+        }
+        else if (type == typeof(IPAddress))
         {
             schema.Type = JsonSchemaType.String;
             schema.Format = "ip"; // supports both IPv4 and IPv6
