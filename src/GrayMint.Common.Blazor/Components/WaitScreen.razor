@@ -1,0 +1,36 @@
+﻿<MudOverlay Visible="@WaitState.IsBusy" LightBackground="@(!DarkBackground)" DarkBackground="@DarkBackground" Absolute="@Absolute" AutoClose="false">
+
+    @if (string.IsNullOrEmpty(WaitState.Message))
+    {
+        <MudProgressCircular Color="Color.Secondary" Indeterminate="@true" />
+    }
+    else
+    {
+        <MudPaper>
+            <MudGrid>
+                <MudItem xs="5" />
+                <MudItem xs="2" Class="pl-0">
+                    <MudProgressCircular Color="Color.Secondary" Indeterminate="@true" />
+                </MudItem>
+                <MudItem xs="5" />
+                <MudItem xs="12">
+                    <MudText Align="Align.Center" Class="pb-2" >@($"{WaitState.Message}...")</MudText>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+    }
+</MudOverlay>
+
+
+@code {
+
+    [Parameter] 
+    public WaitState WaitState { get; set; } = null!;
+
+    [Parameter]
+    public bool DarkBackground { get; set; }
+
+    [Parameter]
+    public bool Absolute { get; set; } 
+
+}

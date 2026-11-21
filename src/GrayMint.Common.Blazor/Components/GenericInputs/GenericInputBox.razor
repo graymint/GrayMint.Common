@@ -1,0 +1,123 @@
+﻿@using GrayMint.Common.Blazor.Utils
+@typeparam T;
+@inject IJSRuntime JsRuntime
+
+<MudDialog DefaultFocus="DefaultFocus.FirstChild">
+    <TitleContent>
+        <div class="d-flex align-center">
+            <MudText Typo="Typo.h6">@(MudDialog.Title ?? Params.Label)</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudText>@Params.Description</MudText>
+        @if (Params.Warnings != null)
+        {
+            @foreach (var item in Params.Warnings)
+            {
+                <MudContainer Class="d-flex justify-start align-center my-5 pa-0 mx-0">
+                    <MudIcon Class="d-flex pe-2" Icon="@Icons.Material.Rounded.Warning" Color="Color.Warning" Size="Size.Large" />
+                    <MudText Class="d-flex" Typo="Typo.body2">
+                        @item
+                    </MudText>
+                </MudContainer>
+            }
+        }
+        <MudForm @ref="_form" @bind-IsValid="_isFromValid" Class="py-4">
+            <GenericInput T="T"
+                          @bind-Value="@Params.Value"
+                          Required="@Params.Required"
+                          Readonly="@Params.Readonly"
+                          Label="@Params.Label"
+                          Lines="@Params.Lines"
+                          HelperText="@Params.HelperText"
+                          PlaceHolder="@Params.PlaceHolder"
+                          SelectProvider="@Params.SelectProvider"
+                          FalseText="@Params.FalseText"
+                          TrueText="@Params.TrueText"
+                          NullText="@Params.NullText"
+                          IsCode="@Params.IsCode"
+                          ShowCopyTextButton="@Params.ShowCopyTextButton"
+                          HelperTextOnFocus="@Params.HelperTextOnFocus"
+                          Wrap="@Params.Wrap"
+                          Validation="@Params.Validation"
+                          ShowLabel="@Params.ShowInputLabel" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        @if (!string.IsNullOrWhiteSpace(Params.DownloadFileName))
+        {
+            <MudButton Variant="@Variant.Text" OnClick="@Download">@CommonResource.Download</MudButton>
+        }
+        @if (Params.Readonly)
+        {
+            <MudButton Variant="@Variant.Text" OnClick="@Close">@CommonResource.Close</MudButton>
+        }
+        else
+        {
+            <MudButton Variant="@(Params.OkButtonText == CommonResource.OK ? Variant.Text : Variant.Filled)"
+                       Color="@Color.Primary" OnClick="@Ok">@Params.OkButtonText</MudButton>
+            <MudButton Color="@Color.Secondary" OnClick="@Cancel">@CommonResource.Cancel</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudForm? _form;
+    private bool _isFromValid;
+    private object? _initValue;
+
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter, EditorRequired] public InputBoxParams<T> Params { get; set; } = null!;
+
+    protected override Task OnInitializedAsync()
+    {
+        _initValue = Params.Value;
+        return base.OnInitializedAsync();
+    }
+
+    private async Task Download()
+    {
+        ArgumentNullException.ThrowIfNull(_form);
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+            return;
+
+        await JsRuntime.InvokeVoidAsync("app_downloadText", Params.DownloadFileName, Params.Value);
+        MudDialog.Close();
+    }
+
+    private void Close() => MudDialog.Close();
+    private void Cancel() => MudDialog.Close(DialogResult.Cancel());
+    private async Task Ok()
+    {
+        ArgumentNullException.ThrowIfNull(_form);
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+            return;
+
+        if (Params.CancelIfNoChange && Equals(Params.Value, _initValue))
+        {
+            MudDialog.Close(DialogResult.Cancel());
+            return;
+        }
+
+        MudDialog.Close(DialogResult.Ok(Params.Value));
+    }
+
+    public static async Task<DialogReferenceExtensions.Result<T>> ShowAsync(IDialogService dialogService, InputBoxParams<T> parameters)
+    {
+        var dialog = await dialogService.ShowAsync<GenericInputBox<T>>(title: parameters.Title,
+            new DialogParameters
+            {
+                [nameof(Params)] = parameters,
+            },
+            new DialogOptions
+            {
+                MaxWidth = parameters.MaxWidth ?? MaxWidth.ExtraSmall
+            }
+        );
+
+        return await dialog.GetDialogResultAsync<T>();
+    }
+}

@@ -1,0 +1,32 @@
+﻿<MudSelect T="TimePeriodMode?" Label="@Label" Value="@Mode" Margin="@Margin" Style="@Style" Clearable
+           ValueChanged="@OnModeChanged" Variant="@Variant" Class="@Class" InputClass="@InputClass">
+    <MudSelectItem T="TimePeriodMode?" Value="@TimePeriodMode.LastHour">@CommonResource.PeriodLastHour</MudSelectItem>
+    <MudSelectItem T="TimePeriodMode?" Value="@TimePeriodMode.Today">@CommonResource.PeriodToday</MudSelectItem>
+    <MudSelectItem T="TimePeriodMode?" Value="@TimePeriodMode.Yesterday">@CommonResource.PeriodYesterday</MudSelectItem>
+    <MudSelectItem T="TimePeriodMode?" Value="@TimePeriodMode.Last24Hours">@CommonResource.PeriodLast24Hours</MudSelectItem>
+    <MudSelectItem T="TimePeriodMode?" Value="@TimePeriodMode.Last48Hours">@CommonResource.PeriodLast48Hours</MudSelectItem>
+    <MudSelectItem T="TimePeriodMode?" Value="@TimePeriodMode.Last72Hours">@CommonResource.PeriodLast72Hours</MudSelectItem>
+    <MudSelectItem T="TimePeriodMode?" Value="@TimePeriodMode.Last7Days">@CommonResource.PeriodLast7Days</MudSelectItem>
+    <MudSelectItem T="TimePeriodMode?" Value="@TimePeriodMode.Last31Days">@CommonResource.PeriodLast31Days</MudSelectItem>
+    <MudSelectItem T="TimePeriodMode?" Value="@TimePeriodMode.CurrentMonth">@CommonResource.PeriodCurrentMounth</MudSelectItem>
+</MudSelect>
+
+
+@code {
+
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public Margin Margin { get; set; }
+    [Parameter] public string? InputClass { get; set; }
+    [Parameter] public string? Label { get; set; } = CommonResource.ShowDataPeriod;
+    [Parameter] public Variant Variant { get; set; } = Variant.Outlined;
+    [Parameter] public TimePeriod Value { get; set; } = new();
+    [Parameter] public EventCallback<TimePeriod> ValueChanged { get; set; }
+
+    private TimePeriodMode? Mode => Value.Mode == TimePeriodMode.Nothing ? null : Value.Mode;
+    private async Task OnModeChanged(TimePeriodMode? periodMode)
+    {
+        Value = new TimePeriod(periodMode ?? TimePeriodMode.Nothing);
+        await ValueChanged.InvokeAsync(Value);
+    }
+}

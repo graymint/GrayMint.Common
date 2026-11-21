@@ -1,0 +1,19 @@
+<MudStack
+    AlignItems="AlignItems.Center"
+    Justify="Justify.Center"
+    Spacing="1"
+    Style="min-height: 150px;">
+    <MudIcon Icon="@Icons.Material.Outlined.Info" Size="Size.Large" />
+    <MudText Align="Align.Center">@DisplayText</MudText>
+</MudStack>
+
+
+@code {
+    [Parameter]
+    public string MinHeight { get; set; } = "200px";
+
+    [Parameter]
+    public string? Text { get; set; }
+
+    private string DisplayText => Text ?? CommonResource.NoRecordsFound;
+}

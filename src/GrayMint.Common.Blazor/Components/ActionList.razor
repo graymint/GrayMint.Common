@@ -1,0 +1,24 @@
+﻿<MudHidden Breakpoint="@BreakpointValue" Invert="@false">
+    <CascadingValue Name="IsMenu" Value="@false">
+        @ChildContent
+    </CascadingValue>
+</MudHidden>
+<MudHidden Breakpoint="@BreakpointValue" Invert="@true">
+    <MudMenu Icon="@Icons.Material.Filled.MoreVert" AnchorOrigin="@Origin.TopRight" TransformOrigin="@Origin.TopRight">
+        <CascadingValue Name="IsMenu" Value="@true">
+            @ChildContent
+        </CascadingValue>
+    </MudMenu>
+</MudHidden>
+
+@code {
+    private Breakpoint BreakpointValue => Breakpoint ?? MudBlazor.Breakpoint.Xs;
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; } = null!;
+
+    [Parameter] 
+    public Breakpoint? Breakpoint { get; set; }
+
+
+}

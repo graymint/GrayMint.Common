@@ -1,0 +1,216 @@
+﻿@using GrayMint.Common.Blazor.Components
+@inherits SuperComponentBase
+
+<MudCard>
+    @if (UseProgress)
+    {
+        <MudProgressLinear Color="@(WaitState.IsBusy? Color.Primary: Color.Transparent)"
+                           Indeterminate="@WaitState.IsBusy"
+                           Class="pa-0 ma-0" />
+    }
+    @if (ShowHeader)
+    {
+        <MudCardHeader>
+            <CardHeaderContent>
+                @if (ShowTitle && (!string.IsNullOrEmpty(Title) || !string.IsNullOrEmpty(HelpUrl)))
+                {
+                    @* a flex row centres the "?" on the title; inline, it sat 3px below *@
+                    <span class="d-inline-flex align-center">
+                        @if (!string.IsNullOrEmpty(Title))
+                        {
+                            @if (!string.IsNullOrEmpty(TitleUrl))
+                            {
+                                <MudLink Typo="Typo.h6" Href="@TitleUrl">@Title</MudLink>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.h6" Inline="true">@Title</MudText>
+                            }
+                        }
+                        @if (!string.IsNullOrEmpty(HelpUrl))
+                        {
+                            <HelpButton Url="@HelpUrl" Class="ms-1 pa-1" />
+                        }
+                    </span>
+                }
+                @if (!string.IsNullOrEmpty(TitleNote) && ShowTitle)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Warning" Inline="true" Class="ms-2">(@TitleNote)</MudText>
+                }
+                @if (OnRefresh.HasDelegate && AutoRefreshInterval != null)
+                {
+                    <AutoRefresh 
+                        Value="@LastRefreshTime" 
+                        ShowLastRefreshTime="@ShowLastRefreshTime"
+                        OnRefresh="@OnRefreshClicked" Interval="@AutoRefreshInterval.Value" />
+                }
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <ActionList>
+                    @GmCardHeaderActions
+                    @if (OnDelete.HasDelegate)
+                    {
+                        <ActionButton Icon="@Icons.Material.Outlined.Delete" OnClick="@OnDeleteClicked">@CommonResource.Delete</ActionButton>
+                    }
+                    @if (OnRefresh.HasDelegate)
+                    {
+                        <ActionButton Icon="@Icons.Material.Outlined.Refresh" OnClick="@OnRefreshClicked" Disabled="@WaitState.IsBusy">@CommonResource.Refresh</ActionButton>
+                    }
+                </ActionList>
+            </CardHeaderActions>
+        </MudCardHeader>
+    }
+    <MudCardContent>
+        @if (SearchTextChanged.HasDelegate)
+        {
+            <MudGrid>
+
+                <MudItem xs="7" sm="6" md="3">
+                    <SearchField ValueChanged="OnSearchChangedInternal" WaitState="@WaitState" PlaceHolder="@SearchPlaceHolder" />
+                </MudItem>
+                <MudItem xs="5" sm="3" md="2">
+                    @if (SearchDropdownItems.Count() > 1)
+                    {
+                        <MudSelect T="string" Value="@SearchDropdownValue" ValueChanged="OnDropdownValueChanged"
+                                   Variant="Variant.Text" Dense="true" FitContent="true">
+                            @foreach (var item in SearchDropdownItems)
+                            {
+                                <MudSelectItem T="string" Value="@item.Id">@item.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    }
+                </MudItem>
+            </MudGrid>
+            <br />
+        }
+        @GmCardContent
+    </MudCardContent>
+
+    <MudCardActions>
+        @GmCardActions
+    </MudCardActions>
+</MudCard>
+
+@code {
+    [Parameter]
+    public bool UseProgress { get; set; } = true;
+
+    [Parameter]
+    public DateTime LastRefreshTime { get; set; } = DateTime.Now;
+
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? TitleUrl { get; set; }
+
+    [Parameter]
+    public string? TitleNote { get; set; }
+
+    // the docs about what the card shows, opened by a "?" after its title
+    [Parameter]
+    public string? HelpUrl { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnRefresh { get; set; }
+
+    [Parameter]
+    public EventCallback OnDelete { get; set; }
+
+    [Parameter]
+    public string? PostDeleteUrl { get; set; }
+
+    [Parameter]
+    public TimeSpan? AutoRefreshInterval { get; set; }
+
+    [Parameter] 
+    public bool ShowLastRefreshTime { get; set; } = true;
+
+    [Parameter]
+    public RenderFragment GmCardHeaderActions { get; set; } = null!;
+
+    [Parameter]
+    public RenderFragment GmCardActions { get; set; } = null!;
+
+    [Parameter]
+    public RenderFragment GmCardContent { get; set; } = null!;
+
+    [Parameter]
+    public string? SearchText { get; set; }
+
+    [Parameter]
+    public string? SearchPlaceHolder { get; set; } = CommonResource.Search;
+
+    [Parameter]
+    public bool ShowHeader { get; set; } = true;
+
+    [Parameter]
+    public bool ShowTitle { get; set; } = true;
+
+    [Parameter]
+    public EventCallback<string> SearchTextChanged { get; set; }
+
+    [Parameter]
+    public IdName[] SearchDropdownItems { get; set; } = [];
+
+    [Parameter]
+    public string? SearchDropdownValue { get; set; }
+
+    [Parameter]
+    public EventCallback<string> SearchDropdownValueChanged { get; set; }
+
+
+    private Task OnRefreshClicked() => Refresh(false);
+    private async Task Refresh(bool bySearch)
+    {
+        try
+        {
+            using var busy = WaitState.Start();
+            await OnRefresh.InvokeAsync(bySearch);
+            LastRefreshTime = DateTime.Now;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(string.Format(CommonResource.ErrorCantFetchDataParam, ex.Message), Severity.Error);
+        }
+    }
+
+    private async Task OnDeleteClicked()
+    {
+        try
+        {
+            if (!await ShowWarningBox(message: string.Format(CommonResource.DeleteWarning, Title)))
+                return;
+
+            using var busy = WaitState.Start();
+            await OnDelete.InvokeAsync();
+            Snackbar.Add(string.Format(CommonResource.ItemDeleted, Title), Severity.Success);
+            if (PostDeleteUrl != "-")
+                NavigationManager.NavigateTo(PostDeleteUrl ?? NavigationManager.BaseUri);
+
+        }
+        catch (Exception ex)
+        {
+            StateHasChanged(); // remove progress bar
+            await ShowException(ex);
+        }
+    }
+
+    private Task OnSearchChangedInternal(string value)
+    {
+        if (!string.IsNullOrEmpty(value))
+            value = value.Trim();
+
+        SearchText = value;
+        _ = SearchTextChanged.InvokeAsync(value);
+        _ = Refresh(true);
+        return Task.CompletedTask;
+    }
+
+    private async Task OnDropdownValueChanged(string value)
+    {
+        SearchDropdownValue = value;
+        await SearchDropdownValueChanged.InvokeAsync(value);
+        _ = Refresh(true);
+    }
+}

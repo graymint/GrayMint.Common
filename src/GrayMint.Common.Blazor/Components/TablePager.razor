@@ -1,0 +1,15 @@
+﻿<MudTablePager LastIcon="@LastIcon" PageSizeOptions="@([10, 25, 50, 100])" InfoFormat="@InfoFormat" />
+
+@code {
+    [CascadingParameter]
+    public TableContext? Context { get; set; }
+
+    [Parameter]
+    public bool ShowLastPageButton { get; set; }
+
+    // makes double call if make it conditional
+    public static bool ShouldShow<T>(MudTable<T>? table) => true; // table?.GetFilteredItemsCount() > table?.RowsPerPage || true;
+
+    public string InfoFormat => ShowLastPageButton ? "{first_item}-{last_item} of {all_items}" : "{first_item}-{last_item}";
+    private string LastIcon => ShowLastPageButton ? Icons.Material.Outlined.LastPage : "";
+}

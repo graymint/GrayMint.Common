@@ -1,0 +1,82 @@
+﻿@*//Chart.razor*@
+@inject IJSRuntime JsRuntime
+
+<canvas id="@Id"></canvas>
+
+@code {
+    public enum ChartType
+    {
+        Pie,
+        Bar,
+        Line
+    }
+
+    private string Id { get; } = Guid.NewGuid().ToString();
+
+    [Parameter, EditorRequired]
+    public ChartType Type { get; set; } = ChartType.Line;
+
+    [Parameter, EditorRequired]
+    public object[] Datasets { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public string[] Labels { get; set; } = null!;
+
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public string? Unit { get; set; }
+
+
+    private object[]? _lastsDatasets;
+    protected override bool ShouldRender()
+    {
+        return _lastsDatasets != Datasets;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        _lastsDatasets = Datasets;
+        var config = new
+        {
+            Type = Type.ToString().ToLower(),
+            Options = new
+            {
+                Responsive = true,
+                Plugins = new
+                {
+                    Legend = new
+                    {
+                        Display = false
+                    },
+                    Title = new
+                    {
+                        Display = Title != null,
+                        Text = Title
+                    }
+                },
+                Scales = new
+                {
+                    Y = new
+                    {
+                        BeginAtZero = true,
+                        Ticks = new
+                        {
+                            Precision = 0
+                        }
+                    }
+                }
+            },
+            Data = new
+            {
+                Labels,
+                Datasets,
+            }
+
+        };
+
+        await JsRuntime.InvokeVoidAsync("setup", Id, config, Unit);
+    }
+}
+

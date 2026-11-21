@@ -1,0 +1,57 @@
+﻿<MudDialog DefaultFocus="DefaultFocus.FirstChild">
+    <TitleContent>
+        <div class="d-flex align-center">
+            @if (Params.Warnings?.Any() is null or false)
+            {
+                <MudIcon Icon="@Icons.Material.Rounded.Warning" Color="Color.Warning" Size="Size.Large"></MudIcon>
+            }
+            <MudText Style="font-weight: bold" Typo="Typo.subtitle1">@(MudDialog.Title ?? CommonResource.Warning)</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body1">@Params.Message</MudText>
+        @if (Params.Warnings != null)
+        {
+            @foreach (var item in Params.Warnings)
+            {
+                <MudContainer Class="d-flex justify-start align-center my-5 pa-0 mx-0">
+                    <MudIcon Class="d-flex pe-2" Icon="@Icons.Material.Rounded.Warning" Color="Color.Warning" Size="Size.Large" />
+                    <MudText Class="d-flex" Typo="Typo.body2">
+                        @item
+                    </MudText>
+                </MudContainer>
+            }
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="@Variant.Filled" Color="@Color.Primary" OnClick="@OnYes">@Params.YesButtonText</MudButton>
+        @if (Params.ShowNoButton)
+        {
+            <MudButton Color="@Color.Secondary" OnClick="@OnNo">@Params.NoButtonText</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public WarningBoxParams Params { get; set; } = null!;
+
+    void OnNo() => MudDialog.Close(false);
+    void OnYes() => MudDialog.Close(true);
+
+    public static async Task<bool> ShowAsync(IDialogService dialogService, WarningBoxParams parameters)
+    {
+        var dialog = await dialogService.ShowAsync<WarningBox>(parameters.Title,
+            new DialogParameters {
+                    [nameof(Params)] = parameters,
+            });
+
+        var result = await dialog.Result;
+        return result?.Data is true;
+
+    }
+
+}

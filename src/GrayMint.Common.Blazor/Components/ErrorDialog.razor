@@ -1,0 +1,75 @@
+﻿@inject IJSRuntime JsRuntime;
+
+<MudDialog DefaultFocus="DefaultFocus.FirstChild">
+    <DialogContent>
+        <MudText Typo="Typo.body1" Color="Color.Error">@Error.Message</MudText>
+        <MudTextField Class="mt-5" Error Style="font-size: small; font-family: sans-serif; overflow: auto" T="string" Variant="Variant.Filled"
+        Label="@CommonResource.Details" Text="@_details" Lines="10" ReadOnly FullWidth />
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="@Color.Secondary" OnClick="@Refresh">@CommonResource.Refresh</MudButton>
+        @if (HelpUrl != null)
+        {
+            <MudButton StartIcon="@Icons.Material.Outlined.HelpOutline" Href="@HelpUrl" Target="_blank">@CommonResource.Help</MudButton>
+        }
+        <MudSpacer />
+        <MudButton Color="@Color.Primary" OnClick="@Close">@CommonResource.OK</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public Exception Error { get; set; } = null!;
+
+    // the docs about this kind of error, behind a Help button
+    [Parameter]
+    public string? HelpUrl { get; set; }
+
+    private string? _details;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await MudDialog.SetOptionsAsync(new DialogOptions { MaxWidth = MaxWidth.Medium });
+       
+        _details = Error.ToString();
+
+        // Detect an NSwag-generated ApiException by its name, so any client library's works
+        // (GrayMint.Common.ApiClients.ApiException and an app's own alike).
+        var t = Error.GetType();
+        if (t.Name == "ApiException")
+        {
+            var response = t.GetProperty("Response")?.GetValue(Error) as string;
+            var statusCode = t.GetProperty("StatusCode")?.GetValue(Error) as int? ?? 0;
+            _details = response;
+            if (Error.Data.Contains("log"))
+                _details = (string)Error.Data["log"]!;
+
+            if (string.IsNullOrEmpty(_details) && statusCode == 403)
+                _details = "Access Denied!";
+        }
+    }
+
+    public static async Task ShowAsync(IDialogService dialogService, Exception ex, string? helpUrl = null)
+    {
+        var dialog = await dialogService.ShowAsync<ErrorDialog>(CommonResource.Error,
+            new DialogParameters { [nameof(Error)] = ex, [nameof(HelpUrl)] = helpUrl });
+
+        await dialog.Result;
+    }
+
+    void Close()
+    {
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private Task Refresh()
+    {
+        // refresh the SPA
+        JsRuntime.InvokeVoidAsync("window.location.reload", true);
+        return Task.CompletedTask;
+    }
+}

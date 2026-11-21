@@ -1,0 +1,26 @@
+﻿
+<MudTextField T="string" Value="_lastSearchValue" ValueChanged="@OnSearchChanged" Placeholder="@PlaceHolder" Clearable="@true"
+              Adornment="@Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Search" IconSize="@Size.Medium" 
+              Margin="0" Immediate="true"  FullWidth="false">
+</MudTextField>
+
+@code {
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter] 
+    public WaitState WaitState { get; set; } = new();
+
+    [Parameter]
+    public string? PlaceHolder { get; set; } = CommonResource.Search;
+
+    string _lastSearchValue = "";
+    private async Task OnSearchChanged(string value)
+    {
+        using var busy = WaitState.Start();
+        _lastSearchValue = value;
+        await Task.Delay(1000);
+        if (_lastSearchValue == value)
+            _ = ValueChanged.InvokeAsync(value);
+    }
+}

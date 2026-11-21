@@ -1,0 +1,291 @@
+﻿@using System.Threading
+@using GrayMint.Common.Blazor.Components.GenericInputs
+@using GrayMint.Common.Blazor.Components.GenericSelects
+@using GrayMint.Common.Blazor.Components.SelectProviders
+@using GrayMint.Common.Blazor.Utils
+@typeparam T;
+<div class="row mb-4">
+    <div class="property-name">
+        @if (LabelContent == null)
+        {
+            @if (_isWorking.IsBusy || (InProgress && StatusMessage == null)) // don't show here if there is a status message
+            {
+                <MudProgressCircular Class="mt-1 me-1" Style="height: 10px; width: 10px; margin-left:-14px" StrokeWidth="5" Color="Color.Default" Indeterminate="true" />
+            }
+            <MudText Style="color: gray;" Typo="Typo.caption">@Label</MudText>
+        }
+        else
+        {
+            @LabelContent
+        }
+    </div>
+
+    <div class="@(ForceBreak ? "property-value_br" : "property-value")">
+        @if (ValueContent == null)
+        {
+            <div class="@(ImageUrl != null ? "d-flex align-center" : null)">
+                @if (ImageUrl != null)
+                {
+                    <MudImage Src="@ImageUrl" Width="20" Class="me-2" Style="@UiUtil.FlagStyle" />
+                }
+
+                @if (Href != null)
+                {
+                    if (OpenLinkInNew)
+                    {
+                        <MudButton Style="margin-inline-start: -5px; vertical-align: middle;" DropShadow Size="Size.Small" IconSize="Size.Small" IconColor="Color.Primary" Href="@Href"
+                                   Variant="Variant.Text" EndIcon="@Icons.Material.Outlined.OpenInNew" Target="_blank">
+                            <MudText Color="Color.Primary" Typo="Typo.caption">@ValueText</MudText>
+                        </MudButton>
+                    }
+                    else
+                    {
+                        <MudLink Style="vertical-align: middle;" Href="@Href" Typo="Typo.caption">@ValueText</MudLink>
+                    }
+                }
+                else
+                {
+                    <MudText Style="vertical-align: middle;" Color="@ValueTextColor" Typo="Typo.caption">@ValueText</MudText>
+                }
+            </div>
+        }
+        else
+        {
+            @ValueContent
+        }
+
+        @if (!Readonly && (OnClickEdit.HasDelegate || ValueChanged.HasDelegate))
+        {
+            @* <MudText Typo="Typo.caption" Style="font-size: small"  Class="mx-2">(<MudLink OnClick="@OnEditInternal" Typo="Typo.caption">@CommonResource.EditProperty</MudLink>)</MudText> *@
+            <MudIconButton Style="margin-top: -1px" Color="@Color.Primary"
+                           Size="@Size.Small" Icon="@Icons.Material.Filled.Edit" OnClick="@OnEditInternal" />
+        }
+
+        @if (HelpUrl != null)
+        {
+            <HelpButton Url="@HelpUrl" Class="pa-0 ms-1" />
+        }
+    </div>
+
+    @* status row *@
+    @if (StatusMessage != null)
+    {
+        <div class="property-status">
+            @if (InProgress)
+            {
+                <MudProgressCircular Class="me-1" Style="margin-top:-2px; height: 10px; width: 10px; margin-left:-14px" StrokeWidth="5" Color="Color.Default" Indeterminate="true" />
+            }
+            <MudText Color="@StatusColor" Typo="Typo.caption">@StatusMessage</MudText>
+            @if (StatusHelpUrl != null)
+            {
+                <HelpButton Url="@StatusHelpUrl" Class="pa-0 ms-1" />
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .row {
+        display: grid;
+        grid-template-columns: minmax(100px, 200px) minmax(0, 1fr);
+        grid-template-areas:
+            "property-name property-value"
+            "property-value_br property-value_br"
+            "property-status property-status";
+    }
+
+    @@media (max-width: 400px) {
+        .row {
+            grid-template-areas:
+                "property-name property-name"
+                "property-value property-value"
+                "property-value_br property-value_br"
+                "property-status property-status";
+        }
+    }
+
+    @@media (min-width: 401px) {
+        .property-value::before {
+            content: ":"; /* The text you want to add */
+            padding-inline-end: 0.5em;
+        }
+    }
+
+    .row .property-name {
+        grid-area: property-name;
+        display: flex;
+        align-items: flex-start;
+        align-content: center;
+    }
+
+    .row .property-value {
+        grid-area: property-value;
+        display: flex;
+        align-items: flex-start;
+        text-align: start;
+    }
+
+    .row .property-value_br {
+        grid-area: property-value_br;
+        display: flex;
+        align-items: flex-start;
+        text-align: start;
+    }
+
+
+    .row .property-status {
+        grid-area: property-status;
+    }
+</style>
+
+
+@code {
+    [Inject] protected ISnackbar Snackbar { get; set; } = null!;
+    [Inject] protected IDialogService DialogService { get; set; } = null!;
+    [Parameter] public bool InProgress { get; set; }
+    [Parameter, EditorRequired] public string Label { get; set; } = null!;
+    [Parameter] public RenderFragment? LabelContent { get; set; }
+    [Parameter] public T Value { get; set; } = default!;
+    [Parameter] public EventCallback<T> ValueChanged { get; set; }
+    [Parameter] public RenderFragment? ValueContent { get; set; }
+    [Parameter] public EventCallback OnClickEdit { get; set; }
+    [Parameter] public bool Readonly { get; set; }
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public bool OpenLinkInNew { get; set; }
+    [Parameter] public string TrueText { get; set; } = CommonResource.Yes;
+    [Parameter] public string FalseText { get; set; } = CommonResource.No;
+    [Parameter] public string NullText { get; set; } = CommonResource.NotSet;
+    [Parameter] public bool UseNullText { get; set; } = ShouldUseNullText();
+    [Parameter] public string? HelperText { get; set; }
+    [Parameter] public string? PlaceHolder { get; set; }
+    [Parameter] public string? StatusMessage { get; set; }
+    [Parameter] public Color ValueTextColor { get; set; } = Color.Default;
+    [Parameter] public Color StatusColor { get; set; }
+    [Parameter] public string? HelpUrl { get; set; } // a "?" after the value opens these docs
+    [Parameter] public string? StatusHelpUrl { get; set; } // and one after the status message
+    [Parameter] public string? ImageUrl { get; set; }
+    [Parameter] public bool IsCode { get; set; }
+    [Parameter] public bool? ShowCopyTextButton { get; set; }
+    [Parameter] public bool? Wrap { get; set; }
+    [Parameter] public int? Lines { get; set; }
+    [Parameter] public IGenericSelectProvider? SelectProvider { get; set; }
+    [Parameter] public bool ForceBreak { get; set; }
+    [Parameter] public bool Required { get; set; } = typeof(T).IsValueType && Nullable.GetUnderlyingType(typeof(T)) == null;
+    [Parameter] public string? ValueDisplay { get; set; }
+    [Parameter] public MaxWidth? DialogMaxWidth { get; set; }
+
+    private readonly WaitState _isWorking = new();
+    private GenericSelectItem? _selectItem;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        if (SelectProvider != null)
+            _selectItem = Value?.ToString() != null ? await SelectProvider.Get(Value.ToString()!, CancellationToken.None) : null;
+    }
+
+    private static bool ShouldUseNullText()
+    {
+        var type = typeof(T);
+        if (Nullable.GetUnderlyingType(typeof(T)) != null) return true;
+        return type != typeof(bool) && type != typeof(int) && type != typeof(long);
+    }
+
+    protected virtual string ValueText
+    {
+        get
+        {
+            if (ValueDisplay != null)
+                return ValueDisplay;
+
+            var value = Value;
+            if (_selectItem?.Text != null) return _selectItem.Text;
+            if (UseNullText && Equals(value, null)) return NullText;
+            if (value is bool boolValue) return boolValue ? TrueText : FalseText;
+            if (value is DateTime dateTimeValue) return UiUtil.FormatDate(dateTimeValue);
+            return value?.ToString() ?? NullText;
+        }
+    }
+
+    private async Task OnEditInternal()
+    {
+        if (OnClickEdit.HasDelegate)
+            await OnClickEdit.InvokeAsync();
+
+        else if (await ShowInputBox())
+            _isLastUpdateFailed = false;
+
+        else
+            _ = OnEditInternal();
+
+    }
+
+    private async Task<bool> ShowInputBox()
+    {
+        var result = await GenericInputBox<T>.ShowAsync(DialogService, new InputBoxParams<T>
+            {
+                Title = Label,
+                Value = _isLastUpdateFailed ? _lastFailedValue : Value,
+                Required = Required,
+                Readonly = Readonly,
+                Label = Label,
+                Lines = Lines ?? 1,
+                HelperText = HelperText,
+                PlaceHolder = PlaceHolder,
+                SelectProvider = SelectProvider,
+                TrueText = TrueText,
+                FalseText = FalseText,
+                NullText = NullText,
+                IsCode = IsCode,
+                ShowCopyTextButton = ShowCopyTextButton,
+                Wrap = Wrap,
+                MaxWidth = DialogMaxWidth
+            });
+
+        if (result.Canceled)
+            return true;
+
+        return await InvokeUpdateAsync(result.Value!);
+    }
+
+    private bool _isLastUpdateFailed;
+    private T _lastFailedValue = default!;
+    private async Task<bool> InvokeUpdateAsync(T newValue)
+    {
+        if (Equals(Value, newValue))
+            return true;
+
+        var oldValue = Value;
+        Value = newValue;
+
+        try
+        {
+            using var isBusy = _isWorking.Start();
+            await ValueChanged.InvokeAsync(Value);
+
+            if (ValueChanged.HasDelegate)
+            {
+                _isLastUpdateFailed = false;
+                Snackbar.Add(string.Format(CommonResource.ItemUpdated, Label), Severity.Success);
+                StateHasChanged();
+            }
+        }
+        catch (Exception e)
+        {
+            _isLastUpdateFailed = true;
+            _lastFailedValue = newValue;
+            StateHasChanged(); //let _isWorking to be effective
+            await ShowException(e);
+            Value = oldValue;
+            await ValueChanged.InvokeAsync(Value);
+            return false;
+        }
+
+        return true;
+    }
+
+    protected Task ShowException(Exception ex)
+    {
+        return ErrorDialog.ShowAsync(DialogService, ex);
+    }
+}

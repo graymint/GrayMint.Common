@@ -1,0 +1,59 @@
+﻿@if (Visible)
+{
+    @if (IsMenu)
+    {
+        <MudMenuItem Disabled="@Disabled" IconColor="@Color.Primary" Class="py-0" Icon="@Icon" OnClick="@OnClickInternal">
+            @ChildContent
+        </MudMenuItem>
+    }
+    else
+    {
+        @if (ShowText)
+        {
+            <MudButton Size="Size.Small" Disabled="@Disabled" IconColor="@Color.Primary" StartIcon="@Icon" OnClick="@OnClick">
+                @ChildContent
+            </MudButton>
+        }
+        else
+        {
+            <MudIconButton Disabled="@Disabled" Color="@Color.Primary" Class="py-0" Icon="@Icon" OnClick="@OnClick" />
+        }
+    }
+}
+
+@code {
+
+    [Parameter]
+    public bool Visible { get; set; } = true;
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    [Parameter]
+    public string? Icon { get; set; }
+
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; } = null!;
+
+    [CascadingParameter(Name = "IsMenu")]
+    private bool IsMenu { get; set; }
+
+    [CascadingParameter(Name = "ShowText")]
+    private bool ShowText { get; set; } = true;
+
+    private void OnClickInternal()
+    {
+        _ = InvokeClick();
+    }
+
+    private async Task InvokeClick()
+    {
+        // MudBlazor has a problem in touchscreen mode. It doesn't show some popup dialog without wait
+        await Task.Delay(100);
+        await OnClick.InvokeAsync();
+    }
+
+}

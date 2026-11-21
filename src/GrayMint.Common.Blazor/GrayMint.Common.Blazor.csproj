@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <!-- Version, language and package metadata come from src/Directory.Build.props. -->
+  <PropertyGroup>
+    <Description>Blazor WebAssembly components on MudBlazor for admin panels: a property list that shows and edits each value in place, a card that frames a list or an item (title, refresh, search, delete), typed input and select dialogs, and a wait state</Description>
+    <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MudBlazor" Version="9.13.0" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.15" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="11.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="CommonResource.Designer.cs">
+      <DependentUpon>CommonResource.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="CommonResource.resx">
+      <SubType>Designer</SubType>
+      <LastGenOutput>CommonResource.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+</Project>

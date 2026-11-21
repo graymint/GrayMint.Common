@@ -1,0 +1,95 @@
+﻿@using GrayMint.Common.Blazor.Utils
+@inherits SuperComponentBase
+
+@if (_items.Length <= Provider.SearchModeThreshold)
+{
+    <MudSelect @ref="@_selectControl" T="GenericSelectItem"
+               Value="@_selectedItem"
+               Label="@Label"
+               Class="@Class"
+               InputClass="@InputClass" 
+               HelperText="@HelperText"
+               Variant="@Variant" 
+               Margin="@Margin"
+               HelperTextOnFocus="@HelperTextOnFocus"
+               Style="@Style"
+               ValueChanged="OnListValueChanged" 
+               Required="@Required" 
+               Clearable="@(!Required)">
+
+        @foreach (var item in _items)
+        {
+            if (item == _separatorSelectItem)
+            {
+                <MudSelectItem Value="@item" Disabled>
+                    <MudDivider/>
+                </MudSelectItem>
+            }
+            else
+            {
+                <MudSelectItem Value="@item" Class="@item.Class">
+                    <div class="d-flex align-center">
+                        @if (item.ImageUrl != null)
+                        {
+                            <MudImage Src="@item.ImageUrl" Width="20" Class="me-2" Style="@UiUtil.FlagStyle"/>
+                        }
+                        @if (item.Icon != null)
+                        {
+                            <MudIcon Icon="@item.Icon" Size="Size.Small" Class="me-2"/>
+                        }
+                        <MudText>
+                            @item.Text
+                        </MudText>
+                    </div>
+                </MudSelectItem>
+            }
+        }
+    </MudSelect>
+}
+else
+{
+    <MudAutocomplete Value="@_selectedItem" 
+                     T="GenericSelectItem" 
+                     ShowProgressIndicator
+                     Class="@Class" 
+                     SearchFunc="@OnSearch"
+                     Label="@Label"
+                     Variant="@Variant" 
+                     SelectValueOnTab
+                     Placeholder="@CommonResource.Search"
+                     CoerceText
+                     HelperText="@HelperText" 
+                     Margin="@Margin" 
+                     Clearable="@(!Required)"
+                     HelperTextOnFocus="@HelperTextOnFocus"
+                     Required="@Required" 
+                     ValueChanged="OnListValueChanged"
+                     OnClearButtonClick="OnClearButtonClick"
+                     ItemDisabledFunc="ItemDisabledFunc">
+        <ItemDisabledTemplate>
+            @if (Provider.CanAdd)
+            {
+                <MudDivider />
+            }
+        </ItemDisabledTemplate>
+        <ItemTemplate Context="item">
+            @if (item != null!)
+            {
+                <div class="d-flex align-center">
+                    <MudText Class="@item.CalcClass">
+                        @if (item.ImageUrl != null)
+                        {
+                            <MudImage Src="@item.ImageUrl" Width="20" Class="me-2" Style="@UiUtil.FlagStyle" />
+                        }
+                        @if (item.Icon != null)
+                        {
+                            <MudIcon Icon="@item.Icon" Size="Size.Small" Class="me-2" />
+                        }
+                        @item.Text
+                    </MudText>
+                </div>
+            }
+        </ItemTemplate>
+
+    </MudAutocomplete>
+}

@@ -1,0 +1,13 @@
+﻿@* A "?" that opens the docs about what it stands beside, in a new tab *@
+<MudTooltip Text="@CommonResource.Help">
+    <MudIconButton Class="@Class" Size="Size.Small" Icon="@Icons.Material.Outlined.HelpOutline"
+                   Href="@Url" Target="_blank" aria-label="@CommonResource.Help" />
+</MudTooltip>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Url { get; set; } = null!;
+
+    [Parameter]
+    public string Class { get; set; } = "pa-1";
+}

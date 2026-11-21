@@ -1,0 +1,129 @@
+﻿@using System.Threading;
+@implements IAsyncDisposable;
+@inject IJSRuntime JsRuntime
+
+<div>
+    @if (ShowLastRefreshTime)
+    {
+        <MudButton Disabled="true" Class="px-0">
+            @if (Interval != TimeSpan.Zero)
+            {
+                <MudIcon Icon="@Icons.Material.Outlined.Update" Size="Size.Small" Class="mr-1" Style="color: gray"/>
+            }
+            <MudText Typo="Typo.subtitle2" Style="color: gray" Inline="true">@CommonResource.LastUpdated: @Value?.ToString("t")</MudText>
+        </MudButton>
+    }
+</div>
+
+
+@code {
+    [Parameter]
+    public DateTime? Value { get; set; }
+
+    [Parameter]
+    public TimeSpan Interval { get; set; } = TimeSpan.FromSeconds(60);
+
+    [Parameter]
+    public EventCallback OnRefresh { get; set; }
+
+    [Parameter] 
+    public bool ShowLastRefreshTime { get; set; } = true;
+
+    // a page shown again after a while away is refreshed at once, not at its next tick; a glance at another tab is not
+    private static readonly TimeSpan MinHiddenTimeToRefresh = TimeSpan.FromSeconds(30);
+
+    private Timer? _refreshTimer;
+    private TimeSpan _currentInterval;
+    private Task _refreshTask = Task.CompletedTask;
+    private Task<IJSObjectReference>? _moduleTask;
+    private DotNetObjectReference<AutoRefresh>? _dotNetObjectReference;
+    private IJSObjectReference? _visibilityWatch;
+
+    protected override Task OnInitializedAsync()
+    {
+        _currentInterval = Interval;
+        InitializeTimer();
+        return Task.CompletedTask;
+    }
+
+    protected override Task OnParametersSetAsync()
+    {
+        if (_currentInterval == Interval) 
+            return Task.CompletedTask;
+
+        _currentInterval = Interval;
+        _refreshTimer?.Dispose();
+        InitializeTimer();
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        var module = await GetModule();
+        _dotNetObjectReference = DotNetObjectReference.Create(this);
+        _visibilityWatch = await module.InvokeAsync<IJSObjectReference>("watchPageShown", _dotNetObjectReference);
+    }
+
+    private void InitializeTimer()
+    {
+        if (_currentInterval != TimeSpan.Zero)
+            _refreshTimer = new Timer(_ => OnTimer(), null, _currentInterval, _currentInterval);
+    }
+
+    private Task<IJSObjectReference> GetModule()
+    {
+        return _moduleTask ??= JsRuntime
+            .InvokeAsync<IJSObjectReference>("import", "./_content/GrayMint.Common.Blazor/autoRefresh.js").AsTask();
+    }
+
+    // no tick while the last refresh still waits for its answer: once the network is gone, as after a sleep, every
+    // tick would add a hung request, and its error toast
+    private void OnTimer()
+    {
+        if (!_refreshTask.IsCompleted)
+            return;
+
+        _refreshTask = Tick();
+    }
+
+    // a page nobody sees (a background tab, a minimized window, a locked screen) is not refreshed: its requests
+    // would only cost the browser and the server
+    private async Task Tick()
+    {
+        var module = await GetModule();
+        if (await module.InvokeAsync<bool>("isPageHidden"))
+            return;
+
+        await OnRefresh.InvokeAsync();
+    }
+
+    [JSInvokable]
+    public Task OnPageShown(double hiddenMilliseconds)
+    {
+        if (_currentInterval == TimeSpan.Zero || !_refreshTask.IsCompleted ||
+            TimeSpan.FromMilliseconds(hiddenMilliseconds) < MinHiddenTimeToRefresh)
+            return Task.CompletedTask;
+
+        _refreshTask = OnRefresh.InvokeAsync();
+        return Task.CompletedTask;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_refreshTimer != null)
+            await _refreshTimer.DisposeAsync();
+
+        if (_visibilityWatch != null) {
+            await _visibilityWatch.InvokeVoidAsync("dispose");
+            await _visibilityWatch.DisposeAsync();
+        }
+
+        _dotNetObjectReference?.Dispose();
+        if (_moduleTask is { IsCompletedSuccessfully: true })
+            await _moduleTask.Result.DisposeAsync();
+    }
+
+}

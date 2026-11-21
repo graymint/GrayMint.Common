@@ -1,0 +1,175 @@
+﻿@using System.Globalization
+@using GrayMint.Common.Blazor.Components.SelectProviders
+@using GrayMint.Common.Blazor.Components.GenericSelects
+@using GrayMint.Common.Blazor.Utils
+@inject IJSRuntime JsRuntime;
+@typeparam T;
+
+@if (SelectProvider != null)
+{
+    <GenericSelect Value="@Value?.ToString()"
+                   ValueChanged="OnValueChanged"
+                   Class="@Class"
+                   Required="@Required"
+                   Label="@LabelValue"
+                   HelperText="@HelperText"
+                   HelperTextOnFocus="@HelperTextOnFocus"
+                   Provider="@SelectProvider" />
+}
+else if (typeof(T) == typeof(int) || typeof(T) == typeof(int?) || typeof(T) == typeof(long) || typeof(T) == typeof(long?))
+{
+    <MudNumericField Variant="@Variant"
+                     T="T"
+                     Required="@Required"
+                     ReadOnly="@Readonly"
+                     Label="@LabelValue"
+                     Class="@Class"
+                     Value="@Value"
+                     ValueChanged="value => OnValueChanged(value)"
+                     Placeholder="@PlaceHolder"
+                     HelperText="@HelperText"
+                     HelperTextOnFocus="@HelperTextOnFocus"
+                     AdornmentIcon="@_copyTextIcon" Adornment="Adornment.End" OnAdornmentClick="CopyTextToClipboard"
+                     Style="@StyleValue"
+                     Validation="@Validation"
+                     wrap="@UseWrap"
+                     spellcheck="@UseSpellCheck" data-gramm="@UseSpellCheck" data-enable-grammarly="@UseSpellCheck" />
+}
+
+else if (typeof(T) == typeof(DateTime) || typeof(T?) == typeof(DateTime?))
+{
+    <MudDatePicker Variant="@Variant"
+                   Label="@LabelValue"
+                   Date="@(Value as DateTime?)"
+                   DateChanged="@(value=>OnValueChanged(value?.ToUniversalTime()))"
+                   Class="@Class"
+                   Required="@Required"
+                   ReadOnly="@Readonly"
+                   Editable="@true"
+                   Culture="@CultureInfo.CurrentUICulture"
+                   Placeholder="@(PlaceHolder ?? CultureInfo.CurrentUICulture.DateTimeFormat.ShortDatePattern)"
+                   HelperText="@HelperText"
+                   HelperTextOnFocus="@HelperTextOnFocus"
+                   DateFormat="@CultureInfo.CurrentUICulture.DateTimeFormat.ShortDatePattern"
+                   Validation="@Validation"
+                   Clearable="@(!Required)" />
+}
+else if (typeof(T) == typeof(bool) || typeof(T?) == typeof(bool?))
+{
+    <MudText Class="mb-3" Typo="Typo.body2">@HelperText</MudText>
+    <MudRadioGroup T="bool?"
+                   Value="@(Value as bool?)"
+                   ValueChanged="value => OnValueChanged(value)"
+                   Class="@Class"
+                   Validation="@Validation"
+                   ReadOnly="@Readonly">
+        <MudRadio T="bool?" Value="@true">@TrueText</MudRadio>
+        <MudFlexBreak />
+        <MudRadio T="bool?" Value="@false">@FalseText</MudRadio>
+        @if (!Required)
+        {
+            <MudFlexBreak />
+            <MudRadio T="bool?" Value="@null">@NullText</MudRadio>
+        }
+    </MudRadioGroup>
+}
+else
+{
+    <MudTextField Variant="@Variant"
+                  T="T"
+                  Required="@Required"
+                  ReadOnly="@Readonly"
+                  Label="@LabelValue"
+                  Value="@Value"
+                  ValueChanged="value => OnValueChanged(value)"
+                  Class="@Class"
+                  Lines="@LinesValue"
+                  FullWidth="@true"
+                  Placeholder="@PlaceHolder"
+                  HelperText="@HelperText"
+                  HelperTextOnFocus="@HelperTextOnFocus"
+                  AdornmentIcon="@_copyTextIcon" Adornment="Adornment.End" OnAdornmentClick="CopyTextToClipboard"
+                  Style="@StyleValue"
+                  Converter="@_converter"
+                  Validation="@Validation"
+                  wrap="@UseWrap"
+                  spellcheck="@UseSpellCheck" data-gramm="@UseSpellCheck" data-enable-grammarly="@UseSpellCheck" />
+}
+
+
+@code {
+    private string? _copyTextIcon = Icons.Material.Outlined.ContentCopy;
+    private bool UseSpellCheck => !IsCode;
+    private bool UseWrap => Wrap ?? IsCode;
+    private string? StyleValue => IsCode ? "font-family: Courier New, Courier, monospace; font-size: small; overflow: auto" : null;
+    private int LinesValue => Lines ?? (IsCode ? 10 : 1);
+    private string? LabelValue => ShowLabel ? Label : null;
+    private Variant Variant => IsCode ? Variant.Filled : Variant.Text;
+    private readonly GenericConverter _converter = new();
+
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public IGenericSelectProvider? SelectProvider { get; set; }
+    [Parameter, EditorRequired] public string Label { get; set; } = null!;
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public string? HelperText { get; set; }
+    [Parameter] public T Value { get; set; } = default!;
+    [Parameter] public EventCallback<T> ValueChanged { get; set; }
+    [Parameter] public string? PlaceHolder { get; set; }
+    [Parameter] public int? Lines { get; set; }
+    [Parameter] public string NullText { get; set; } = CommonResource.NotSet;
+    [Parameter] public string TrueText { get; set; } = CommonResource.Yes;
+    [Parameter] public string FalseText { get; set; } = CommonResource.No;
+    [Parameter] public bool IsCode { get; set; }
+    [Parameter] public bool? ShowCopyTextButton { get; set; }
+    [Parameter] public bool? Wrap { get; set; }
+    [Parameter] public bool Readonly { get; set; }
+    [Parameter] public bool HelperTextOnFocus { get; set; }
+    [Parameter] public bool ShowLabel { get; set; }
+    [Category(CategoryTypes.FormComponent.Validation)]
+    [Parameter] public object? Validation { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        if (ShowCopyTextButton == false || (ShowCopyTextButton == null && !IsCode))
+            _copyTextIcon = null;
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        ShowCopyTextButton ??= IsCode;
+        _converter.Label = Label;
+    }
+
+    private async Task CopyTextToClipboard()
+    {
+        await JsRuntime.InvokeVoidAsync("navigator.clipboard.writeText", Value);
+        _copyTextIcon = Icons.Material.Outlined.Done;
+        StateHasChanged();
+        await Task.Delay(3000);
+        _copyTextIcon = Icons.Material.Outlined.ContentCopy;
+        StateHasChanged();
+    }
+
+    private async Task OnValueChanged(object? value)
+    {
+        Value = UiUtil.ConvertValue<T>(value, Label);
+        if (!Required && Value as string == string.Empty)
+            Value = default!;
+
+        await ValueChanged.InvokeAsync(Value);
+    }
+
+    public class GenericConverter : IReversibleConverter<T?, string?>
+    {
+        public string? Label { get; set; }
+
+        public string? Convert(T? value) => value?.ToString(); 
+
+        public T? ConvertBack(string? value)
+        {
+            return UiUtil.ConvertValue<T?>(value, Label);
+        }
+    }
+}
