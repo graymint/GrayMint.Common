@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\GrayMint.Common\GrayMint.Common.csproj" />
+    <ProjectReference Include="..\..\src\GrayMint.Common.Acme\GrayMint.Common.Acme.csproj" />
     <ProjectReference Include="..\..\src\GrayMint.Common.AspNetCore\GrayMint.Common.AspNetCore.csproj" />
     <!-- a web app on GrayMint.Common.OpenApi, for its Scalar page -->
     <ProjectReference Include="..\TestWebApp\TestWebApp.csproj" />

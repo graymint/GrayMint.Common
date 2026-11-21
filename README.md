@@ -10,6 +10,7 @@
 | [GrayMint.Common](https://www.nuget.org/packages/GrayMint.Common) | Core utilities: recurring jobs, `AsyncLock`, `FastDateTime`, `Patch<T>`, typed API client base, canonical exceptions. No framework dependencies. |
 | [GrayMint.Common.AspNetCore](https://www.nuget.org/packages/GrayMint.Common.AspNetCore) | One-call service registration and pipeline setup, JSON exception handling middleware, DI-friendly background jobs, graceful lifetime hooks. |
 | [GrayMint.Common.EntityFrameworkCore](https://www.nuget.org/packages/GrayMint.Common.EntityFrameworkCore) | Enum lookup-table sync, safe table creation, provider-aware schema checks (SQL Server & PostgreSQL). |
+| [GrayMint.Common.Acme](https://www.nuget.org/packages/GrayMint.Common.Acme) | Let's Encrypt certificates for your users' domains over the HTTP-01 challenge: the order with a check of port 80 first, the challenge's answer, and Kestrel's certificate for each domain of a connection. |
 | [GrayMint.Common.OpenApi](https://www.nuget.org/packages/GrayMint.Common.OpenApi) | ASP.NET Core's own OpenAPI document, worded from the app's doc comments, and the Scalar UI, with bearer-token auth, in two calls; a client generated from the document keeps NSwag's names and types. Formerly GrayMint.Common.Swagger. |
 
 All packages target `net10.0` and ship under a single shared version; GrayMint.Common.OpenApi targets `net11.0` too, as each .NET has its own OpenAPI generator.
@@ -125,6 +126,46 @@ bool hasFn = await EfCoreUtil.SqlFunctionExists(db.Database, "dbo", "fnCalcUsage
 
 Named default constraints come from EF Core itself: `modelBuilder.Model.UseNamedDefaultConstraints(true)` names
 each default `DF_<table>_<column>` where the database names one (SQL Server), on any provider.
+
+### Let's Encrypt certificates for your users' domains
+
+`AcmeCertificateIssuer` gets a certificate for one domain, from the order to the signed certificate. Where the challenge is kept, and the certificate, is yours: here, the database, which whatever answers port 80 reads.
+
+```csharp
+using GrayMint.Common.Acme;
+
+var issuer = new AcmeCertificateIssuer(new AcmeClient()); // Let's Encrypt; AcmeDirectories.LetsEncryptStaging to try it out
+var accountKeyPem = await issuer.CreateAccount(); // once, kept for every later order
+
+byte[] pfx = await issuer.Issue(new AcmeIssueRequest {
+    AccountKeyPem = accountKeyPem,
+    Domain = "checkout.example.com",
+    PublishChallenge = (challenge, ct) => SaveChallenge(challenge, ct),
+    WithdrawChallenge = (challenge, ct) => DeleteChallenge(challenge, ct),
+    // our own read of http://domain/.well-known/acme-challenge/token first: a domain that does not point to the
+    // server yet fails here, not at Let's Encrypt, which allows five failures an hour for a domain
+    SelfCheckHandlerFactory = () => CreatePublicOnlyHandler()
+});
+```
+
+The PFX has the key, the certificate and Let's Encrypt's intermediates, with no password. The domain is your user's, so the self-check's handler should connect to public addresses only and follow no redirect. A failed check throws `AcmeSelfCheckException`, whose `Error` says what to fix: no address, port 80 not reached, or another server's answer.
+
+The server that answers port 80, and serves each domain over HTTPS with its own certificate:
+
+```csharp
+var selector = new TlsCertificateSelector(LoadPfx, new TlsCertificateSelectorOptions { DefaultDomain = "checkout.example.com" });
+builder.WebHost.ConfigureKestrel(kestrel => {
+    kestrel.ListenAnyIP(80);
+    kestrel.ListenAnyIP(443, listen => listen.UseHttps(selector));
+});
+
+var app = builder.Build();
+app.UseAcmeChallenge((domain, token, ct) => FindKeyAuthorization(domain, token, ct)); // first: the challenge is read on port 80
+```
+
+`LoadPfx` runs for every name a client sends that is not in the selector's cache, so refuse a name you do not serve without a database read. A loaded certificate is used for 10 minutes (`CacheTimeout`), which takes a renewed one; `Invalidate(domain)` takes it at once. A domain no connection names for an hour (`IdleTimeout`) leaves the cache, and a load that fails keeps the certificate loaded before. `AcmeClientOptions.HttpClient` sends the authority's requests through a client of yours, such as one through a proxy.
+
+To have the certificates kept, renewed and served for you, in tables of their own on PostgreSQL or SQL Server, use [GrayMint.TlsCertificates](https://github.com/graymint/GrayMint.TlsCertificates), which is built on this package.
 
 ### OpenAPI & Scalar in two lines
 
