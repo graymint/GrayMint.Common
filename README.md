@@ -14,7 +14,7 @@
 | [GrayMint.Common.OpenApi](https://www.nuget.org/packages/GrayMint.Common.OpenApi) | ASP.NET Core's own OpenAPI document, worded from the app's doc comments, and the Scalar UI, with bearer-token auth, in two calls; a client generated from the document keeps NSwag's names and types. Formerly GrayMint.Common.Swagger. |
 | [GrayMint.Common.Blazor](https://www.nuget.org/packages/GrayMint.Common.Blazor) | Blazor WebAssembly components on MudBlazor for admin panels: a property list that shows and edits each value in place, a card that frames a list or an item, typed input and select dialogs, and a wait state. |
 
-All packages target `net10.0` and ship under a single shared version; GrayMint.Common.OpenApi targets `net11.0` too, as each .NET has its own OpenAPI generator, and so does GrayMint.Common.Blazor, for apps on .NET 11's WebAssembly runtime.
+All packages target `net11.0` and ship under a single shared version.
 
 ```sh
 dotnet add package GrayMint.Common
@@ -208,7 +208,7 @@ Microsoft's build-time generator writes the document to a file when the API proj
 </PropertyGroup>
 ```
 
-It runs the app's startup with a stand-in server to read the endpoints, so skip what needs a real one, such as a database, while `Assembly.GetEntryAssembly()?.GetName().Name == "GetDocument.Insider"`. The tool of the app's own .NET loads that .NET's OpenAPI generator, which is why this package targets both .NET 10 and .NET 11.
+It runs the app's startup with a stand-in server to read the endpoints, so skip what needs a real one, such as a database, while `Assembly.GetEntryAssembly()?.GetName().Name == "GetDocument.Insider"`.
 
 To write the file only when you ask, set `<OpenApiGenerateDocumentsOnBuild>false</OpenApiGenerateDocumentsOnBuild>` and build with `-p:OpenApiGenerateDocumentsOnBuild=true`.
 

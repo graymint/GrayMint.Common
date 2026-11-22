@@ -100,8 +100,7 @@ internal sealed class ApiDocsDocumentTransformer(AddOpenApiOptions options) : IO
         }
     }
 
-    // generic, as Microsoft.OpenApi 2 (.NET 10) holds a media type as a class and 3 (.NET 11) as IOpenApiMediaType
-    private static void RemoveJsonAliases<TMediaType>(IDictionary<string, TMediaType> content)
+    private static void RemoveJsonAliases(IDictionary<string, IOpenApiMediaType> content)
     {
         if (!content.ContainsKey(JsonContentType))
             return;

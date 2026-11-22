@@ -2,7 +2,7 @@
   <!-- Version, language and package metadata come from src/Directory.Build.props. -->
   <PropertyGroup>
     <Description>Let's Encrypt certificates over ACME's HTTP-01 challenge: the account, the order with a check of port 80 first, the challenge's answer in ASP.NET Core, and Kestrel's certificate for each domain of a connection</Description>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <IsPackable>true</IsPackable>
   </PropertyGroup>
 

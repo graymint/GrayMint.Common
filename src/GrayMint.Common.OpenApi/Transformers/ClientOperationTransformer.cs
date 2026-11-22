@@ -212,11 +212,7 @@ public class ClientOperationTransformer : IOpenApiOperationTransformer
             okResponse is not OpenApiResponse { Content: null or { Count: 0 } } response)
             return;
 
-#if NET11_0_OR_GREATER // Microsoft.OpenApi 3 holds a media type by its interface
         response.Content ??= new Dictionary<string, IOpenApiMediaType>();
-#else
-        response.Content ??= new Dictionary<string, OpenApiMediaType>();
-#endif
         response.Content["application/octet-stream"] = new OpenApiMediaType
         {
             Schema = new OpenApiSchema { Type = JsonSchemaType.String, Format = "binary" }

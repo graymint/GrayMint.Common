@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <!-- Shared test settings (IsPackable=false, language defaults) come from tests/Directory.Build.props. -->
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <InvariantGlobalization>true</InvariantGlobalization>
     <!-- the API's description takes its words from the doc comments, the app's and its packages' -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

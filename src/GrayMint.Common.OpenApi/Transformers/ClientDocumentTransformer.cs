@@ -113,11 +113,7 @@ internal sealed class ClientDocumentTransformer(ClientSchemaRegistry registry) :
             path.Value.Operations?.Select(x => (path.Key, x.Key, x.Value)) ?? []);
     }
 
-#if NET11_0_OR_GREATER // Microsoft.OpenApi 3 holds a media type by its interface
     private static IEnumerable<IOpenApiSchema?> Schemas(IDictionary<string, IOpenApiMediaType>? content)
-#else
-    private static IEnumerable<IOpenApiSchema?> Schemas(IDictionary<string, OpenApiMediaType>? content)
-#endif
     {
         return content?.Values.Select(x => x.Schema) ?? [];
     }
