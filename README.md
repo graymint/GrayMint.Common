@@ -12,8 +12,9 @@
 | [GrayMint.Common.EntityFrameworkCore](https://www.nuget.org/packages/GrayMint.Common.EntityFrameworkCore) | Enum lookup-table sync, safe table creation, provider-aware schema checks (SQL Server & PostgreSQL). |
 | [GrayMint.Common.Acme](https://www.nuget.org/packages/GrayMint.Common.Acme) | Let's Encrypt certificates for your users' domains over the HTTP-01 challenge: the order with a check of port 80 first, the challenge's answer, and Kestrel's certificate for each domain of a connection. |
 | [GrayMint.Common.OpenApi](https://www.nuget.org/packages/GrayMint.Common.OpenApi) | ASP.NET Core's own OpenAPI document, worded from the app's doc comments, and the Scalar UI, with bearer-token auth, in two calls; a client generated from the document keeps NSwag's names and types. Formerly GrayMint.Common.Swagger. |
+| [GrayMint.Common.Blazor](https://www.nuget.org/packages/GrayMint.Common.Blazor) | Blazor WebAssembly components on MudBlazor for admin panels: a property list that shows and edits each value in place, a card that frames a list or an item, typed input and select dialogs, and a wait state. |
 
-All packages target `net10.0` and ship under a single shared version; GrayMint.Common.OpenApi targets `net11.0` too, as each .NET has its own OpenAPI generator.
+All packages target `net10.0` and ship under a single shared version; GrayMint.Common.OpenApi targets `net11.0` too, as each .NET has its own OpenAPI generator, and so does GrayMint.Common.Blazor, for apps on .NET 11's WebAssembly runtime.
 
 ```sh
 dotnet add package GrayMint.Common
@@ -257,6 +258,30 @@ A client project names the file, and its build generates the client:
 ```
 
 `CodeGenerator="NSwagTypeScript"` makes a TypeScript client the same way.
+
+### Admin panels in Blazor
+
+`GrayMint.Common.Blazor` gives a Blazor WebAssembly admin panel its building blocks on MudBlazor. `PropertyList` and
+`PropertyItem` show an item's values and edit each in place: a pencil opens a typed box (text, number, yes/no, a list
+or a date), the value is saved at once, and a failed save shows the error with what was typed. `GmCard` frames a list
+or an item: title, refresh, search, delete and progress. Components derive from `SuperComponentBase` for the busy
+state, errors, warnings and input dialogs.
+
+```razor
+@inherits SuperComponentBase
+
+<GmCard Title="Customer" OnRefresh="@(_ => Refresh())" WaitState="@WaitState">
+    <GmCardContent>
+        <PropertyList>
+            <PropertyItem T="string" Label="Name" Value="@_customer.Name" ValueChanged="OnNameChanged" />
+            <PropertyItem T="bool" Label="Blocked" @bind-Value="@_customer.IsBlocked" @bind-Value:after="OnBlockedChanged" />
+        </PropertyList>
+    </GmCardContent>
+</GmCard>
+```
+
+The app registers MudBlazor (`builder.Services.AddMudServices()`) and imports `GrayMint.Common.Blazor.Components` and
+its `PropertyLists` namespace in `_Imports.razor`.
 
 ## Development
 
