@@ -7,7 +7,14 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <CopyDocumentationFilesFromPackages>true</CopyDocumentationFilesFromPackages>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!-- TestWebApp.Client's build has the document written; a build of this project alone writes none -->
+    <OpenApiGenerateDocumentsOnBuild>false</OpenApiGenerateDocumentsOnBuild>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Microsoft's build-time document generator, which TestWebApp.Client's build calls -->
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="11.0.0" PrivateAssets="all" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\GrayMint.Common.AspNetCore\GrayMint.Common.AspNetCore.csproj" />

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- TestWebApp's clients, made on this project's build by GrayMint.Common.OpenApi.ClientGenerator: its targets come
+       from src/ here, where a client project elsewhere takes them from the package, so every push tests them -->
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <RootNamespace>TestWebApp.Client</RootNamespace>
+    <ApiServerProject>../TestWebApp/TestWebApp.csproj</ApiServerProject>
+    <ApiClientTypeScript>true</ApiClientTypeScript>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- the package brings it; a project that imports the targets itself references it -->
+    <PackageReference Include="NSwag.MSBuild" Version="14.8.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\GrayMint.Common\GrayMint.Common.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\..\src\GrayMint.Common.OpenApi.ClientGenerator\build\GrayMint.Common.OpenApi.ClientGenerator.targets" />
+</Project>

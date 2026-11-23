@@ -13,6 +13,7 @@ The scripts assume this standard layout (the only assumption they make):
 <repoRoot>/
 ├── .github/workflows/
 │   ├── pack_nugets.yml        # reusable: build → test → bump → pack → `nupkgs` artifact
+│   ├── pack_api_clients.yml   # reusable: the API clients that changed → `api-clients` artifact
 │   ├── publish_nugets.yml     # calls pack_nugets.yml, then pushes to nuget.org
 │   └── update_nugets.yml      # daily: update packages → test → commit → publish
 ├── src/                       # packable libraries, one folder per project
@@ -22,6 +23,7 @@ The scripts assume this standard layout (the only assumption they make):
 │   └── Directory.Build.props  # IsPackable=false + shared test settings
 ├── pub/
 │   ├── Invoke-VersionBump.ps1        # the ONE place the version is bumped
+│   ├── Build-ApiClientPackages.ps1   # packs the API clients that changed (pack_api_clients.yml)
 │   ├── PubVersion.json               # the version source of truth
 │   └── lib/
 │       ├── Update-VersionFile.ps1    # bump primitive (increments json, stamps props)
@@ -105,6 +107,63 @@ workflow.
   user" after the bump.
 - Create a new repo's policy **before** its `publish_nugets.yml` reaches `main`: the bump is
   pushed before the push job signs in, so a missing policy burns a version.
+
+## API clients (`pack_api_clients.yml`)
+
+A repo whose API clients are made by `GrayMint.Common.OpenApi.ClientGenerator` publishes each packable client when its
+code changes, which is when its API does, with no version file. `pack_api_clients.yml` runs
+`pub/Build-ApiClientPackages.ps1`:
+
+1. Each packable project that references the generator is built, which writes its client again from its API, so a
+   client is compared as its API makes it now, even where nobody built and committed it.
+2. The client's folder is compared with the one at the commit its newest version on nuget.org was built from (the
+   package records it); a version with no such commit counts as changed.
+3. A changed client is packed at its newest version's next patch (1.0.0 for the first), or at the project's own
+   `<Version>` where that is higher, which is how a client starts a new major version.
+
+A committed client that is not what its API makes now gets a warning in the run, so the next commit can carry it. The
+packages are the `api-clients` artifact, and the repo's own workflow pushes them, as nuget.org's Trusted Publishing
+matches the workflow that requests the token. Its policy names that repo and that file:
+
+```yaml
+# .github/workflows/publish_nugets.yml
+name: Publish NuGets
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: publish-nugets # one run at a time, so two pushes never take the same version
+jobs:
+  pack-api-clients:
+    uses: graymint/GrayMint.Common/.github/workflows/pack_api_clients.yml@main
+
+  push-api-clients:
+    needs: pack-api-clients
+    if: needs.pack-api-clients.outputs.count != '0'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: api-clients
+          path: nupkgs
+      - uses: NuGet/login@v1
+        id: nuget-login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+      - run: dotnet nuget push "nupkgs/*.nupkg" --source "https://api.nuget.org/v3/index.json" --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}"
+```
+
+Anyone who can push to `main`, or run the workflow by hand, publishes; nobody needs a key. To see what a run would
+pack, from a local clone of this repo:
+
+```powershell
+./pub/Build-ApiClientPackages.ps1 -repoDir C:\path\to\other-repo -outputDir $env:TEMP\nupkgs
+```
 
 ## Daily NuGet updates (`update_nugets.yml`)
 

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Version, language and package metadata come from src/Directory.Build.props. -->
+  <PropertyGroup>
+    <Description>An API's C# and TypeScript clients, generated on the client project's build from the API project's own OpenAPI document, with one set of NSwag settings for every client</Description>
+    <TargetFramework>net11.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <!-- build logic only: the package has no assembly, and a client's own users never get it -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <IncludeSymbols>false</IncludeSymbols>
+    <!-- NU5128: no lib/ folder, as the package has no assembly -->
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- NSwag's command line: its props (buildTransitive) give a client project $(NSwagExe_Net110), so every client is
+         made by this one NSwag. PrivateAssets none lets those props reach the client project. -->
+    <PackageReference Include="NSwag.MSBuild" Version="14.8.0" PrivateAssets="none" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="build\*" Pack="true" PackagePath="build\" />
+  </ItemGroup>
+</Project>

@@ -12,6 +12,7 @@
 | [GrayMint.Common.EntityFrameworkCore](https://www.nuget.org/packages/GrayMint.Common.EntityFrameworkCore) | Enum lookup-table sync, safe table creation, provider-aware schema checks (SQL Server & PostgreSQL). |
 | [GrayMint.Common.Acme](https://www.nuget.org/packages/GrayMint.Common.Acme) | Let's Encrypt certificates for your users' domains over the HTTP-01 challenge: the order with a check of port 80 first, the challenge's answer, and Kestrel's certificate for each domain of a connection. |
 | [GrayMint.Common.OpenApi](https://www.nuget.org/packages/GrayMint.Common.OpenApi) | ASP.NET Core's own OpenAPI document, worded from the app's doc comments, and the Scalar UI, with bearer-token auth, in two calls; a client generated from the document keeps NSwag's names and types. Formerly GrayMint.Common.Swagger. |
+| [GrayMint.Common.OpenApi.ClientGenerator](https://www.nuget.org/packages/GrayMint.Common.OpenApi.ClientGenerator) | An API's C# and TypeScript clients, made on the client project's build from the API project's document, with one set of NSwag settings for every client; a reusable workflow publishes a client's new version whenever its API changes. |
 | [GrayMint.Common.Blazor](https://www.nuget.org/packages/GrayMint.Common.Blazor) | Blazor WebAssembly components on MudBlazor for admin panels: a property list that shows and edits each value in place, a card that frames a list or an item, typed input and select dialogs, and a wait state. |
 
 All packages target `net11.0` and ship under a single shared version.
@@ -211,6 +212,37 @@ Microsoft's build-time generator writes the document to a file when the API proj
 It runs the app's startup with a stand-in server to read the endpoints, so skip what needs a real one, such as a database, while `Assembly.GetEntryAssembly()?.GetName().Name == "GetDocument.Insider"`.
 
 To write the file only when you ask, set `<OpenApiGenerateDocumentsOnBuild>false</OpenApiGenerateDocumentsOnBuild>` and build with `-p:OpenApiGenerateDocumentsOnBuild=true`.
+
+#### With GrayMint.Common.OpenApi.ClientGenerator
+
+A client project names its API project, and its build makes the clients: the API writes its document, and NSwag
+makes the C# client, the TypeScript client or both from it, with this package's settings, the same for every client.
+
+```xml
+<!-- the client project -->
+<PropertyGroup>
+  <ApiServerProject>../MyApi/MyApi.csproj</ApiServerProject>
+  <ApiClientNamespace>MyApi.Client</ApiClientNamespace>
+  <ApiClientCSharp>true</ApiClientCSharp>         <!-- Api/Api.cs, the default -->
+  <ApiClientTypeScript>true</ApiClientTypeScript> <!-- Api/Api.ts -->
+</PropertyGroup>
+<ItemGroup>
+  <PackageReference Include="GrayMint.Common" Version="..." />
+  <PackageReference Include="GrayMint.Common.OpenApi.ClientGenerator" Version="..." PrivateAssets="all" />
+</ItemGroup>
+```
+
+The API project takes `Microsoft.Extensions.ApiDescription.Server` (above); it need not write the document on its own
+build. The document and the clients are written in the client project's `Api/` folder, to keep in git so a commit
+shows how the API changed, and again only when the API's build, the client project or the package changed. The C#
+clients derive from `GrayMint.Common.ApiClients.ApiClientCommon` and throw its `ApiException`; an `ApiException.ts`
+beside them is the TypeScript client's own exception class. Where a client needs another value:
+`ApiClientDirectory`, `ApiClientFileName` (`Api`), `ApiClientBaseClass`, `ApiClientExceptionClass`,
+`ApiClientTypeScriptTemplate` (`Angular`, `Axios`, `Fetch`, ...), `ApiClientTypeScriptWithCredentials` (`true`) and
+`ApiClientEnvironment` (`Development`, the environment the API starts in to write its document).
+
+A packable client is published by the reusable `pack_api_clients.yml`, a new version whenever its code changes: see
+[docs/versioning-and-nuget-updates.md](docs/versioning-and-nuget-updates.md#api-clients-pack_api_clientsyml).
 
 #### With NSwag's CLI, as before
 

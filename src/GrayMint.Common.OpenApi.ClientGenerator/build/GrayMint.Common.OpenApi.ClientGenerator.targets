@@ -1,0 +1,111 @@
+<Project>
+
+  <!--
+    The project's client of an ASP.NET Core API, generated on build.
+
+    The API project writes its OpenAPI document (Microsoft's build-time generator,
+    Microsoft.Extensions.ApiDescription.Server), and NSwag makes the C# client, the TypeScript client or both from it
+    with this package's settings (CSharpClient.nswag, TypeScriptClient.nswag beside this file), so every client comes
+    out the same way.
+
+    The client project sets:
+      ApiServerProject                    the API project, a path (required)
+      ApiClientCSharp                     generate the C# client: true (default) or false
+      ApiClientTypeScript                 generate the TypeScript client: true or false (default)
+    and only where it needs another value:
+      ApiClientNamespace                  the C# client's namespace (default: the project's RootNamespace)
+      ApiClientDirectory                  where the document and the clients go (default: Api/ in the project)
+      ApiClientFileName                   the clients' file name, without extension (default: Api)
+      ApiClientBaseClass                  the C# clients' base class (default: GrayMint.Common.ApiClients.ApiClientCommon)
+      ApiClientExceptionClass             the C# clients' exception (default: GrayMint.Common.ApiClients.ApiException)
+      ApiClientTypeScriptTemplate         Angular (default), Axios, Fetch, ...
+      ApiClientTypeScriptWithCredentials  send cookies on cross-origin calls: true (default) or false
+      ApiClientEnvironment                the environment the API starts in to write its document (default: Development)
+
+    The files stay in the project and in git, so a commit shows how the API changed. They are written again when the
+    API's build changed, or the project file or this package did. An ApiException.ts beside them is the TypeScript
+    client's own exception class.
+  -->
+
+  <PropertyGroup>
+    <ApiClientCSharp Condition="'$(ApiClientCSharp)' == ''">true</ApiClientCSharp>
+    <ApiClientTypeScript Condition="'$(ApiClientTypeScript)' == ''">false</ApiClientTypeScript>
+    <ApiClientNamespace Condition="'$(ApiClientNamespace)' == ''">$(RootNamespace)</ApiClientNamespace>
+    <ApiClientDirectory Condition="'$(ApiClientDirectory)' == ''">$(MSBuildProjectDirectory)/Api</ApiClientDirectory>
+    <ApiClientFileName Condition="'$(ApiClientFileName)' == ''">Api</ApiClientFileName>
+    <ApiClientBaseClass Condition="'$(ApiClientBaseClass)' == ''">GrayMint.Common.ApiClients.ApiClientCommon</ApiClientBaseClass>
+    <ApiClientExceptionClass Condition="'$(ApiClientExceptionClass)' == ''">GrayMint.Common.ApiClients.ApiException</ApiClientExceptionClass>
+    <ApiClientTypeScriptTemplate Condition="'$(ApiClientTypeScriptTemplate)' == ''">Angular</ApiClientTypeScriptTemplate>
+    <ApiClientTypeScriptWithCredentials Condition="'$(ApiClientTypeScriptWithCredentials)' == ''">true</ApiClientTypeScriptWithCredentials>
+    <ApiClientEnvironment Condition="'$(ApiClientEnvironment)' == ''">Development</ApiClientEnvironment>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(ApiServerProject)' != ''">
+    <_ApiServerProjectPath>$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(ApiServerProject)'))</_ApiServerProjectPath>
+    <_ApiServerName>$([System.IO.Path]::GetFileNameWithoutExtension('$(_ApiServerProjectPath)'))</_ApiServerName>
+    <!-- the document generator's record of what it wrote, in the API project's obj/ -->
+    <_ApiServerOpenApiCache>$([System.IO.Path]::GetDirectoryName('$(_ApiServerProjectPath)'))/obj/$(_ApiServerName).OpenApiFiles.cache</_ApiServerOpenApiCache>
+    <_ApiClientDir>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '$(ApiClientDirectory)'))</_ApiClientDir>
+    <_ApiClientDocument>$(_ApiClientDir)$(_ApiServerName).json</_ApiClientDocument>
+    <_ApiClientCSharpFile>$(_ApiClientDir)$(ApiClientFileName).cs</_ApiClientCSharpFile>
+    <_ApiClientTypeScriptFile>$(_ApiClientDir)$(ApiClientFileName).ts</_ApiClientTypeScriptFile>
+    <_ApiClientTypeScriptExtension Condition="Exists('$(_ApiClientDir)ApiException.ts')">$(_ApiClientDir)ApiException.ts</_ApiClientTypeScriptExtension>
+    <!-- NSwag puts the values into its JSON as they are, where a backslash would start an escape -->
+    <_ApiClientNSwagDocument>$(_ApiClientDocument.Replace('\', '/'))</_ApiClientNSwagDocument>
+    <_ApiClientNSwagCSharpFile>$(_ApiClientCSharpFile.Replace('\', '/'))</_ApiClientNSwagCSharpFile>
+    <_ApiClientNSwagTypeScriptFile>$(_ApiClientTypeScriptFile.Replace('\', '/'))</_ApiClientNSwagTypeScriptFile>
+    <_ApiClientNSwagTypeScriptExtension>$(_ApiClientTypeScriptExtension.Replace('\', '/'))</_ApiClientNSwagTypeScriptExtension>
+  </PropertyGroup>
+
+  <!-- The API builds first. The client takes only its document, so it does not reference its assembly, and the
+       client's package does not depend on it. The client's package version is not the API's, so packing the client at
+       a version builds the API as it was. -->
+  <PropertyGroup>
+    <_ApiServerPropertiesToRemove>TargetFramework;RuntimeIdentifier;SelfContained;Version;PackageVersion;RepositoryType;RepositoryCommit</_ApiServerPropertiesToRemove>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(ApiServerProject)' != ''">
+    <ProjectReference Include="$(_ApiServerProjectPath)" ReferenceOutputAssembly="false" PrivateAssets="all"
+                      SkipGetTargetFrameworkProperties="true" GlobalPropertiesToRemove="$(_ApiServerPropertiesToRemove)" />
+  </ItemGroup>
+
+  <!-- Not in a design-time build (the IDE's), which builds no reference. -->
+  <Target Name="GenerateApiClient" BeforeTargets="CoreCompile"
+          Condition="'$(ApiServerProject)' != '' AND '$(DesignTimeBuild)' != 'true' AND '$(BuildingProject)' != 'false'"
+          DependsOnTargets="ResolveProjectReferences;_GenerateApiClientDocument;_GenerateApiClientCSharp;_GenerateApiClientTypeScript">
+    <!-- a C# client written for the first time is not among the files the build found -->
+    <ItemGroup Condition="'$(ApiClientCSharp)' == 'true'">
+      <_ApiClientCompile Include="@(Compile)" Condition="'%(Compile.FullPath)' == '$(_ApiClientCSharpFile)'" />
+      <Compile Remove="@(_ApiClientCompile)" />
+      <Compile Include="$(_ApiClientCSharpFile)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_GenerateApiClientDocument">
+    <Error Condition="!Exists('$(_ApiServerProjectPath)')" Text="ApiServerProject: $(_ApiServerProjectPath) does not exist." />
+    <!-- a document deleted, or written somewhere else before: write it again, though the API did not change -->
+    <Delete Files="$(_ApiServerOpenApiCache)" Condition="!Exists('$(_ApiClientDocument)')" />
+    <MSBuild Projects="$(_ApiServerProjectPath)" Targets="GenerateOpenApiDocuments"
+             Properties="OpenApiGenerateDocuments=true;OpenApiDocumentsDirectory=$(_ApiClientDir);OpenApiGenerationEnvironment=$(ApiClientEnvironment)"
+             RemoveProperties="$(_ApiServerPropertiesToRemove)" />
+    <Error Condition="!Exists('$(_ApiClientDocument)')"
+           Text="$(_ApiServerName) wrote no OpenAPI document at $(_ApiClientDocument). It needs Microsoft.Extensions.ApiDescription.Server and an AddOpenApi call." />
+  </Target>
+
+  <Target Name="_GenerateApiClientCSharp" Condition="'$(ApiClientCSharp)' == 'true'"
+          Inputs="$(_ApiClientDocument);$(MSBuildThisFileDirectory)CSharpClient.nswag;$(MSBuildProjectFullPath)"
+          Outputs="$(_ApiClientCSharpFile)">
+    <Error Condition="'$(NSwagExe_Net110)' == ''" Text="NSwag.MSBuild's props are missing: reference GrayMint.Common.OpenApi.ClientGenerator as a package, without ExcludeAssets." />
+    <Exec Command="$(NSwagExe_Net110) run &quot;$(MSBuildThisFileDirectory)CSharpClient.nswag&quot; &quot;/variables:document=$(_ApiClientNSwagDocument),output=$(_ApiClientNSwagCSharpFile),namespace=$(ApiClientNamespace),baseClass=$(ApiClientBaseClass),exceptionClass=$(ApiClientExceptionClass)&quot;" />
+    <!-- NSwag leaves a file that did not change as it was -->
+    <Touch Files="$(_ApiClientCSharpFile)" />
+  </Target>
+
+  <Target Name="_GenerateApiClientTypeScript" Condition="'$(ApiClientTypeScript)' == 'true'"
+          Inputs="$(_ApiClientDocument);$(MSBuildThisFileDirectory)TypeScriptClient.nswag;$(MSBuildProjectFullPath);$(_ApiClientTypeScriptExtension)"
+          Outputs="$(_ApiClientTypeScriptFile)">
+    <Error Condition="'$(NSwagExe_Net110)' == ''" Text="NSwag.MSBuild's props are missing: reference GrayMint.Common.OpenApi.ClientGenerator as a package, without ExcludeAssets." />
+    <Exec Command="$(NSwagExe_Net110) run &quot;$(MSBuildThisFileDirectory)TypeScriptClient.nswag&quot; &quot;/variables:document=$(_ApiClientNSwagDocument),output=$(_ApiClientNSwagTypeScriptFile),template=$(ApiClientTypeScriptTemplate),withCredentials=$(ApiClientTypeScriptWithCredentials),extensionCode=$(_ApiClientNSwagTypeScriptExtension)&quot;" />
+    <Touch Files="$(_ApiClientTypeScriptFile)" />
+  </Target>
+
+</Project>

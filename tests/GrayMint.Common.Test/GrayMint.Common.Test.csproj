@@ -22,5 +22,7 @@
     <ProjectReference Include="..\..\src\GrayMint.Common.AspNetCore\GrayMint.Common.AspNetCore.csproj" />
     <!-- a web app on GrayMint.Common.OpenApi, for its Scalar page -->
     <ProjectReference Include="..\TestWebApp\TestWebApp.csproj" />
+    <!-- TestWebApp's client, made by GrayMint.Common.OpenApi.ClientGenerator's targets -->
+    <ProjectReference Include="..\TestWebApp.Client\TestWebApp.Client.csproj" />
   </ItemGroup>
 </Project>

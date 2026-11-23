@@ -1,0 +1,876 @@
+{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Test Shop",
+    "description": "The shop's API, for its tests.",
+    "version": "1.2.3"
+  },
+  "paths": {
+    "/api/items/{itemId}": {
+      "get": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "Get an item",
+        "description": "The item, with its size.",
+        "operationId": "Items_Get",
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "description": "The item's id, such as \"42\".",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The item.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/items": {
+      "post": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "Add an item",
+        "operationId": "Items_Create",
+        "requestBody": {
+          "description": "The item to add.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemCreateRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-name": "request",
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "The new item.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "List the items",
+        "operationId": "Items_List",
+        "parameters": [
+          {
+            "name": "count",
+            "in": "query",
+            "description": "How many items a page holds.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResultOfItem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/items/count": {
+      "get": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "Count the items",
+        "description": "Open to anyone.",
+        "operationId": "Items_Count",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shop": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "operationId": "Orders_GetShop",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Shop"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/orders": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "operationId": "Orders_List",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "$ref": "#/components/schemas/Order"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/orders/latest": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "operationId": "Orders_GetLatest",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/orders/total": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "operationId": "Orders_GetTotal",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "null",
+                    "number"
+                  ],
+                  "format": "decimal"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/orders/count": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "operationId": "Orders_Count",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "null",
+                    "integer"
+                  ],
+                  "format": "int32"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/orders/summary": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "operationId": "Orders_GetSummary",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderSummary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/orders/legacy": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "operationId": "Orders_GetLegacy",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyBox"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/orders/callback": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "operationId": "Orders_CallbackGET",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "operationId": "Orders_CallbackPOST",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/shops/{shopId}/orders/{orderId}/notes": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "operationId": "Orders_AddNote",
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "author",
+            "in": "query",
+            "schema": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "x-position": 3
+          },
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 4
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Order"
+              }
+            }
+          },
+          "x-name": "order",
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/orders/upload": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "operationId": "Orders_Upload",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "File": {
+                    "type": [
+                      "null",
+                      "string"
+                    ],
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/WeatherForecast": {
+      "get": {
+        "tags": [
+          "WeatherForecast"
+        ],
+        "operationId": "WeatherForecast_Get",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WeatherForecast"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "IPAddress": {
+        "examples": [
+          "192.168.1.10 or 2001:db8::1"
+        ],
+        "type": "string",
+        "additionalProperties": false,
+        "format": "ip"
+      },
+      "Item": {
+        "required": [
+          "itemId",
+          "name",
+          "size"
+        ],
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "description": "The item's id."
+          },
+          "name": {
+            "type": "string",
+            "description": "The item's name."
+          },
+          "size": {
+            "description": "How big the item is.",
+            "$ref": "#/components/schemas/ItemSize"
+          }
+        },
+        "additionalProperties": false,
+        "description": "An item of the shop."
+      },
+      "ItemCreateRequest": {
+        "required": [
+          "name",
+          "size"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The item's name."
+          },
+          "size": {
+            "description": "How big the item is.",
+            "$ref": "#/components/schemas/ItemSize"
+          },
+          "note": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PatchOfString"
+              }
+            ],
+            "description": "A note on the item, if it has one."
+          }
+        },
+        "additionalProperties": false,
+        "description": "An item to add."
+      },
+      "ItemSize": {
+        "enum": [
+          "Small",
+          "Large"
+        ],
+        "type": "string",
+        "description": "How big an item is.\n\n- `Small`: Fits in a hand.\n- `Large`: Takes two hands."
+      },
+      "Label": {
+        "required": [
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Label2": {
+        "required": [
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LegacyBox": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Label"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "ListResultOfItem": {
+        "required": [
+          "items",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Item"
+            },
+            "description": "The items of this page."
+          },
+          "totalCount": {
+            "type": "integer",
+            "description": "How many items match, on every page together.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "One page of a list, and how many items match in all."
+      },
+      "Order": {
+        "required": [
+          "orderId",
+          "clientIp",
+          "state",
+          "price",
+          "extras"
+        ],
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          },
+          "previousState": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OrderState"
+              }
+            ]
+          },
+          "state": {
+            "$ref": "#/components/schemas/OrderState"
+          },
+          "price": {
+            "type": "number",
+            "format": "decimal"
+          },
+          "extras": {
+            "type": "object",
+            "additionalProperties": { }
+          },
+          "note": {
+            "nullable": true
+          },
+          "label": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Label"
+              }
+            ]
+          },
+          "clientIp": {
+            "$ref": "#/components/schemas/IPAddress"
+          },
+          "lines": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/OrderLine"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "OrderBase": {
+        "required": [
+          "orderId"
+        ],
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "OrderLine": {
+        "required": [
+          "quantity"
+        ],
+        "type": "object",
+        "properties": {
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "order": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Order"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "OrderState": {
+        "enum": [
+          "Open",
+          "Closed"
+        ],
+        "type": "string"
+      },
+      "OrderSummary": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/OrderBase"
+          },
+          {
+            "required": [
+              "lineCount"
+            ],
+            "type": "object",
+            "properties": {
+              "lineCount": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "giftLabel": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Label2"
+                  }
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "PatchOfString": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The field's new value."
+          }
+        },
+        "additionalProperties": false,
+        "description": "A change to one field, as `{ \"value\": ... }`. Leave the field out to keep its value."
+      },
+      "Shop": {
+        "type": "object",
+        "properties": {
+          "orders": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/Order"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "WeatherForecast": {
+        "required": [
+          "date",
+          "temperatureC",
+          "temperatureF"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "temperatureC": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "temperatureF": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "summary": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "ipAddress": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IPAddress"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "description": "Paste your JWT token here. Do not include the 'Bearer' prefix.",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Items",
+      "description": "The shop's items.\n\nEach item has a name and a size.",
+      "x-displayName": "Shop items"
+    },
+    {
+      "name": "Orders"
+    },
+    {
+      "name": "WeatherForecast"
+    }
+  ]
+}

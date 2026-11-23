@@ -1,0 +1,70 @@
+name: Pack API Clients
+
+# Packs every API client of the calling repo whose code changed since its newest version on nuget.org
+# (pub/Build-ApiClientPackages.ps1): a client is a packable project that references
+# GrayMint.Common.OpenApi.ClientGenerator, and its build writes the client again from its API first, so an API that
+# changed gets a new client version, at the next patch. The packages are uploaded as the `api-clients` artifact, and
+# `count` says how many there are.
+#
+# REUSABLE ONLY: the calling repo's own publish workflow runs it, then pushes the artifact to nuget.org in a job of its
+# own, as nuget.org Trusted Publishing matches the workflow that requests the OIDC token (see pack_nugets.yml). The
+# caller is checked out into repo/ and the script comes from THIS repo's checkout in tools/.
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: "Runner image"
+        type: string
+        required: false
+        default: ubuntu-latest
+    outputs:
+      count:
+        description: "How many client packages were packed"
+        value: ${{ jobs.pack-api-clients.outputs.count }}
+
+permissions:
+  contents: read
+
+jobs:
+  pack-api-clients:
+    runs-on: ${{ inputs.runs-on }}
+    outputs:
+      count: ${{ steps.pack.outputs.count }}
+    env:
+      DOTNET_NOLOGO: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+
+    steps:
+      - name: Checkout target repo
+        uses: actions/checkout@v5
+        with:
+          path: repo
+          fetch-depth: 0 # the commits the published versions were built from
+
+      - name: Checkout build tools (GrayMint.Common)
+        uses: actions/checkout@v5
+        with:
+          repository: graymint/GrayMint.Common
+          ref: main
+          path: tools
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 11.0.x
+
+      - name: Pack the clients that changed
+        id: pack
+        shell: pwsh
+        run: |
+          & "$env:GITHUB_WORKSPACE/tools/pub/Build-ApiClientPackages.ps1" -repoDir "$env:GITHUB_WORKSPACE/repo" -outputDir "$env:GITHUB_WORKSPACE/nupkgs"
+          "count=$(@(Get-ChildItem "$env:GITHUB_WORKSPACE/nupkgs" -Filter *.nupkg).Count)" >> $env:GITHUB_OUTPUT
+
+      - name: Upload packages
+        if: steps.pack.outputs.count != '0'
+        uses: actions/upload-artifact@v7
+        with:
+          name: api-clients
+          path: nupkgs/
+          if-no-files-found: error

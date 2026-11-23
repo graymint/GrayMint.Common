@@ -18,10 +18,12 @@
     <Project Path="src/GrayMint.Common.Blazor/GrayMint.Common.Blazor.csproj" />
     <Project Path="src/GrayMint.Common.EntityFrameworkCore/GrayMint.Common.EntityFrameworkCore.csproj" />
     <Project Path="src/GrayMint.Common.OpenApi/GrayMint.Common.OpenApi.csproj" />
+    <Project Path="src/GrayMint.Common.OpenApi.ClientGenerator/GrayMint.Common.OpenApi.ClientGenerator.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/GrayMint.Common.Test/GrayMint.Common.Test.csproj" />
     <Project Path="tests/TestWebApp/TestWebApp.csproj" />
+    <Project Path="tests/TestWebApp.Client/TestWebApp.Client.csproj" />
   </Folder>
   <Folder Name="/workflows/">
     <File Path=".github/workflows/publish_nugets.yml" />
