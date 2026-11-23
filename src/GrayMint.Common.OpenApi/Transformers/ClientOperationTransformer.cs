@@ -61,7 +61,7 @@ public class ClientOperationTransformer : IOpenApiOperationTransformer
         if (IsFileResult(action.MethodInfo.ReturnType))
             AddFileResponse(operation);
 
-        TransformResponses(operation, action.MethodInfo);
+        TransformResponses(operation, context.Description, action.MethodInfo);
         return Task.CompletedTask;
     }
 
@@ -85,34 +85,60 @@ public class ClientOperationTransformer : IOpenApiOperationTransformer
         }
     }
 
-    private static void TransformResponses(OpenApiOperation operation, MethodInfo method)
+    private static void TransformResponses(OpenApiOperation operation, ApiDescription description, MethodInfo method)
     {
-        var nullableItems = ReturnsNullableCollection(method);
-        var mediaTypes = (operation.Responses?.Values.AsEnumerable() ?? [])
-            .OfType<OpenApiResponse>()
-            .SelectMany(x => x.Content?.Values.OfType<OpenApiMediaType>() ?? []);
+        if (operation.Responses is null)
+            return;
 
-        foreach (var mediaType in mediaTypes)
+        var (answered, nullability) = Answered(method);
+        var nullableItems = IsNullableCollection(answered, nullability);
+        foreach (var (status, response) in operation.Responses)
         {
-            // a nullable value is the value's schema, nullable, without the oneOf the framework puts around it, which
-            // a client would take for a type of its own
-            if (mediaType.Schema is OpenApiSchema
-                {
-                    OneOf: [OpenApiSchema { Type: JsonSchemaType.Null }, OpenApiSchema { Type: { } valueType } value]
-                })
-            {
-                value.Type = valueType | JsonSchemaType.Null;
-                mediaType.Schema = value;
-            }
+            if (response is not OpenApiResponse { Content: { } content })
+                continue;
 
-            // NSwag read a nullable collection's items as nullable too
-            if (nullableItems && mediaType.Schema is OpenApiSchema { Items: OpenApiSchemaReference items } array)
-                array.Items = new OpenApiSchema { OneOf = [new OpenApiSchema { Type = JsonSchemaType.Null }, items] };
+            // the type the response is declared with: the action's answer, or a ProducesResponseType's
+            var declared = int.TryParse(status, out var statusCode)
+                ? description.SupportedResponseTypes.FirstOrDefault(x => x.StatusCode == statusCode)?.Type
+                : null;
+            var isValue = (declared ?? answered).IsValueType;
+
+            foreach (var mediaType in content.Values.OfType<OpenApiMediaType>())
+            {
+                // an object, a collection or a string is answered never null, as NSwag's document had it whatever the
+                // action declares; since .NET 11 the framework puts the null of a nullable one around its schema
+                if (!isValue)
+                {
+                    if (mediaType.Schema is OpenApiSchema
+                        { OneOf: [OpenApiSchema { Type: JsonSchemaType.Null }, var value] })
+                        mediaType.Schema = value;
+
+                    if (mediaType.Schema is OpenApiSchema { Type: { } schemaType } schema &&
+                        schemaType.HasFlag(JsonSchemaType.Null))
+                        schema.Type = schemaType & ~JsonSchemaType.Null;
+                }
+
+                // a nullable value is the value's schema, nullable, without the oneOf the framework puts around it,
+                // which a client would take for a type of its own
+                else if (mediaType.Schema is OpenApiSchema
+                         {
+                             OneOf: [OpenApiSchema { Type: JsonSchemaType.Null }, OpenApiSchema { Type: { } valueType } value]
+                         })
+                {
+                    value.Type = valueType | JsonSchemaType.Null;
+                    mediaType.Schema = value;
+                }
+
+                // NSwag read a nullable collection's items as nullable too
+                if (nullableItems && mediaType.Schema is OpenApiSchema { Items: OpenApiSchemaReference items } array)
+                    array.Items = new OpenApiSchema
+                        { OneOf = [new OpenApiSchema { Type = JsonSchemaType.Null }, items] };
+            }
         }
     }
 
-    // a collection of objects the action may answer null for, such as Task<Item[]?>
-    private static bool ReturnsNullableCollection(MethodInfo method)
+    // the type an action answers, out of the Task, ValueTask or ActionResult around it, and whether it may be null
+    private static (Type Type, NullabilityInfo Nullability) Answered(MethodInfo method)
     {
         var type = method.ReturnType;
         var nullability = new NullabilityInfoContext().Create(method.ReturnParameter);
@@ -124,6 +150,12 @@ public class ClientOperationTransformer : IOpenApiOperationTransformer
             nullability = nullability.GenericTypeArguments[0];
         }
 
+        return (type, nullability);
+    }
+
+    // a collection of objects the action may answer null for, such as Task<Item[]?>
+    private static bool IsNullableCollection(Type type, NullabilityInfo nullability)
+    {
         var elementType = type.IsArray
             ? type.GetElementType()
             : type.IsGenericType && typeof(System.Collections.IEnumerable).IsAssignableFrom(type) &&

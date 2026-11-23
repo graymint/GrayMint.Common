@@ -20,10 +20,23 @@ public class OrdersController : ControllerBase
         return Task.FromResult<Order[]?>(null);
     }
 
+    [HttpGet("api/orders/latest")]
+    public Task<Order?> GetLatest()
+    {
+        return Task.FromResult<Order?>(null);
+    }
+
     [HttpGet("api/orders/total")]
     public Task<decimal?> GetTotal()
     {
         return Task.FromResult<decimal?>(null);
+    }
+
+    [HttpGet("api/orders/count")]
+    [ProducesResponseType<int?>(200)]
+    public IActionResult Count()
+    {
+        return Ok(null);
     }
 
     [HttpGet("api/orders/summary")]

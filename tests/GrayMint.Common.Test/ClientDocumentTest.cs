@@ -108,6 +108,27 @@ public class ClientDocumentTest
     }
 
     [TestMethod]
+    public void Object_or_collection_answered_is_never_null()
+    {
+        // as NSwag's document had them, though the actions declare them nullable (Task<Order?>, Task<Order[]?>)
+        var latest = ResponseSchema("/api/orders/latest", "get");
+        Assert.IsNull(latest["oneOf"]);
+        Assert.AreEqual("#/components/schemas/Order", (string?)latest["$ref"]);
+
+        var orders = ResponseSchema("/api/orders", "get")["type"];
+        Assert.AreEqual("array", orders is JsonValue ? (string?)orders : orders?.ToJsonString());
+    }
+
+    [TestMethod]
+    public void Nullable_value_an_attribute_declares_stays_nullable()
+    {
+        // the action answers an IActionResult; ProducesResponseType<int?> says what
+        var count = ResponseSchema("/api/orders/count", "get");
+        CollectionAssert.AreEquivalent(new[] { "null", "integer" },
+            count["type"]!.AsArray().Select(x => (string?)x).ToArray());
+    }
+
+    [TestMethod]
     public void Nullable_value_answered_is_the_values_schema()
     {
         var total = ResponseSchema("/api/orders/total", "get");
