@@ -1,0 +1,11 @@
+<Project>
+
+  <!-- A client's package carries its doc comments, the API's own words, which an IDE shows for each call and type. The
+       generated code has a comment wherever the API's document has words; a member with none is no warning. Before the
+       project file, so a client can still turn either off. -->
+  <PropertyGroup>
+    <GenerateDocumentationFile Condition="'$(GenerateDocumentationFile)' == ''">true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+</Project>

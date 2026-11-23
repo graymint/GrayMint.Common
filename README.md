@@ -236,7 +236,8 @@ The API project takes `Microsoft.Extensions.ApiDescription.Server` (above); it n
 build. The document and the clients are written in the client project's `Api/` folder, to keep in git so a commit
 shows how the API changed, and again only when the API's build, the client project or the package changed. The C#
 clients derive from `GrayMint.Common.ApiClients.ApiClientCommon` and throw its `ApiException`; an `ApiException.ts`
-beside them is the TypeScript client's own exception class. Where a client needs another value:
+beside them is the TypeScript client's own exception class. A client's package carries its doc comments, the API's
+words, which an IDE shows for each call and type. Where a client needs another value:
 `ApiClientDirectory`, `ApiClientFileName` (`Api`), `ApiClientBaseClass`, `ApiClientExceptionClass`,
 `ApiClientTypeScriptTemplate` (`Angular`, `Axios`, `Fetch`, ...), `ApiClientTypeScriptWithCredentials` (`true`) and
 `ApiClientEnvironment` (`Development`, the environment the API starts in to write its document).

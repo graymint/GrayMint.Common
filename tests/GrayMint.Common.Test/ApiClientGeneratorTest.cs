@@ -58,6 +58,15 @@ public class ApiClientGeneratorTest
         StringAssert.Contains(File.ReadAllText(Path.Combine(apiDir, "Api.ts")), "export class ItemsClient");
     }
 
+    [TestMethod]
+    public void Client_carries_the_api_words_as_doc_comments()
+    {
+        // the client's doc file, copied beside this test's assembly, has the API's words for an IDE to show
+        var docFile = Path.Combine(AppContext.BaseDirectory, "TestWebApp.Client.xml");
+        Assert.IsTrue(File.Exists(docFile));
+        StringAssert.Contains(File.ReadAllText(docFile), "Get an item");
+    }
+
     private static string FindRepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);

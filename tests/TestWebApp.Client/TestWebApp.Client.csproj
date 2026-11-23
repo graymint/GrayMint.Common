@@ -1,4 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../src/GrayMint.Common.OpenApi.ClientGenerator/build/GrayMint.Common.OpenApi.ClientGenerator.props" />
+
   <!-- TestWebApp's clients, made on this project's build by GrayMint.Common.OpenApi.ClientGenerator: its targets come
        from src/ here, where a client project elsewhere takes them from the package, so every push tests them -->
   <PropertyGroup>
