@@ -22,7 +22,8 @@ public static class GrayMintApp
         throw CreateOptionsValidationException(optionsName, optionsType, failureMessage);
     }
 
-    public static async Task UseGrayMintDatabaseCommand<T>(this IServiceProvider serviceProvider, string[] args)
+    public static async Task UseGrayMintDatabaseCommand<T>(this IServiceProvider serviceProvider, string[] args,
+        CancellationToken cancellationToken)
         where T : DbContext
     {
         var logger = serviceProvider.GetRequiredService<ILogger<WebApplication>>();
@@ -36,10 +37,10 @@ public static class GrayMintApp
                 throw new InvalidOperationException("RecreateDb command is only allowed in Development environment.");
 
             logger.LogInformation("Recreating the database of {DbContext}...", typeof(T).Name);
-            await appDbContext.Database.EnsureDeletedAsync();
+            await appDbContext.Database.EnsureDeletedAsync(cancellationToken);
         }
 
-        await appDbContext.Database.EnsureCreatedAsync();
+        await appDbContext.Database.EnsureCreatedAsync(cancellationToken);
     }
 
     public static Task RunAsync(WebApplication webApplication, string[] args)

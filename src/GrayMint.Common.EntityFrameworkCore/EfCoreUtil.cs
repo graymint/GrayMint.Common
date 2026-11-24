@@ -11,14 +11,14 @@ namespace GrayMint.Common.EntityFrameworkCore;
 
 public static class EfCoreUtil
 {
-    public static Task UpdateEnums<T, TEnum>(DbSet<T> dbSet)
+    public static Task UpdateEnums<T, TEnum>(DbSet<T> dbSet, CancellationToken cancellationToken)
         where T : class
         where TEnum : Enum
     {
-        return UpdateEnums<T, TEnum, byte>(dbSet);
+        return UpdateEnums<T, TEnum, byte>(dbSet, cancellationToken);
     }
 
-    public static async Task UpdateEnums<T, TEnum, TEnumType>(DbSet<T> dbSet)
+    public static async Task UpdateEnums<T, TEnum, TEnumType>(DbSet<T> dbSet, CancellationToken cancellationToken)
         where T : class
         where TEnum : Enum
         where TEnumType : notnull
@@ -28,7 +28,7 @@ public static class EfCoreUtil
                 .ToDictionary(item => item, item => Enum.GetName(typeof(TEnum), item));
 
         var oldEnumItemKeys = new List<TEnumType>();
-        foreach (var dbItem in await dbSet.ToArrayAsync())
+        foreach (var dbItem in await dbSet.ToArrayAsync(cancellationToken))
         {
             var dbItemKeyProp = dbItem.GetType().GetProperties().Single(x => x.Name.EndsWith("Id"));
             var dbItemKeyValue = dbItemKeyProp.GetValue(dbItem, null) ??
@@ -67,17 +67,17 @@ public static class EfCoreUtil
         database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true ||
         database.ProviderName?.Contains("PostgreSQL", StringComparison.OrdinalIgnoreCase) == true;
 
-    public static async Task EnsureTablesCreated(DatabaseFacade database)
+    public static async Task EnsureTablesCreated(DatabaseFacade database, CancellationToken cancellationToken)
     {
         // Probe first: a create that fails as "already exists" logs a failed command, read as a fault, on every start.
         // The catch stays for a probe that cannot run and for two starts at once.
-        if (await AllTablesExist(database))
+        if (await AllTablesExist(database, cancellationToken))
             return;
 
         try
         {
             var databaseCreator = (RelationalDatabaseCreator)database.GetService<IDatabaseCreator>();
-            await databaseCreator.CreateTablesAsync();
+            await databaseCreator.CreateTablesAsync(cancellationToken);
         }
         catch (DbException ex) when (
             ex.ErrorCode == 2714 ||                                                           // SQL Server: object already exists
@@ -93,7 +93,7 @@ public static class EfCoreUtil
 
     // Not HasTables(), which is true for any table: contexts that share a database would skip theirs after the first.
     // A plain DbCommand, so EF's log never shows the probe; a failure answers false, and the create's catch decides.
-    private static async Task<bool> AllTablesExist(DatabaseFacade database)
+    private static async Task<bool> AllTablesExist(DatabaseFacade database, CancellationToken cancellationToken)
     {
         try
         {
@@ -108,7 +108,7 @@ public static class EfCoreUtil
             var connection = database.GetDbConnection();
             var wasClosed = connection.State != ConnectionState.Open;
             if (wasClosed)
-                await database.OpenConnectionAsync();
+                await database.OpenConnectionAsync(cancellationToken);
 
             try
             {
@@ -136,7 +136,7 @@ public static class EfCoreUtil
                         AddParameter(command, "@schema", table.Schema);
                     }
 
-                    var count = Convert.ToInt32(await command.ExecuteScalarAsync() ?? 0);
+                    var count = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken) ?? 0);
                     if (count == 0)
                         return false;
                 }
@@ -149,9 +149,9 @@ public static class EfCoreUtil
                     await database.CloseConnectionAsync();
             }
         }
-        catch
+        catch when (!cancellationToken.IsCancellationRequested)
         {
-            // provider we cannot probe, or the probe failed for any other reason
+            // provider we cannot probe, or the probe failed for any reason but a cancel
             return false;
         }
     }
@@ -167,7 +167,8 @@ public static class EfCoreUtil
         command.Parameters.Add(parameter);
     }
 
-    public static async Task<bool> SqlFunctionExists(DatabaseFacade database, string schema, string functionName)
+    public static async Task<bool> SqlFunctionExists(DatabaseFacade database, string schema, string functionName,
+        CancellationToken cancellationToken)
     {
         var sql = IsPostgres(database)
             ? $"SELECT COUNT(1) FROM information_schema.routines " +
@@ -176,11 +177,12 @@ public static class EfCoreUtil
             : $"SELECT COUNT(1) FROM sys.objects WHERE object_id=OBJECT_ID(N'[{schema}].[{functionName}]') " +
               "AND type IN ( N'FN', N'IF', N'TF', N'FS', N'FT' )";
 
-        var res = await ExecuteScalar(database, sql);
+        var res = await ExecuteScalar(database, sql, cancellationToken);
         return res > 0;
     }
 
-    public static async Task<bool> SqlTableExists(DatabaseFacade database, string schema, string tableName)
+    public static async Task<bool> SqlTableExists(DatabaseFacade database, string schema, string tableName,
+        CancellationToken cancellationToken)
     {
         var sql = IsPostgres(database)
             ? $"SELECT COUNT(1) FROM information_schema.tables " +
@@ -189,11 +191,11 @@ public static class EfCoreUtil
             : $"SELECT COUNT(1) FROM sys.objects WHERE object_id=OBJECT_ID(N'[{schema}].[{tableName}]') " +
               "AND type IN ( N'U' )";
 
-        var res = await ExecuteScalar(database, sql);
+        var res = await ExecuteScalar(database, sql, cancellationToken);
         return res > 0;
     }
 
-    private static async Task<int> ExecuteScalar(DatabaseFacade database, string sql)
+    private static async Task<int> ExecuteScalar(DatabaseFacade database, string sql, CancellationToken cancellationToken)
     {
         await using var cmd = database.GetDbConnection().CreateCommand();
         if (database.CurrentTransaction != null) cmd.Transaction = database.CurrentTransaction.GetDbTransaction();
@@ -201,11 +203,11 @@ public static class EfCoreUtil
         ArgumentNullException.ThrowIfNull(cmd.Connection);
         var connection = cmd.Connection;
         if (connection.State != ConnectionState.Open)
-            await connection.OpenAsync();
+            await connection.OpenAsync(cancellationToken);
 
         await using var command = connection.CreateCommand();
         command.CommandText = sql;
-        var scalar = await command.ExecuteScalarAsync();
+        var scalar = await command.ExecuteScalarAsync(cancellationToken);
         return Convert.ToInt32(scalar);
     }
 }

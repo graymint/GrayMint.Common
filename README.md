@@ -81,8 +81,8 @@ var app = builder.Build();
 app.UseGrayMintCommonServices(new UseServicesOptions());
 app.UseGrayMintOpenApi();
 
-await app.Services.UseGrayMintDatabaseCommand<AppDbContext>(args); // /recreateDb, EnsureCreated
-await GrayMintApp.RunAsync(app, args);                             // honors /initOnly
+await app.Services.UseGrayMintDatabaseCommand<AppDbContext>(args, CancellationToken.None); // /recreateDb, EnsureCreated
+await GrayMintApp.RunAsync(app, args);                                                    // honors /initOnly
 ```
 
 ### Exceptions that speak HTTP
@@ -117,13 +117,13 @@ Alongside it, `Generics` provides the small contract types every API ends up nee
 
 ```csharp
 // Keep an enum lookup table in sync with its C# enum (adds, renames, removes)
-await EfCoreUtil.UpdateEnums<StatusLookup, Status>(db.StatusLookups);
+await EfCoreUtil.UpdateEnums<StatusLookup, Status>(db.StatusLookups, ct);
 
 // Create tables idempotently; works on SQL Server and PostgreSQL
-await EfCoreUtil.EnsureTablesCreated(db.Database);
+await EfCoreUtil.EnsureTablesCreated(db.Database, ct);
 
 // Provider-aware existence checks
-bool hasFn = await EfCoreUtil.SqlFunctionExists(db.Database, "dbo", "fnCalcUsage");
+bool hasFn = await EfCoreUtil.SqlFunctionExists(db.Database, "dbo", "fnCalcUsage", ct);
 ```
 
 Named default constraints come from EF Core itself: `modelBuilder.Model.UseNamedDefaultConstraints(true)` names

@@ -9,7 +9,9 @@ public abstract class SimpleSelectProvider(GenericSelectItem? preload, string? e
 
     // the apps' own providers use them
     // ReSharper disable UnusedParameter.Global
-    protected abstract Task<GenericSelectItem[]> SearchImpl(string? search, int? recordCount, CancellationToken cancellationToken);
+    protected abstract Task<IReadOnlyList<GenericSelectItem>> SearchImpl(string? search, int? recordCount,
+        CancellationToken cancellationToken);
+
     protected abstract Task<GenericSelectItem> GetImpl(string itemId, CancellationToken cancellationToken);
     // ReSharper restore UnusedParameter.Global
     public virtual Task<GenericSelectItem?> AddNew() => throw new NotImplementedException();
@@ -32,10 +34,10 @@ public abstract class SimpleSelectProvider(GenericSelectItem? preload, string? e
         return item;
     }
 
-    public async Task<GenericSelectItem[]> Search(string? search, int? recordCount, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<GenericSelectItem>> Search(string? search, int? recordCount,
+        CancellationToken cancellationToken)
     {
         var items = await SearchImpl(search: search, recordCount: recordCount, cancellationToken);
-        items = items.Where(x => x.ItemId != excludeId).ToArray();
-        return items.ToArray();
+        return items.Where(x => x.ItemId != excludeId).ToArray();
     }
 }

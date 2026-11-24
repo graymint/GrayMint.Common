@@ -8,7 +8,7 @@ namespace GrayMint.Common.Utils;
 
 public static class GmUtils
 {
-    public static async Task ForEachAsync<T>(T[] source, Func<T, Task> body, int maxDegreeOfParallelism,
+    public static async Task ForEachAsync<T>(IReadOnlyList<T> source, Func<T, Task> body, int maxDegreeOfParallelism,
         CancellationToken cancellationToken)
     {
         var tasks = new List<Task>();
@@ -60,7 +60,7 @@ public static class GmUtils
         return aes.Key;
     }
 
-    public static string RedactJsonValue(string json, string[] keys)
+    public static string RedactJsonValue(string json, IReadOnlyList<string> keys)
     {
         foreach (var key in keys) {
             // array

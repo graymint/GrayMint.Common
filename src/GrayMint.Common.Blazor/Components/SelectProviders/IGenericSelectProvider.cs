@@ -7,7 +7,7 @@ public interface IGenericSelectProvider
     public int SearchModeThreshold { get; }
     Task<GenericSelectItem?> AddNew();
     Task<GenericSelectItem> Get(string itemId, CancellationToken cancellationToken);
-    Task<GenericSelectItem[]> Search(string? search, int? recordCount, CancellationToken cancellationToken);
+    Task<IReadOnlyList<GenericSelectItem>> Search(string? search, int? recordCount, CancellationToken cancellationToken);
     bool CanAdd { get; }
 
 }

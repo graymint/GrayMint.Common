@@ -2,12 +2,13 @@
 
 namespace GrayMint.Common.Blazor.Components.SelectProviders;
 
-public class StaticSelectProvider(GenericSelectItem[] items)
+public class StaticSelectProvider(IReadOnlyList<GenericSelectItem> items)
     : SimpleSelectProvider(preload: null, excludeId: null)
 {
-    protected override Task<GenericSelectItem[]> SearchImpl(string? search, int? recordCount, CancellationToken cancellationToken)
+    protected override Task<IReadOnlyList<GenericSelectItem>> SearchImpl(string? search, int? recordCount,
+        CancellationToken cancellationToken)
     {
-        var result = items
+        IReadOnlyList<GenericSelectItem> result = items
             .Where(x => string.IsNullOrWhiteSpace(search) || search.Equals(x.Text, StringComparison.OrdinalIgnoreCase))
             .ToArray();
 
