@@ -1,8 +1,8 @@
 ﻿namespace GrayMint.Common.AspNetCore.ApplicationLifetime;
 
-public class GrayMinApplicationLifetimeService<T>(
+public class GrayMintApplicationLifetimeService<T>(
     IServiceScopeFactory scopeFactory,
-    ILogger<GrayMinApplicationLifetimeService<T>> logger)
+    ILogger<GrayMintApplicationLifetimeService<T>> logger)
     : IHostedService where T : IGrayMintApplicationLifetime
 {
     public async Task StartAsync(CancellationToken cancellationToken)

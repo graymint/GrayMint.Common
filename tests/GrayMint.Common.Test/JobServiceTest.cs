@@ -104,10 +104,10 @@ public class JobServiceTest : TestBase
         await using var serviceProvider = CreateServiceProvider<QuickJob>(new JobRuns());
         var serviceScopeFactory = serviceProvider.GetRequiredService<IServiceScopeFactory>();
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => new GrayMinJobService<QuickJob>(serviceScopeFactory,
+        Assert.Throws<ArgumentOutOfRangeException>(() => new GrayMintJobService<QuickJob>(serviceScopeFactory,
             NullLogger<QuickJob>.Instance, new GrayMintJobOptions { Interval = TimeSpan.Zero }));
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => new GrayMinJobService<QuickJob>(serviceScopeFactory,
+        Assert.Throws<ArgumentOutOfRangeException>(() => new GrayMintJobService<QuickJob>(serviceScopeFactory,
             NullLogger<QuickJob>.Instance, new GrayMintJobOptions { DueTime = TimeSpan.FromSeconds(-1) }));
     }
 
@@ -137,10 +137,10 @@ public class JobServiceTest : TestBase
             .BuildServiceProvider();
     }
 
-    private static GrayMinJobService<TJob> CreateJobService<TJob>(IServiceProvider serviceProvider,
+    private static GrayMintJobService<TJob> CreateJobService<TJob>(IServiceProvider serviceProvider,
         ILogger<TJob> logger, GrayMintJobOptions jobOptions) where TJob : IGrayMintJob
     {
-        return new GrayMinJobService<TJob>(serviceProvider.GetRequiredService<IServiceScopeFactory>(), logger,
+        return new GrayMintJobService<TJob>(serviceProvider.GetRequiredService<IServiceScopeFactory>(), logger,
             jobOptions);
     }
 

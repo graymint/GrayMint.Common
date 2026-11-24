@@ -2,14 +2,14 @@ namespace GrayMint.Common.AspNetCore.Jobs;
 
 // each job runs on its own schedule, apart from the app's other jobs: the next run starts an interval after the
 // last one ended, and the wait between runs holds a timer, not a thread
-public class GrayMinJobService<T> : BackgroundService where T : IGrayMintJob
+public class GrayMintJobService<T> : BackgroundService where T : IGrayMintJob
 {
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ILogger<T> _logger;
     private readonly GrayMintJobOptions _jobOptions;
     private readonly string _jobName;
 
-    public GrayMinJobService(
+    public GrayMintJobService(
         IServiceScopeFactory serviceScopeFactory,
         ILogger<T> logger,
         GrayMintJobOptions jobOptions)
