@@ -38,14 +38,13 @@ public class TlsCertificateSelector(
     {
         var domain = Normalize(serverName);
         var context = domain != null ? await GetCertificateContext(domain, cancellationToken) : null;
-        if (context == null && _options.DefaultDomain != null && domain != Normalize(_options.DefaultDomain))
-            context = await GetCertificateContext(Normalize(_options.DefaultDomain)!, cancellationToken);
-
-        if (context == null)
-            throw new AuthenticationException($"There is no certificate for {serverName}.");
+        if (context == null && Normalize(_options.DefaultDomain) is { } defaultDomain && domain != defaultDomain)
+            context = await GetCertificateContext(defaultDomain, cancellationToken);
 
         // new options each time, as Kestrel sets the connection's protocols on them
-        return new SslServerAuthenticationOptions { ServerCertificateContext = context };
+        return context != null
+            ? new SslServerAuthenticationOptions { ServerCertificateContext = context }
+            : throw new AuthenticationException($"There is no certificate for {serverName}.");
     }
 
     /// <summary>Drops the domain's certificate from the cache, so the next connection loads it again.</summary>
@@ -67,11 +66,9 @@ public class TlsCertificateSelector(
                 return entry.Context;
         }
 
-        SslStreamCertificateContext? context;
         try
         {
-            var pfx = await loader(domain, cancellationToken);
-            context = pfx != null ? CreateCertificateContext(pfx) : null;
+            return await LoadCertificateContext(domain, now, cancellationToken);
         }
         catch (Exception ex) when (entry != null && !cancellationToken.IsCancellationRequested)
         {
@@ -80,13 +77,19 @@ public class TlsCertificateSelector(
             _logger.LogWarning(ex, "Could not load a certificate; the one loaded before is used. Domain: {Domain}", domain);
             return entry.Context;
         }
+    }
 
-        if (context == null)
+    private async ValueTask<SslStreamCertificateContext?> LoadCertificateContext(string domain, DateTime now,
+        CancellationToken cancellationToken)
+    {
+        var pfx = await loader(domain, cancellationToken);
+        if (pfx == null)
         {
             _entries.TryRemove(domain, out _);
             return null;
         }
 
+        var context = CreateCertificateContext(pfx);
         _entries[domain] = new Entry(context, now);
         return context;
     }
@@ -109,7 +112,10 @@ public class TlsCertificateSelector(
         var certificates = X509CertificateLoader.LoadPkcs12Collection(pfx, password: null);
         var certificate = certificates.FirstOrDefault(x => x.HasPrivateKey)
                           ?? throw new InvalidOperationException("The PFX has no certificate with a private key.");
-        var intermediates = new X509Certificate2Collection(certificates.Where(x => x != certificate).ToArray());
+
+        var intermediates =
+            new X509Certificate2Collection(certificates.Where(x => !ReferenceEquals(x, certificate)).ToArray());
+
         return SslStreamCertificateContext.Create(certificate, intermediates, offline: true);
     }
 

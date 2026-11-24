@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace GrayMint.Common.Test;
 
 [TestClass]
-public class JobServiceTest
+public class JobServiceTest : TestBase
 {
     [TestMethod]
     public async Task Runs_the_job_at_its_due_time_then_an_interval_after_each_run()
@@ -21,9 +21,9 @@ public class JobServiceTest
             new GrayMintJobOptions { DueTime = TimeSpan.Zero, Interval = TimeSpan.FromMilliseconds(200) });
 
         var stopwatch = Stopwatch.StartNew();
-        await jobService.StartAsync(CancellationToken.None);
-        await runs.ThirdStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        await jobService.StopAsync(CancellationToken.None);
+        await jobService.StartAsync(TestCt);
+        await runs.ThirdStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TestCt);
+        await jobService.StopAsync(TestCt);
 
         // two intervals between the three runs: the wait is not skipped
         Assert.IsGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(380), stopwatch.Elapsed);
@@ -38,9 +38,9 @@ public class JobServiceTest
         using var jobService = CreateJobService(serviceProvider, logger,
             new GrayMintJobOptions { DueTime = TimeSpan.Zero, Interval = TimeSpan.FromMilliseconds(50) });
 
-        await jobService.StartAsync(CancellationToken.None);
-        await runs.ThirdStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        await jobService.StopAsync(CancellationToken.None);
+        await jobService.StartAsync(TestCt);
+        await runs.ThirdStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TestCt);
+        await jobService.StopAsync(TestCt);
 
         Assert.AreEqual(LogLevel.Error, logger.Level);
         Assert.AreEqual("Job failed. JobName: FailingJob", logger.Message);
@@ -55,10 +55,10 @@ public class JobServiceTest
         using var jobService = CreateJobService(serviceProvider, logger,
             new GrayMintJobOptions { DueTime = TimeSpan.Zero, Interval = TimeSpan.FromMilliseconds(50), MaxRetry = 2 });
 
-        await jobService.StartAsync(CancellationToken.None);
+        await jobService.StartAsync(TestCt);
         Assert.IsNotNull(jobService.ExecuteTask);
-        await jobService.ExecuteTask.WaitAsync(TimeSpan.FromSeconds(10));
-        await jobService.StopAsync(CancellationToken.None);
+        await jobService.ExecuteTask.WaitAsync(TimeSpan.FromSeconds(10), TestCt);
+        await jobService.StopAsync(TestCt);
 
         Assert.AreEqual(3, runs.Count);
         Assert.AreEqual("Job failed too many times and stopped. JobName: FailingJob, FailedCount: 3", logger.Message);
@@ -72,11 +72,11 @@ public class JobServiceTest
         using var jobService = CreateJobService(serviceProvider, NullLogger<SlowToStopJob>.Instance,
             new GrayMintJobOptions { DueTime = TimeSpan.Zero, ExecuteOnShutdown = true });
 
-        await jobService.StartAsync(CancellationToken.None);
-        await runs.FirstStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        await jobService.StopAsync(CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(10));
+        await jobService.StartAsync(TestCt);
+        await runs.FirstStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TestCt);
+        await jobService.StopAsync(TestCt).WaitAsync(TimeSpan.FromSeconds(10), TestCt);
 
-        CollectionAssert.AreEqual(new[] { "start 1", "end 1", "start 2", "end 2" }, runs.Events.ToArray());
+        Assert.AreSequenceEqual(["start 1", "end 1", "start 2", "end 2"], runs.Events);
     }
 
     [TestMethod]
@@ -88,11 +88,11 @@ public class JobServiceTest
         using var jobService = CreateJobService(serviceProvider, logger,
             new GrayMintJobOptions { DueTime = TimeSpan.Zero });
 
-        await jobService.StartAsync(CancellationToken.None);
-        await runs.FirstStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await jobService.StartAsync(TestCt);
+        await runs.FirstStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TestCt);
         using var shutdownCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
         // not the shutdown token for the wait: it is the one under test
-        await jobService.StopAsync(shutdownCts.Token).WaitAsync(TimeSpan.FromSeconds(10), CancellationToken.None);
+        await jobService.StopAsync(shutdownCts.Token).WaitAsync(TimeSpan.FromSeconds(10), TestCt);
 
         Assert.AreEqual(LogLevel.Warning, logger.Level);
         runs.Release.SetResult();
@@ -106,6 +106,7 @@ public class JobServiceTest
 
         Assert.Throws<ArgumentOutOfRangeException>(() => new GrayMinJobService<QuickJob>(serviceScopeFactory,
             NullLogger<QuickJob>.Instance, new GrayMintJobOptions { Interval = TimeSpan.Zero }));
+
         Assert.Throws<ArgumentOutOfRangeException>(() => new GrayMinJobService<QuickJob>(serviceScopeFactory,
             NullLogger<QuickJob>.Instance, new GrayMintJobOptions { DueTime = TimeSpan.FromSeconds(-1) }));
     }
@@ -120,6 +121,7 @@ public class JobServiceTest
 
         Assert.Throws<InvalidOperationException>(() =>
             services.AddGrayMintJob<QuickJob>(new GrayMintJobOptions { Interval = TimeSpan.FromMinutes(1) }));
+
         await using var serviceProvider = services.BuildServiceProvider();
         Assert.HasCount(2, serviceProvider.GetServices<IHostedService>());
     }
@@ -154,8 +156,16 @@ public class JobServiceTest
         {
             var run = Interlocked.Increment(ref Count);
             Events.Enqueue($"start {run}");
-            if (run == 1) FirstStarted.TrySetResult();
-            if (run == 3) ThirdStarted.TrySetResult();
+            switch (run)
+            {
+                case 1:
+                    FirstStarted.TrySetResult();
+                    break;
+                case 3:
+                    ThirdStarted.TrySetResult();
+                    break;
+            }
+
             return run;
         }
     }

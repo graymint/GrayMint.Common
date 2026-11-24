@@ -24,6 +24,7 @@ public class AcmeOrder(IOrderContext orderContext, IChallengeContext challengeCo
         var challenge = _validateRequested
             ? await challengeContext.Resource().WaitAsync(cancellationToken)
             : await challengeContext.Validate().WaitAsync(cancellationToken);
+
         _validateRequested = true;
 
         return challenge.Status switch
@@ -43,6 +44,7 @@ public class AcmeOrder(IOrderContext orderContext, IChallengeContext challengeCo
         // Certes refuses the empty Country it makes of it.
         var chain = await orderContext.Generate(new CsrInfo { CommonName = domain }, privateKey)
             .WaitAsync(cancellationToken);
+
         return ToPfx(chain.Certificate.ToPem(), chain.Issuers.Select(x => x.ToPem()), privateKey.ToPem());
     }
 

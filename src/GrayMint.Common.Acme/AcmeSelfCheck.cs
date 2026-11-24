@@ -21,14 +21,25 @@ public static class AcmeSelfCheck
     public static async Task Check(string domain, string token, string keyAuthorization, HttpMessageHandler handler,
         TimeSpan timeout, CancellationToken cancellationToken = default)
     {
+        var answer = await ReadAnswer(domain, token, handler, timeout, cancellationToken);
+
+        // the authority, too, ignores the whitespace at the end (RFC 8555, 8.3)
+        if (answer.TrimEnd() != keyAuthorization)
+            throw OtherAnswer(domain, null);
+    }
+
+    private static async Task<string> ReadAnswer(string domain, string token, HttpMessageHandler handler,
+        TimeSpan timeout, CancellationToken cancellationToken)
+    {
+        // over the caller's handler, which keeps the connections: disposing this client closes none
+        // ReSharper disable once ShortLivedHttpClient
         using var httpClient = new HttpClient(handler, disposeHandler: false);
         httpClient.Timeout = timeout;
         httpClient.MaxResponseContentBufferSize = MaxAnswerLength;
 
-        string answer;
         try
         {
-            answer = await httpClient.GetStringAsync(ChallengeUrl(domain, token), cancellationToken);
+            return await httpClient.GetStringAsync(ChallengeUrl(domain, token), cancellationToken);
         }
         catch (HttpRequestException ex) when (ex.HttpRequestError is HttpRequestError.NameResolutionError)
         {
@@ -47,10 +58,6 @@ public static class AcmeSelfCheck
             throw new AcmeSelfCheckException(AcmeSelfCheckError.NotReached,
                 $"Port 80 of {domain} could not be reached. Open port 80 to the server.", ex);
         }
-
-        // the authority, too, ignores the whitespace at the end (RFC 8555, 8.3)
-        if (answer.TrimEnd() != keyAuthorization)
-            throw OtherAnswer(domain, null);
     }
 
     private static AcmeSelfCheckException OtherAnswer(string domain, Exception? innerException) =>

@@ -8,16 +8,19 @@ namespace GrayMint.Common.Test;
 // The API's description types and names what a client generator reads as NSwag's own document did, where the
 // framework's differs (TestWebApp's OrdersController).
 [TestClass]
-public class ClientDocumentTest
+public class ClientDocumentTest : TestBase
 {
-    private static JsonObject _document = null!;
+    private static JsonObject? _document;
+
+    private static JsonObject Document =>
+        _document ?? throw new InvalidOperationException("The class has not been initialized.");
 
     [ClassInitialize]
     public static async Task ClassInitialize(TestContext testContext)
     {
         await using var factory = new WebApplicationFactory<TestWebApp.Program>();
         using var client = factory.CreateClient();
-        var json = await client.GetStringAsync("/openapi/v1.json");
+        var json = await client.GetStringAsync("/openapi/v1.json", testContext.CancellationToken);
         _document = JsonNode.Parse(json)?.AsObject() ?? throw new AssertFailedException("No description.");
     }
 
@@ -27,10 +30,10 @@ public class ClientDocumentTest
         // the enum's own schema: one type, and its values only
         var state = Schema("OrderState");
         Assert.IsInstanceOfType<JsonValue>(state["type"]);
-        Assert.AreEqual(2, state["enum"]!.AsArray().Count);
-        Assert.IsFalse(state["enum"]!.AsArray().Any(x => x is null));
+        Assert.HasCount(2, Required(state, "enum").AsArray());
+        Assert.DoesNotContain(x => x is null, Required(state, "enum").AsArray());
 
-        var order = Schema("Order")["properties"]!;
+        var order = Required(Schema("Order"), "properties");
         Assert.AreEqual("#/components/schemas/OrderState", (string?)order["state"]?["$ref"]);
         Assert.AreEqual("null", (string?)order["previousState"]?["oneOf"]?[0]?["type"]);
     }
@@ -60,7 +63,7 @@ public class ClientDocumentTest
         var lines = Schema("Order")["properties"]?["lines"];
         Assert.AreEqual("#/components/schemas/OrderLine", (string?)lines?["items"]?["$ref"]);
 
-        var line = Schema("OrderLine")["properties"]!;
+        var line = Required(Schema("OrderLine"), "properties");
         Assert.AreEqual("integer", (string?)line["quantity"]?["type"]);
         Assert.AreEqual("#/components/schemas/Order", (string?)line["order"]?["oneOf"]?[1]?["$ref"]);
     }
@@ -84,7 +87,7 @@ public class ClientDocumentTest
     [TestMethod]
     public void Class_keeps_its_base()
     {
-        var parts = Schema("OrderSummary")["allOf"]!.AsArray();
+        var parts = Required(Schema("OrderSummary"), "allOf").AsArray();
         Assert.AreEqual("#/components/schemas/OrderBase", (string?)parts[0]?["$ref"]);
         Assert.IsNotNull(parts[1]?["properties"]?["lineCount"]);
         Assert.IsNull(parts[1]?["properties"]?["orderId"]);
@@ -124,8 +127,8 @@ public class ClientDocumentTest
     {
         // the action answers an IActionResult; ProducesResponseType<int?> says what
         var count = ResponseSchema("/api/orders/count", "get");
-        CollectionAssert.AreEquivalent(new[] { "null", "integer" },
-            count["type"]!.AsArray().Select(x => (string?)x).ToArray());
+        var types = Required(count, "type").AsArray().Select(x => (string?)x);
+        Assert.AreSequenceEqual(["null", "integer"], types, SequenceOrder.InAnyOrder);
     }
 
     [TestMethod]
@@ -134,8 +137,8 @@ public class ClientDocumentTest
         var total = ResponseSchema("/api/orders/total", "get");
         Assert.IsNull(total["oneOf"]);
         Assert.AreEqual("decimal", (string?)total["format"]);
-        CollectionAssert.AreEquivalent(new[] { "null", "number" },
-            total["type"]!.AsArray().Select(x => (string?)x).ToArray());
+        var types = Required(total, "type").AsArray().Select(x => (string?)x);
+        Assert.AreSequenceEqual(["null", "number"], types, SequenceOrder.InAnyOrder);
     }
 
     [TestMethod]
@@ -151,14 +154,16 @@ public class ClientDocumentTest
     public void Parameters_and_body_have_their_places()
     {
         var operation = Operation("/api/shops/{shopId}/orders/{orderId}/notes", "post");
-        var positions = operation["parameters"]!.AsArray()
-            .ToDictionary(x => (string)x!["name"]!, x => (int?)x!["x-position"]);
+        var positions = Required(operation, "parameters").AsArray().OfType<JsonNode>()
+            .ToDictionary(x => (string?)x["name"] ?? throw new AssertFailedException("A parameter has no name."),
+                x => (int?)x["x-position"]);
+
         Assert.AreEqual(1, positions["shopId"]);
         Assert.AreEqual(3, positions["author"]);
         Assert.AreEqual(4, positions["orderId"]);
 
         // a body that may be left out is not required, and not nullable
-        var body = operation["requestBody"]!;
+        var body = Required(operation, "requestBody");
         Assert.AreEqual(2, (int?)body["x-position"]);
         Assert.AreNotEqual(true, (bool?)body["required"]);
         Assert.AreEqual("#/components/schemas/Order", (string?)body["content"]?["application/json"]?["schema"]?["$ref"]);
@@ -170,9 +175,9 @@ public class ClientDocumentTest
         var form = Operation("/api/orders/upload", "post")["requestBody"]?["content"]?["multipart/form-data"]?["schema"];
         var file = form?["properties"]?["File"];
         Assert.AreEqual("binary", (string?)file?["format"]);
-        CollectionAssert.Contains(file?["type"]!.AsArray().Select(x => (string?)x).ToArray(), "null");
-        Assert.IsFalse(form?["required"]?.AsArray().Any(x => (string?)x == "File") == true);
-        Assert.IsNull(_document["components"]?["schemas"]?["IFormFile"]);
+        Assert.Contains("null", Required(file, "type").AsArray().Select(x => (string?)x));
+        Assert.AreNotEqual(true, form?["required"]?.AsArray().Any(x => (string?)x == "File"));
+        Assert.IsNull(Document["components"]?["schemas"]?["IFormFile"]);
     }
 
     [TestMethod]
@@ -189,12 +194,11 @@ public class ClientDocumentTest
         await using var factory = new WebApplicationFactory<TestWebApp.Program>();
         var create = factory.Services.GetRequiredService<IApiDescriptionGroupCollectionProvider>().ApiDescriptionGroups.Items
             .SelectMany(x => x.Items)
-            .Single(x => x.HttpMethod == "POST" && x.RelativePath == "api/items");
+            .Single(x => x is { HttpMethod: "POST", RelativePath: "api/items" });
 
-        CollectionAssert.AreEqual(new[] { "application/json" },
-            create.SupportedRequestFormats.Select(x => x.MediaType).ToArray());
-        CollectionAssert.AreEqual(new[] { "application/json" },
-            create.SupportedResponseTypes.Single(x => x.StatusCode == 200).ApiResponseFormats.Select(x => x.MediaType).ToArray());
+        Assert.AreSequenceEqual(["application/json"], create.SupportedRequestFormats.Select(x => x.MediaType));
+        Assert.AreSequenceEqual(["application/json"],
+            create.SupportedResponseTypes.Single(x => x.StatusCode == 200).ApiResponseFormats.Select(x => x.MediaType));
     }
 
     private static JsonObject ResponseSchema(string path, string method)
@@ -205,13 +209,18 @@ public class ClientDocumentTest
 
     private static JsonObject Operation(string path, string method)
     {
-        return _document["paths"]?[path]?[method]?.AsObject()
+        return Document["paths"]?[path]?[method]?.AsObject()
                ?? throw new AssertFailedException($"{method} {path} is not in the description.");
     }
 
     private static JsonObject Schema(string name)
     {
-        return _document["components"]?["schemas"]?[name]?.AsObject()
+        return Document["components"]?["schemas"]?[name]?.AsObject()
                ?? throw new AssertFailedException($"{name} is not in the description.");
+    }
+
+    private static JsonNode Required(JsonNode? node, string name)
+    {
+        return node?[name] ?? throw new AssertFailedException($"{name} is not in the description.");
     }
 }

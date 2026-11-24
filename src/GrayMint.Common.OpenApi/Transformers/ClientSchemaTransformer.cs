@@ -28,12 +28,16 @@ public class ClientSchemaTransformer : IOpenApiSchemaTransformer
             schema.Pattern = null;
         }
 
-        // an enum of names is a string, which the document leaves unsaid
+        // an enum of names is a string, which the document leaves unsaid; its values are typed never null, but the
+        // framework puts a null among them
+        // ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (schema.Type == null && schema.Enum is { Count: > 0 } values &&
             values.All(x => x == null || x.GetValueKind() == JsonValueKind.String))
             schema.Type = values.Any(x => x == null)
                 ? JsonSchemaType.String | JsonSchemaType.Null
                 : JsonSchemaType.String;
+
+        // ReSharper restore ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 
         // a dictionary of any value says it has values, or a client takes it for a plain object
         if (context.JsonTypeInfo.Kind == JsonTypeInfoKind.Dictionary && schema.AdditionalProperties == null)

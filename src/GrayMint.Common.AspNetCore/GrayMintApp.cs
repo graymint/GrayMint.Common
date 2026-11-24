@@ -35,7 +35,7 @@ public static class GrayMintApp
             if (!hostEnvironment.IsDevelopment())
                 throw new InvalidOperationException("RecreateDb command is only allowed in Development environment.");
 
-            logger.LogInformation($"Recreating the {nameof(T)} database...");
+            logger.LogInformation("Recreating the database of {DbContext}...", typeof(T).Name);
             await appDbContext.Database.EnsureDeletedAsync();
         }
 

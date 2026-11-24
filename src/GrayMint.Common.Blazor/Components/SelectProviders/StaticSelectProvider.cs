@@ -10,6 +10,7 @@ public class StaticSelectProvider(GenericSelectItem[] items)
         var result = items
             .Where(x => string.IsNullOrWhiteSpace(search) || search.Equals(x.Text, StringComparison.OrdinalIgnoreCase))
             .ToArray();
+
         return Task.FromResult(result);
     }
 

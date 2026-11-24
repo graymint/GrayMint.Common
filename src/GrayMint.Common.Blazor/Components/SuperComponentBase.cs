@@ -9,6 +9,7 @@ namespace GrayMint.Common.Blazor.Components;
 public class SuperComponentBase : ComponentBase, IDisposable
 {
     protected bool Disposed;
+    private bool _isWaitStateRegistered;
     protected bool IsBusy => WaitState.IsBusy;
 
     [Inject] protected ISnackbar Snackbar { get; set; } = null!;
@@ -19,7 +20,6 @@ public class SuperComponentBase : ComponentBase, IDisposable
     [Parameter] public WaitState WaitState { get; set; } = new();
     [CascadingParameter] protected RouteData RouteData { get; set; } = null!;
 
-    private bool _isWaitStateRegistered;
     public IDisposable SetBusy()
     {
         if (!_isWaitStateRegistered)

@@ -4,7 +4,7 @@ using GrayMint.Common.Exceptions;
 namespace GrayMint.Common.Test;
 
 [TestClass]
-public class ExceptionsTest
+public class ExceptionsTest : TestBase
 {
     [TestMethod]
     public void AlreadyExists_Is_should_detect_provider_duplicate_errors()
@@ -20,6 +20,7 @@ public class ExceptionsTest
                 ["HelpLink.EvtID"] = "2601"
             }
         };
+
         Assert.IsTrue(AlreadyExistsException.Is(sqlServerEx));
 
         // SQLite style: message carries the constraint failure (error 19)

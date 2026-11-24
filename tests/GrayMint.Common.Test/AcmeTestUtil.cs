@@ -4,11 +4,8 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace GrayMint.Common.Test;
 
@@ -28,7 +25,7 @@ internal static class AcmeTestUtil
 
     /// <summary>A certificate of the domain and the intermediate that signed it, each as PEM, as an authority sends them:
     /// the intermediate's root stays out.</summary>
-    public static (string CertificatePem, string IssuerPem, string KeyPem) CreateChain(string domain)
+    public static TestCertificateChain CreateChain(string domain)
     {
         // The intermediate is signed by a root, as an authority's is: a self-signed one is a root, which Linux rightly
         // leaves out of the chain a server sends.
@@ -42,13 +39,20 @@ internal static class AcmeTestUtil
         caRequest.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, true, 0, true));
         using var caCertificate = caRequest.Create(root, DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(365),
             RandomNumberGenerator.GetBytes(16));
+
         using var ca = caCertificate.CopyWithPrivateKey(caKey);
 
         using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
         var request = new CertificateRequest($"CN={domain}", key, HashAlgorithmName.SHA256);
         using var certificate = request.Create(ca, DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddDays(90),
             RandomNumberGenerator.GetBytes(16));
-        return (certificate.ExportCertificatePem(), ca.ExportCertificatePem(), key.ExportPkcs8PrivateKeyPem());
+
+        return new TestCertificateChain
+        {
+            CertificatePem = certificate.ExportCertificatePem(),
+            IssuerPem = ca.ExportCertificatePem(),
+            KeyPem = key.ExportPkcs8PrivateKeyPem()
+        };
     }
 
     /// <summary>Whatever name the URL has, the connection goes to the port on the loopback.</summary>
@@ -84,17 +88,22 @@ internal static class AcmeTestUtil
     }
 
     /// <summary>Kestrel on a port of the loopback, answering with the request delegate.</summary>
-    public static async Task<(WebApplication App, int Port)> StartWebServer(RequestDelegate requestDelegate,
-        Action<ListenOptions>? configureListen = null)
+    public static async Task<WebApplication> StartWebServer(RequestDelegate requestDelegate,
+        Action<ListenOptions>? configureListen = null, CancellationToken cancellationToken = default)
     {
         var builder = WebApplication.CreateSlimBuilder();
         builder.WebHost.UseKestrel(options =>
             options.Listen(IPAddress.Loopback, 0, listenOptions => configureListen?.Invoke(listenOptions)));
+
         var app = builder.Build();
         app.Run(requestDelegate);
-        await app.StartAsync();
-        var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!
-            .Addresses.Single();
-        return (app, new Uri(address).Port);
+        await app.StartAsync(cancellationToken);
+        return app;
+    }
+
+    /// <summary>The port a server started by <see cref="StartWebServer"/> listens on.</summary>
+    public static int GetPort(WebApplication app)
+    {
+        return new Uri(app.Urls.Single()).Port;
     }
 }

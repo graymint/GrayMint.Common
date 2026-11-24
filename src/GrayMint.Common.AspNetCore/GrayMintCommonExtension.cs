@@ -8,7 +8,6 @@ public static class GrayMintCommonExtension
     public static IServiceCollection AddGrayMintCommonServices(this IServiceCollection services,
         RegisterServicesOptions servicesOptions)
     {
-        // CORS
         if (servicesOptions.AddCors)
             services.AddCors(o => o.AddPolicy(GrayMintApp.CorsPolicyName, corsPolicyBuilder =>
             {
@@ -19,7 +18,6 @@ public static class GrayMintCommonExtension
                     .SetPreflightMaxAge(TimeSpan.FromHours(24 * 30));
             }));
 
-        // Add services to the container.
         if (servicesOptions.AddControllers)
             services.AddControllers(mvcOptions =>
             {
@@ -59,14 +57,12 @@ public static class GrayMintCommonExtension
         {
             app.Use((context, next) =>
             {
-                // check if the request is *not* using the HTTPS scheme
                 if (context.Request.Path == "/")
                 {
                     context.Response.Redirect(path);
                     return Task.CompletedTask;
                 }
 
-                // otherwise continue with the request pipeline
                 return next();
             });
 

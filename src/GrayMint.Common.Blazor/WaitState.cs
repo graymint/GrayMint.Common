@@ -1,7 +1,9 @@
 namespace GrayMint.Common.Blazor;
+
 public class WaitState
 {
     private int _counter;
+    public string? Message { get; set; }
     public bool IsBusy => _counter > 0;
     public event EventHandler? IsBusyChanged;
 
@@ -11,11 +13,10 @@ public class WaitState
         return new Worker(this);
     }
 
-    public string? Message { get; set; }
-
     private class Worker : IDisposable
     {
         private readonly WaitState _workState;
+        private bool _disposed;
 
         public Worker(WaitState workState)
         {
@@ -24,7 +25,6 @@ public class WaitState
             if (workState._counter == 1) workState.IsBusyChanged?.Invoke(workState, EventArgs.Empty);
         }
 
-        private bool _disposed;
         public void Dispose()
         {
             if (_disposed)

@@ -67,10 +67,9 @@ internal sealed class ClientSchemaBuilder(
         {
             done.Add(name);
             if (Schemas[name] is not OpenApiSchema { Properties.Count: > 0 } schema ||
-                registry.FindType(name) is not { } type || !HasBaseSchema(type))
+                registry.FindType(name) is not { } type || SchemaBaseType(type) is not { } baseType)
                 continue;
 
-            var baseType = type.BaseType!;
             var baseReference = await GetComponent(baseType, cancellationToken);
             var baseProperties = _jsonOptions.GetTypeInfo(baseType).Properties.Select(x => x.Name).ToHashSet();
             var own = new OpenApiSchema
@@ -93,16 +92,18 @@ internal sealed class ClientSchemaBuilder(
         }
     }
 
-    // a class NSwag gave its base's schema: one whose base is a class of the app or a package with fields of its own,
-    // not one the framework describes by its derived types
-    private static bool HasBaseSchema(Type type)
+    // the base whose schema NSwag gave a class: a class of the app or a package with fields of its own, not one the
+    // framework describes by its derived types
+    private static Type? SchemaBaseType(Type type)
     {
         return type.BaseType is { IsClass: true } baseType && baseType != typeof(object) &&
                baseType.Namespace?.StartsWith("System", StringComparison.Ordinal) == false &&
                baseType.Namespace?.StartsWith("Microsoft", StringComparison.Ordinal) == false &&
                !type.IsDefined(typeof(JsonPolymorphicAttribute), inherit: true) &&
                !baseType.IsDefined(typeof(JsonPolymorphicAttribute), inherit: true) &&
-               baseType.GetProperties(BindingFlags.Public | BindingFlags.Instance).Length > 0;
+               baseType.GetProperties(BindingFlags.Public | BindingFlags.Instance).Length > 0
+            ? baseType
+            : null;
     }
 
     private Task<IOpenApiSchema> BuildPropertySchema(JsonPropertyInfo property, CancellationToken cancellationToken)
@@ -128,6 +129,7 @@ internal sealed class ClientSchemaBuilder(
             var elementNullability = nullability?.ElementType ?? nullability?.GenericTypeArguments.LastOrDefault();
             var element = await BuildSchema(elementType, IsNullable(elementType, elementNullability),
                 elementNullability, cancellationToken);
+
             var kind = typeInfo.Kind == JsonTypeInfoKind.Enumerable ? JsonSchemaType.Array : JsonSchemaType.Object;
             return typeInfo.Kind == JsonTypeInfoKind.Enumerable
                 ? new OpenApiSchema { Type = kind | NullFlag(nullable), Items = element }
@@ -143,8 +145,8 @@ internal sealed class ClientSchemaBuilder(
         }
 
         var schema = await context.GetOrCreateSchemaAsync(type, null, cancellationToken);
-        if (nullable && schema is OpenApiSchema { Type: { } schemaType } nullableSchema)
-            nullableSchema.Type = schemaType | JsonSchemaType.Null;
+        if (nullable && schema.Type is { } schemaType)
+            schema.Type = schemaType | JsonSchemaType.Null;
         return schema;
     }
 
@@ -165,7 +167,8 @@ internal sealed class ClientSchemaBuilder(
             var framework = IsPlainObject(typeInfo)
                 ? null
                 : await context.GetOrCreateSchemaAsync(type, null, cancellationToken);
-            if (framework == null || framework is OpenApiSchema frameworkSchema && IsObject(frameworkSchema))
+
+            if (framework == null || IsObject(framework))
             {
                 var schema = new OpenApiSchema();
                 document.AddComponent(name, schema);
@@ -214,10 +217,15 @@ internal sealed class ClientSchemaBuilder(
     // a property's words: beside its reference, whose own Description falls back to the type's, or on its schema
     private static void Describe(IOpenApiSchema schema, string text)
     {
-        if (schema is OpenApiSchemaReference reference)
-            reference.Description = reference.Reference.Description ?? text;
-        else if (schema is OpenApiSchema inlineSchema)
-            inlineSchema.Description ??= text;
+        switch (schema)
+        {
+            case OpenApiSchemaReference reference:
+                reference.Description = reference.Reference.Description ?? text;
+                break;
+            case OpenApiSchema inlineSchema:
+                inlineSchema.Description ??= text;
+                break;
+        }
     }
 
     // a property that may be null and refers to a schema of its own says so: the framework writes the bare reference
@@ -240,6 +248,7 @@ internal sealed class ClientSchemaBuilder(
                         Description = reference.Reference.Description,
                         OneOf = [new OpenApiSchema { Type = JsonSchemaType.Null }, reference]
                     };
+
                     reference.Description = null;
                 }
             }

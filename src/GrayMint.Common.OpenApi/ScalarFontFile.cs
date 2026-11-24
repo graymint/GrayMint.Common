@@ -2,4 +2,4 @@
 
 namespace GrayMint.Common.OpenApi;
 
-internal sealed record ScalarFontFile(byte[] Content, EntityTagHeaderValue EntityTag);
+internal sealed record ScalarFontFile(ReadOnlyMemory<byte> Content, EntityTagHeaderValue EntityTag);

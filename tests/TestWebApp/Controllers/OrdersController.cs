@@ -6,65 +6,69 @@ namespace TestWebApp.Controllers;
 // the shapes a client generator needs as NSwag's own document had them (ClientDocumentTest); no doc comments, so its
 // responses have no words of their own
 [ApiController]
+[Route("api")]
 public class OrdersController : ControllerBase
 {
-    [HttpGet("api/shop")]
+    [HttpGet("shop")]
     public Shop GetShop()
     {
         return new Shop();
     }
 
-    [HttpGet("api/orders")]
+    [HttpGet("orders")]
     public Task<Order[]?> List()
     {
         return Task.FromResult<Order[]?>(null);
     }
 
-    [HttpGet("api/orders/latest")]
+    [HttpGet("orders/latest")]
     public Task<Order?> GetLatest()
     {
         return Task.FromResult<Order?>(null);
     }
 
-    [HttpGet("api/orders/total")]
+    [HttpGet("orders/total")]
     public Task<decimal?> GetTotal()
     {
         return Task.FromResult<decimal?>(null);
     }
 
-    [HttpGet("api/orders/count")]
+    [HttpGet("orders/count")]
     [ProducesResponseType<int?>(200)]
     public IActionResult Count()
     {
         return Ok(null);
     }
 
-    [HttpGet("api/orders/summary")]
+    [HttpGet("orders/summary")]
     public OrderSummary GetSummary()
     {
         return new OrderSummary { OrderId = "1" };
     }
 
-    [HttpGet("api/orders/legacy")]
+    [HttpGet("orders/legacy")]
     public LegacyBox GetLegacy()
     {
         return new LegacyBox();
     }
 
-    [HttpGet("api/orders/callback")]
-    [HttpPost("api/orders/callback")]
+    [HttpGet("orders/callback")]
+    [HttpPost("orders/callback")]
     public ContentResult Callback()
     {
         return Content("done");
     }
 
     // orderId comes from the route alone, so it is described after the action's own parameters
-    [HttpPost("api/shops/{shopId}/orders/{orderId}/notes")]
+#pragma warning disable ASP0018
+    // ReSharper disable once RouteTemplates.RouteParameterIsNotPassedToMethod
+    [HttpPost("shops/{shopId}/orders/{orderId}/notes")]
+#pragma warning restore ASP0018
     public void AddNote(string shopId, Order? order = null, string? author = null)
     {
     }
 
-    [HttpPost("api/orders/upload")]
+    [HttpPost("orders/upload")]
     public void Upload([FromForm] OrderUploadRequest request)
     {
     }

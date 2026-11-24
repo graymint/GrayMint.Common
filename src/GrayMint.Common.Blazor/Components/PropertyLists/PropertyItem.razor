@@ -201,9 +201,12 @@
             var value = Value;
             if (_selectItem?.Text != null) return _selectItem.Text;
             if (UseNullText && Equals(value, null)) return NullText;
-            if (value is bool boolValue) return boolValue ? TrueText : FalseText;
-            if (value is DateTime dateTimeValue) return UiUtil.FormatDate(dateTimeValue);
-            return value?.ToString() ?? NullText;
+            return value switch
+            {
+                bool boolValue => boolValue ? TrueText : FalseText,
+                DateTime dateTimeValue => UiUtil.FormatDate(dateTimeValue),
+                _ => value?.ToString() ?? NullText
+            };
         }
     }
 

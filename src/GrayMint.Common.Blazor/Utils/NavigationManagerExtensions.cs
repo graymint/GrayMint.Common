@@ -16,8 +16,6 @@ public static class NavigationManagerExtensions
         public string ReplaceQueryValue(Dictionary<string, string?> keyValues)
         {
             var uri = navigationManager.ToAbsoluteUri(navigationManager.Uri);
-
-            // this gets all the query string key value pairs as a collection
             var queryString = HttpUtility.ParseQueryString(uri.Query);
             foreach (var keyValue in keyValues) {
                 queryString.Remove(keyValue.Key);
@@ -44,14 +42,9 @@ public static class NavigationManagerExtensions
         public string RemoveQueryStringByKey(string key)
         {
             var uri = navigationManager.ToAbsoluteUri(navigationManager.Uri);
-
-            // this gets all the query string key value pairs as a collection
             var newQueryString = HttpUtility.ParseQueryString(uri.Query);
-
-            // this removes the key if exists
             newQueryString.Remove(key);
 
-            // this gets the page path from root without QueryString
             var pagePathWithoutQueryString = uri.GetLeftPart(UriPartial.Path);
 
             return newQueryString.Count > 0
@@ -61,9 +54,9 @@ public static class NavigationManagerExtensions
 
         public T GetQueryString<T>(string key)
         {
-            if (navigationManager.TryGetQueryString<T>(key, out var value))
-                return value;
-            throw new KeyNotFoundException($"{nameof(key)} does not exist in query string!");
+            return navigationManager.TryGetQueryString<T>(key, out var value)
+                ? value
+                : throw new KeyNotFoundException($"{key} does not exist in query string!");
         }
 
         public bool TryGetQueryString<T>(string key, [NotNullWhen(true)] out T? value)

@@ -7,32 +7,26 @@ namespace GrayMint.Common.Test;
 // TestWebApp.Client is made on its build by GrayMint.Common.OpenApi.ClientGenerator's targets, from the document
 // TestWebApp writes: the C# client calls the API, and the TypeScript client is written beside it.
 [TestClass]
-public class ApiClientGeneratorTest
+public class ApiClientGeneratorTest : TestBase
 {
-    private static WebApplicationFactory<TestWebApp.Program> _factory = null!;
-
-    [ClassInitialize]
-    public static void ClassInitialize(TestContext testContext)
-    {
-        _factory = new WebApplicationFactory<TestWebApp.Program>();
-    }
+    private static readonly WebApplicationFactory<TestWebApp.Program> Factory = new();
 
     [ClassCleanup]
     public static async Task ClassCleanup()
     {
-        await _factory.DisposeAsync();
+        await Factory.DisposeAsync();
     }
 
     [TestMethod]
     public async Task Client_calls_the_api()
     {
-        var itemsClient = new ItemsClient(_factory.CreateClient());
+        var itemsClient = new ItemsClient(Factory.CreateClient());
 
-        var item = await itemsClient.CreateAsync(new ItemCreateRequest { Name = "cup", Size = ItemSize.Large });
+        var item = await itemsClient.CreateAsync(new ItemCreateRequest { Name = "cup", Size = ItemSize.Large }, TestCt);
         Assert.AreEqual("cup", item.Name);
         Assert.AreEqual(ItemSize.Large, item.Size);
 
-        item = await itemsClient.GetAsync("42");
+        item = await itemsClient.GetAsync("42", TestCt);
         Assert.AreEqual("42", item.ItemId);
     }
 
@@ -40,31 +34,33 @@ public class ApiClientGeneratorTest
     public async Task Client_takes_the_base_class_defaults()
     {
         // the base class's defaults reach the request only through its async hooks, which the settings ask for
-        var handler = new RecordingHandler(_factory.Server.CreateHandler());
-        var itemsClient = new ItemsClient(new HttpClient(handler) { BaseAddress = _factory.Server.BaseAddress }) {
+        var handler = new RecordingHandler(Factory.Server.CreateHandler());
+        var itemsClient = new ItemsClient(new HttpClient(handler) { BaseAddress = Factory.Server.BaseAddress }) {
             DefaultAuthorization = new AuthenticationHeaderValue("Bearer", "test-token")
         };
 
-        await itemsClient.CountAsync();
+        await itemsClient.CountAsync(TestCt);
         Assert.AreEqual("Bearer test-token", handler.LastRequest?.Headers.Authorization?.ToString());
     }
 
     [TestMethod]
-    public void Clients_are_written_beside_the_document()
+    public async Task Clients_are_written_beside_the_document()
     {
         var apiDir = Path.Combine(FindRepoRoot(), "tests", "TestWebApp.Client", "Api");
         Assert.IsTrue(File.Exists(Path.Combine(apiDir, "TestWebApp.json")));
         Assert.IsTrue(File.Exists(Path.Combine(apiDir, "Api.cs")));
-        StringAssert.Contains(File.ReadAllText(Path.Combine(apiDir, "Api.ts")), "export class ItemsClient");
+        var typeScript = await File.ReadAllTextAsync(Path.Combine(apiDir, "Api.ts"), TestCt);
+        Assert.Contains("export class ItemsClient", typeScript);
     }
 
     [TestMethod]
-    public void Client_carries_the_api_words_as_doc_comments()
+    public async Task Client_carries_the_api_words_as_doc_comments()
     {
         // the client's doc file, copied beside this test's assembly, has the API's words for an IDE to show
         var docFile = Path.Combine(AppContext.BaseDirectory, "TestWebApp.Client.xml");
         Assert.IsTrue(File.Exists(docFile));
-        StringAssert.Contains(File.ReadAllText(docFile), "Get an item");
+        var docs = await File.ReadAllTextAsync(docFile, TestCt);
+        Assert.Contains("Get an item", docs);
     }
 
     private static string FindRepoRoot()

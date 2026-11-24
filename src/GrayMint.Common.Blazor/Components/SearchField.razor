@@ -14,8 +14,9 @@
     [Parameter]
     public string? PlaceHolder { get; set; } = CommonResource.Search;
 
-    string _lastSearchValue = "";
-    private async Task OnSearchChanged(string value)
+    private string? _lastSearchValue = "";
+
+    private async Task OnSearchChanged(string? value)
     {
         using var busy = WaitState.Start();
         _lastSearchValue = value;

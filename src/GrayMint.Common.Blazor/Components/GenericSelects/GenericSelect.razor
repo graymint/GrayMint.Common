@@ -1,7 +1,7 @@
 ﻿@using GrayMint.Common.Blazor.Utils
 @inherits SuperComponentBase
 
-@if (_items.Length <= Provider.SearchModeThreshold)
+@if (_items.Count <= Provider.SearchModeThreshold)
 {
     <MudSelect @ref="@_selectControl" T="GenericSelectItem"
                Value="@_selectedItem"

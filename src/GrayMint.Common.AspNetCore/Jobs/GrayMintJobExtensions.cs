@@ -10,13 +10,13 @@ public static class GrayMintJobExtensions
         if (services.Any(descriptor => descriptor.ServiceType == typeof(GrayMinJobService<T>)))
             throw new InvalidOperationException($"A job type can be added only once. JobName: {typeof(T).Name}");
 
-        // Add GrayMinJobService
         services.AddSingleton(serviceProvider =>
         {
             var serviceScopeFactory = serviceProvider.GetRequiredService<IServiceScopeFactory>();
             var logger = serviceProvider.GetRequiredService<ILogger<T>>();
             return new GrayMinJobService<T>(serviceScopeFactory, logger, jobOptions);
         });
+
         services.AddHostedService(serviceProvider => serviceProvider.GetRequiredService<GrayMinJobService<T>>());
 
         return services;

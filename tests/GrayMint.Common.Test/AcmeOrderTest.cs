@@ -8,7 +8,7 @@ namespace GrayMint.Common.Test;
 
 // Certes itself, with no network: the order and the challenge are stand-ins that answer as an authority does
 [TestClass]
-public class AcmeOrderTest
+public class AcmeOrderTest : TestBase
 {
     private const string Domain = "renew.example.com";
 
@@ -19,7 +19,7 @@ public class AcmeOrderTest
         var order = new AcmeOrder(orderContext, new TestChallengeContext(ChallengeStatus.Valid), Domain);
 
         // the test order stops at the download, once the request is built and sent
-        await Assert.ThrowsExactlyAsync<NotSupportedException>(() => order.Validate());
+        await Assert.ThrowsExactlyAsync<NotSupportedException>(() => order.Validate(TestCt));
 
         var request = orderContext.Request ?? throw new InvalidOperationException("No request has been sent.");
         var subject = CertificateRequest.LoadSigningRequest(request, HashAlgorithmName.SHA256).SubjectName.Name;
@@ -32,8 +32,8 @@ public class AcmeOrderTest
         var challengeContext = new TestChallengeContext(ChallengeStatus.Pending, ChallengeStatus.Processing);
         var order = new AcmeOrder(new TestOrderContext(Domain), challengeContext, Domain);
 
-        Assert.IsNull(await order.Validate());
-        Assert.IsNull(await order.Validate());
+        Assert.IsNull(await order.Validate(TestCt));
+        Assert.IsNull(await order.Validate(TestCt));
         Assert.AreEqual(1, challengeContext.ValidateCount);
         Assert.AreEqual(1, challengeContext.ResourceCount);
     }
@@ -45,11 +45,12 @@ public class AcmeOrderTest
         {
             Error = new AcmeError { Detail = "Connection refused" }
         };
+
         var order = new AcmeOrder(new TestOrderContext(Domain), challengeContext, Domain);
 
-        var ex = await Assert.ThrowsExactlyAsync<AcmeException>(() => order.Validate());
-        StringAssert.Contains(ex.Message, Domain);
-        StringAssert.Contains(ex.Message, "Connection refused");
+        var ex = await Assert.ThrowsExactlyAsync<AcmeException>(() => order.Validate(TestCt));
+        Assert.Contains(Domain, ex.Message);
+        Assert.Contains("Connection refused", ex.Message);
     }
 
     [TestMethod]
@@ -58,28 +59,28 @@ public class AcmeOrderTest
         var orderContext = new SigningOrderContext(Domain);
         var order = new AcmeOrder(orderContext, new TestChallengeContext(ChallengeStatus.Valid), Domain);
 
-        var pfx = await order.Validate();
+        var pfx = await order.Validate(TestCt);
 
         Assert.IsNotNull(pfx);
         var certificates = X509CertificateLoader.LoadPkcs12Collection(pfx, password: null);
-        Assert.AreEqual(2, certificates.Count);
+        Assert.HasCount(2, certificates);
         Assert.AreEqual($"CN={Domain}", certificates.Single(x => x.HasPrivateKey).Subject);
         Assert.AreEqual("CN=Test Intermediate", certificates.Single(x => !x.HasPrivateKey).Subject);
 
         // asked again, the order gives what it has, and signs nothing more
-        Assert.AreSame(pfx, await order.Validate());
+        Assert.AreSame(pfx, await order.Validate(TestCt));
         Assert.AreEqual(1, orderContext.FinalizeCount);
     }
 
     [TestMethod]
     public void Pfx_has_the_key_the_certificate_and_its_issuer()
     {
-        var (certificatePem, issuerPem, keyPem) = AcmeTestUtil.CreateChain(Domain);
+        var chain = AcmeTestUtil.CreateChain(Domain);
 
-        var pfx = AcmeOrder.ToPfx(certificatePem, [issuerPem], keyPem);
+        var pfx = AcmeOrder.ToPfx(chain.CertificatePem, [chain.IssuerPem], chain.KeyPem);
 
         var certificates = X509CertificateLoader.LoadPkcs12Collection(pfx, password: null);
-        Assert.AreEqual(2, certificates.Count);
+        Assert.HasCount(2, certificates);
         var certificate = certificates.Single(x => x.HasPrivateKey);
         Assert.AreEqual($"CN={Domain}", certificate.Subject);
         Assert.AreEqual("CN=Test Intermediate", certificates.Single(x => !x.HasPrivateKey).Subject);
@@ -144,11 +145,13 @@ public class AcmeOrderTest
         {
             var request = CertificateRequest.LoadSigningRequest(
                 _request ?? throw new InvalidOperationException("No request has been sent."), HashAlgorithmName.SHA256);
+
             var issuerRequest = new CertificateRequest("CN=Test Intermediate", _issuerKey, HashAlgorithmName.SHA256);
             issuerRequest.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, true));
             using var issuer = issuerRequest.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(365));
             using var certificate = request.Create(issuer, DateTimeOffset.UtcNow.AddMinutes(-5),
                 DateTimeOffset.UtcNow.AddDays(90), RandomNumberGenerator.GetBytes(16));
+
             return Task.FromResult(new CertificateChain(certificate.ExportCertificatePem() + "\n" + issuer.ExportCertificatePem()));
         }
     }

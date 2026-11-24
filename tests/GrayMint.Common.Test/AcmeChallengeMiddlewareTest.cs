@@ -1,20 +1,19 @@
 using System.Net;
 using GrayMint.Common.Acme;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 
 namespace GrayMint.Common.Test;
 
 [TestClass]
-public class AcmeChallengeMiddlewareTest
+public class AcmeChallengeMiddlewareTest : TestBase
 {
     private const string Domain = "checkout.example.com";
     private const string Token = "abc_DEF-123";
     private const string KeyAuthorization = "abc_DEF-123.thumbprint";
 
-    private static async Task<WebApplication> StartApp(List<string> asked)
+    private async Task<WebApplication> StartApp(List<string> asked)
     {
         var builder = WebApplication.CreateSlimBuilder();
         builder.WebHost.UseTestServer();
@@ -24,19 +23,27 @@ public class AcmeChallengeMiddlewareTest
             asked.Add($"{domain} {token}");
             return ValueTask.FromResult(domain == Domain && token == Token ? KeyAuthorization : null);
         });
-        app.Run(context => context.Response.WriteAsync("the app"));
-        await app.StartAsync();
+
+        app.Run(context => context.Response.WriteAsync("the app", context.RequestAborted));
+        await app.StartAsync(TestCt);
         return app;
     }
 
-    private static async Task<(HttpStatusCode, string)> Get(WebApplication app, string host, string path,
-        HttpMethod? method = null)
+    private async Task<TestResponse> Get(WebApplication app, string host, string path, HttpMethod? method = null)
     {
         using var client = app.GetTestClient();
         using var request = new HttpRequestMessage(method ?? HttpMethod.Get, path);
         request.Headers.Host = host;
-        using var response = await client.SendAsync(request);
-        return (response.StatusCode, await response.Content.ReadAsStringAsync());
+        using var response = await client.SendAsync(request, TestCt);
+        var body = await response.Content.ReadAsStringAsync(TestCt);
+        return new TestResponse(response.StatusCode, body);
+    }
+
+    private async Task<HttpStatusCode> GetStatus(WebApplication app, string host, string path,
+        HttpMethod? method = null)
+    {
+        var response = await Get(app, host, path, method);
+        return response.StatusCode;
     }
 
     [TestMethod]
@@ -49,7 +56,7 @@ public class AcmeChallengeMiddlewareTest
 
         Assert.AreEqual(HttpStatusCode.OK, status);
         Assert.AreEqual(KeyAuthorization, body);
-        CollectionAssert.AreEqual(new[] { $"{Domain} {Token}" }, asked);
+        Assert.AreSequenceEqual([$"{Domain} {Token}"], asked);
     }
 
     [TestMethod]
@@ -58,9 +65,10 @@ public class AcmeChallengeMiddlewareTest
         var asked = new List<string>();
         await using var app = await StartApp(asked);
 
-        Assert.AreEqual((HttpStatusCode.NotFound, ""), await Get(app, "other.example.com", AcmeSelfCheck.PathPrefix + Token));
-        Assert.AreEqual((HttpStatusCode.NotFound, ""), await Get(app, Domain, AcmeSelfCheck.PathPrefix + "other"));
-        Assert.AreEqual(2, asked.Count);
+        var notFound = new TestResponse(HttpStatusCode.NotFound, "");
+        Assert.AreEqual(notFound, await Get(app, "other.example.com", AcmeSelfCheck.PathPrefix + Token));
+        Assert.AreEqual(notFound, await Get(app, Domain, AcmeSelfCheck.PathPrefix + "other"));
+        Assert.HasCount(2, asked);
     }
 
     [TestMethod]
@@ -69,14 +77,16 @@ public class AcmeChallengeMiddlewareTest
         var asked = new List<string>();
         await using var app = await StartApp(asked);
 
-        Assert.AreEqual(HttpStatusCode.NotFound, (await Get(app, Domain, AcmeSelfCheck.PathPrefix)).Item1);
-        Assert.AreEqual(HttpStatusCode.NotFound, (await Get(app, Domain, AcmeSelfCheck.PathPrefix + "a.b")).Item1);
-        Assert.AreEqual(HttpStatusCode.NotFound, (await Get(app, Domain, AcmeSelfCheck.PathPrefix + Token + "/x")).Item1);
+        Assert.AreEqual(HttpStatusCode.NotFound, await GetStatus(app, Domain, AcmeSelfCheck.PathPrefix));
+        Assert.AreEqual(HttpStatusCode.NotFound, await GetStatus(app, Domain, AcmeSelfCheck.PathPrefix + "a.b"));
+        Assert.AreEqual(HttpStatusCode.NotFound, await GetStatus(app, Domain, AcmeSelfCheck.PathPrefix + Token + "/x"));
         Assert.AreEqual(HttpStatusCode.NotFound,
-            (await Get(app, Domain, AcmeSelfCheck.PathPrefix + new string('a', 300))).Item1);
+            await GetStatus(app, Domain, AcmeSelfCheck.PathPrefix + new string('a', 300)));
+
         Assert.AreEqual(HttpStatusCode.NotFound,
-            (await Get(app, Domain, AcmeSelfCheck.PathPrefix + Token, HttpMethod.Post)).Item1);
-        Assert.AreEqual(0, asked.Count);
+            await GetStatus(app, Domain, AcmeSelfCheck.PathPrefix + Token, HttpMethod.Post));
+
+        Assert.IsEmpty(asked);
     }
 
     [TestMethod]
@@ -85,8 +95,10 @@ public class AcmeChallengeMiddlewareTest
         var asked = new List<string>();
         await using var app = await StartApp(asked);
 
-        Assert.AreEqual((HttpStatusCode.OK, "the app"), await Get(app, Domain, "/"));
-        Assert.AreEqual((HttpStatusCode.OK, "the app"), await Get(app, Domain, "/.well-known/other"));
-        Assert.AreEqual(0, asked.Count);
+        Assert.AreEqual(new TestResponse(HttpStatusCode.OK, "the app"), await Get(app, Domain, "/"));
+        Assert.AreEqual(new TestResponse(HttpStatusCode.OK, "the app"), await Get(app, Domain, "/.well-known/other"));
+        Assert.IsEmpty(asked);
     }
+
+    private sealed record TestResponse(HttpStatusCode StatusCode, string Body);
 }

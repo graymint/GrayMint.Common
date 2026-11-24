@@ -10,18 +10,16 @@ using Microsoft.Extensions.Options;
 namespace GrayMint.Common.Test;
 
 [TestClass]
-public class LoggingTest
+public class LoggingTest : TestBase
 {
     [TestMethod]
     public async Task ExceptionMiddleware_logs_a_named_client_error_as_information_and_any_other_as_error()
     {
-        Assert.AreEqual((404, LogLevel.Information), await InvokeMiddleware(new KeyNotFoundException()));
-        Assert.AreEqual((403, LogLevel.Information), await InvokeMiddleware(new UnauthorizedAccessException()));
-        Assert.AreEqual((400, LogLevel.Information),
-            await InvokeMiddleware(new NotSupportedException { Data = { ["HttpStatusCode"] = 400 } }));
-        Assert.AreEqual((400, LogLevel.Error), await InvokeMiddleware(new ArgumentException("A bug.")));
-        Assert.AreEqual((503, LogLevel.Error),
-            await InvokeMiddleware(new Exception { Data = { ["HttpStatusCode"] = 503 } }));
+        await AssertMiddleware(new KeyNotFoundException(), 404, LogLevel.Information);
+        await AssertMiddleware(new UnauthorizedAccessException(), 403, LogLevel.Information);
+        await AssertMiddleware(new NotSupportedException { Data = { ["HttpStatusCode"] = 400 } }, 400, LogLevel.Information);
+        await AssertMiddleware(new ArgumentException("A bug."), 400, LogLevel.Error);
+        await AssertMiddleware(new Exception { Data = { ["HttpStatusCode"] = 503 } }, 503, LogLevel.Error);
     }
 
     [TestMethod]
@@ -51,21 +49,24 @@ public class LoggingTest
 
         // the job runs once at the stop
         var jobService = serviceProvider.GetRequiredService<IHostedService>();
-        await jobService.StartAsync(CancellationToken.None);
-        await jobService.StopAsync(CancellationToken.None);
+        await jobService.StartAsync(TestCt);
+        await jobService.StopAsync(TestCt);
 
         Assert.AreEqual(LogLevel.Error, logger.Level);
         Assert.AreEqual($"{typeof(LoggingTest).FullName}.{nameof(FailingJob)}", logger.CategoryName);
     }
 
-    private static async Task<(int, LogLevel?)> InvokeMiddleware(Exception exception)
+    // the status the middleware answers for the exception, and the level it logs it at
+    private static async Task AssertMiddleware(Exception exception, int statusCode, LogLevel logLevel)
     {
         var context = new DefaultHttpContext();
         var logger = new CapturingLogger();
         var middleware = new GrayMintExceptionHandlerExtension.GrayMintExceptionMiddleware(
             _ => throw exception, Options.Create(new GrayMintExceptionHandlerOptions()), logger);
+
         await middleware.Invoke(context);
-        return (context.Response.StatusCode, logger.Level);
+        Assert.AreEqual(statusCode, context.Response.StatusCode, exception.GetType().Name);
+        Assert.AreEqual(logLevel, logger.Level, exception.GetType().Name);
     }
 
     private sealed class FailingJob : IGrayMintJob

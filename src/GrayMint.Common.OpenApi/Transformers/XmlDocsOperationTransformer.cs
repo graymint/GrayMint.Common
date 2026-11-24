@@ -25,6 +25,7 @@ internal sealed class XmlDocsOperationTransformer : IOpenApiOperationTransformer
         {
             var parameterInfo = parameters.FirstOrDefault(x =>
                 string.Equals(x.Name, parameter.Name, StringComparison.OrdinalIgnoreCase));
+
             parameter.Description ??= XmlDocs.Parameter(parameterInfo);
         }
 
@@ -33,6 +34,7 @@ internal sealed class XmlDocsOperationTransformer : IOpenApiOperationTransformer
             var bodyParameter = context.Description.ParameterDescriptions
                 .FirstOrDefault(x => x.Source == BindingSource.Body || x.Source == BindingSource.Form)
                 ?.ParameterDescriptor as ControllerParameterDescriptor;
+
             requestBody.Description ??= XmlDocs.Parameter(bodyParameter?.ParameterInfo);
         }
 

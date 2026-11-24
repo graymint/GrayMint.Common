@@ -31,10 +31,9 @@ public static class UiUtil
         if (timeSpan.TotalMinutes < 60)
             return string.Format(CommonResource.TimeAgoMinutes, (int)timeSpan.TotalMinutes);
 
-        if (timeSpan.TotalHours < 24)
-            return string.Format(CommonResource.TimeAgoHours, (int)timeSpan.TotalHours);
-
-        return string.Format(CommonResource.TimeAgoDays, (int)timeSpan.TotalDays);
+        return timeSpan.TotalHours < 24
+            ? string.Format(CommonResource.TimeAgoHours, (int)timeSpan.TotalHours)
+            : string.Format(CommonResource.TimeAgoDays, (int)timeSpan.TotalDays);
     }
 
     public static string? GetDisplayName(string? name, Guid? defValue)
@@ -46,7 +45,6 @@ public static class UiUtil
     {
         return string.IsNullOrEmpty(name) ? defValue : name;
     }
-
 
     public static string FormatMegaBytes(long? sizeMb, bool use1024 = false, bool round = false)
     {
@@ -60,9 +58,9 @@ public static class UiUtil
         if (size == null) return "-";
         var v = size.Value;
         var u = use1024 ? 1024d : 1000d;
-        string[] units = ["B", "KB", "MB", "GB", "TB", "PB"];
+        IReadOnlyList<string> units = ["B", "KB", "MB", "GB", "TB", "PB"];
         var i = 0; var d = (double)v;
-        while (d >= u && i < units.Length - 1) { d /= u; i++; }
+        while (d >= u && i < units.Count - 1) { d /= u; i++; }
         if (round) d = Math.Round(d);
         return d.ToString("0.##") + " " + units[i];
     }
@@ -71,9 +69,9 @@ public static class UiUtil
     {
         if (bytes == null) return "*";
         var bits = bytes.Value * 8d;
-        string[] units = ["b", "Kb", "Mb", "Gb", "Tb"];
+        IReadOnlyList<string> units = ["b", "Kb", "Mb", "Gb", "Tb"];
         var i = 0;
-        while (bits >= 1000 && i < units.Length - 1) { bits /= 1000; i++; }
+        while (bits >= 1000 && i < units.Count - 1) { bits /= 1000; i++; }
         return bits.ToString("0.##") + " " + units[i];
     }
 
@@ -93,7 +91,6 @@ public static class UiUtil
         if (total == null && free == null || total == 0)
             return "-";
 
-        // if both available and total memory are provided
         if (total == null || free == null) {
             return free != null
                 ? string.Format(CommonResource.FreeMemory, FormatMemoryBytes(free, format: "0.0")) + " / -"
@@ -126,23 +123,29 @@ public static class UiUtil
 
     public static T ConvertValue<T>(object? value, string? name = null)
     {
-        if (value is T value1)
-            return value1;
+        switch (value)
+        {
+            case T value1:
+                return value1;
 
-        if (value is null)
-            return default!;
-
-        // convert using type converter
-        if (value is string newValueString) {
-            if (string.IsNullOrWhiteSpace(newValueString))
+            case null:
                 return default!;
 
-            var converter = TypeDescriptor.GetConverter(typeof(T));
-            if (!converter.CanConvertFrom(newValueString.GetType()))
-                throw new InvalidCastException($"Cannot convert {newValueString.GetType()} to {typeof(T)}. Name: {name}");
+            case string newValueString:
+            {
+                if (string.IsNullOrWhiteSpace(newValueString))
+                    return default!;
 
-            var newValueT = (T)converter.ConvertFromString(newValueString)!;
-            return (T)newValueT;
+                var converter = TypeDescriptor.GetConverter(typeof(T));
+                if (!converter.CanConvertFrom(newValueString.GetType()))
+                    throw new InvalidCastException(
+                        $"Cannot convert {newValueString.GetType()} to {typeof(T)}. Name: {name}");
+
+                var converted = converter.ConvertFromString(newValueString)
+                                ?? throw new InvalidCastException($"Cannot convert to {typeof(T)}. Name: {name}");
+
+                return (T)converted;
+            }
         }
 
         throw new InvalidCastException($"Cannot convert {value.GetType()} to {typeof(T)}. Name: {name}");
@@ -153,7 +156,6 @@ public static class UiUtil
         if (string.IsNullOrEmpty(value))
             return string.Empty;
 
-        // for all digits, add a dash after every 4 digits
         var formattedValue = new StringBuilder();
         for (var i = 0; i < value.Length; i++) {
             if (i > 0 && i % group == 0)

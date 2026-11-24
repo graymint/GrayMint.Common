@@ -27,7 +27,7 @@ internal sealed class JsonAliasApiDescriptionProvider : IApiDescriptionProvider
 
     private static void RemoveAliases<TFormat>(IList<TFormat> formats, Func<TFormat, string> mediaType)
     {
-        if (!formats.Any(x => mediaType(x) == ApiDocsDocumentTransformer.JsonContentType))
+        if (formats.All(x => mediaType(x) != ApiDocsDocumentTransformer.JsonContentType))
             return;
 
         for (var i = formats.Count - 1; i >= 0; i--)

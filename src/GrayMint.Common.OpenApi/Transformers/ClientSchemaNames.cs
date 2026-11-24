@@ -22,8 +22,8 @@ public static class ClientSchemaNames
         if (Nullable.GetUnderlyingType(type) is { } underlyingType)
             return "Nullable" + GetName(underlyingType);
 
-        if (type.IsArray)
-            return GetName(type.GetElementType()!) + "Of";
+        if (type.IsArray && type.GetElementType() is { } elementType)
+            return GetName(elementType) + "Of";
 
         // its own name, not its underlying integer's
         if (type.IsEnum)

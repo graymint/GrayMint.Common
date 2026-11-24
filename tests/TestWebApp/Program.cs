@@ -18,8 +18,10 @@ public class Program
             Description = "The shop's API, for its tests.",
             Version = "1.2.3"
         });
+
         builder.Services.AddGrayMintJob<MyJobService>(new GrayMintJobOptions
             { Interval = TimeSpan.FromSeconds(5), DueTime = TimeSpan.Zero, Name = "MyJobService" });
+
         builder.Services.AddGrayMintJob<MyJobService2>(new GrayMintJobOptions { Interval = TimeSpan.FromSeconds(10) });
         builder.Services.AddScoped<MyJobService>();
         builder.Services.AddScoped<MyJobService2>();
@@ -27,7 +29,6 @@ public class Program
         var app = builder.Build();
         app.UseGrayMintCommonServices(new UseServicesOptions());
         app.UseGrayMintOpenApi(new UseOpenApiOptions { RedirectRootToUi = true });
-
 
         return app.RunAsync();
     }

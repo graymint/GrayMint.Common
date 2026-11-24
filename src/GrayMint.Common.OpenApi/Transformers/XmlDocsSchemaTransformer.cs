@@ -19,6 +19,7 @@ internal sealed class XmlDocsSchemaTransformer : IOpenApiSchemaTransformer
         var type = Nullable.GetUnderlyingType(context.JsonTypeInfo.Type) ?? context.JsonTypeInfo.Type;
         var isComponent = schema.Metadata?.TryGetValue(SchemaIdKey, out var schemaId) == true &&
                           schemaId is string { Length: > 0 };
+
         if (context.JsonPropertyInfo == null || isComponent)
         {
             schema.Description ??= type.IsEnum ? DescribeEnum(type) : XmlDocs.Summary(type);

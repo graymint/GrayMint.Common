@@ -69,18 +69,23 @@ public class ClientOperationTransformer : IOpenApiOperationTransformer
     // as an optional file
     private static void TransformFormFiles(OpenApiSchema fields)
     {
-        foreach (var (name, field) in fields.Properties?.ToArray() ?? [])
+        if (fields.Properties is not { } properties)
+            return;
+
+        foreach (var (name, field) in properties.ToArray())
         {
-            var isFile = field is OpenApiSchemaReference { Target: { Format: "binary" } } ||
-                         field is OpenApiSchema { Format: "binary" };
+            var isFile = field is OpenApiSchemaReference { Target.Format: "binary" } or
+                OpenApiSchema { Format: "binary" };
+
             if (!isFile)
                 continue;
 
-            fields.Properties![name] = new OpenApiSchema
+            properties[name] = new OpenApiSchema
             {
                 Type = JsonSchemaType.String | JsonSchemaType.Null,
                 Format = "binary"
             };
+
             fields.Required?.Remove(name);
         }
     }
@@ -90,8 +95,8 @@ public class ClientOperationTransformer : IOpenApiOperationTransformer
         if (operation.Responses is null)
             return;
 
-        var (answered, nullability) = Answered(method);
-        var nullableItems = IsNullableCollection(answered, nullability);
+        var answered = Answered(method);
+        var nullableItems = IsNullableCollection(answered);
         foreach (var (status, response) in operation.Responses)
         {
             if (response is not OpenApiResponse { Content: { } content })
@@ -101,7 +106,8 @@ public class ClientOperationTransformer : IOpenApiOperationTransformer
             var declared = int.TryParse(status, out var statusCode)
                 ? description.SupportedResponseTypes.FirstOrDefault(x => x.StatusCode == statusCode)?.Type
                 : null;
-            var isValue = (declared ?? answered).IsValueType;
+
+            var isValue = (declared ?? answered.Type).IsValueType;
 
             foreach (var mediaType in content.Values.OfType<OpenApiMediaType>())
             {
@@ -138,24 +144,21 @@ public class ClientOperationTransformer : IOpenApiOperationTransformer
     }
 
     // the type an action answers, out of the Task, ValueTask or ActionResult around it, and whether it may be null
-    private static (Type Type, NullabilityInfo Nullability) Answered(MethodInfo method)
+    private static NullabilityInfo Answered(MethodInfo method)
     {
-        var type = method.ReturnType;
-        var nullability = new NullabilityInfoContext().Create(method.ReturnParameter);
-        while (type.IsGenericType && type.GetGenericTypeDefinition() is var definition &&
+        var answered = new NullabilityInfoContext().Create(method.ReturnParameter);
+        while (answered.Type.IsGenericType && answered.Type.GetGenericTypeDefinition() is var definition &&
                (definition == typeof(Task<>) || definition == typeof(ValueTask<>) ||
                 definition == typeof(ActionResult<>)))
-        {
-            type = type.GenericTypeArguments[0];
-            nullability = nullability.GenericTypeArguments[0];
-        }
+            answered = answered.GenericTypeArguments[0];
 
-        return (type, nullability);
+        return answered;
     }
 
     // a collection of objects the action may answer null for, such as Task<Item[]?>
-    private static bool IsNullableCollection(Type type, NullabilityInfo nullability)
+    private static bool IsNullableCollection(NullabilityInfo answered)
     {
+        var type = answered.Type;
         var elementType = type.IsArray
             ? type.GetElementType()
             : type.IsGenericType && typeof(System.Collections.IEnumerable).IsAssignableFrom(type) &&
@@ -163,7 +166,7 @@ public class ClientOperationTransformer : IOpenApiOperationTransformer
                 ? type.GenericTypeArguments[0]
                 : null;
 
-        return nullability.ReadState == NullabilityState.Nullable && elementType is { IsValueType: false } &&
+        return answered.ReadState == NullabilityState.Nullable && elementType is { IsValueType: false } &&
                elementType != typeof(string);
     }
 
@@ -182,10 +185,15 @@ public class ClientOperationTransformer : IOpenApiOperationTransformer
         // a body a client may leave out is not required, not nullable, as NSwag had it; a client would also take null
         foreach (var mediaType in requestBody.Content?.Values.OfType<OpenApiMediaType>() ?? [])
         {
-            if (mediaType.Schema is OpenApiSchema { OneOf: [OpenApiSchema { Type: JsonSchemaType.Null }, var value] })
-                mediaType.Schema = value;
-            else if (mediaType.Schema is OpenApiSchema { Type: { } type } schema)
-                schema.Type = type & ~JsonSchemaType.Null;
+            switch (mediaType.Schema)
+            {
+                case OpenApiSchema { OneOf: [OpenApiSchema { Type: JsonSchemaType.Null }, var value] }:
+                    mediaType.Schema = value;
+                    break;
+                case OpenApiSchema { Type: { } type } schema:
+                    schema.Type = type & ~JsonSchemaType.Null;
+                    break;
+            }
         }
     }
 
@@ -197,7 +205,7 @@ public class ClientOperationTransformer : IOpenApiOperationTransformer
 
         // a model's property is required by its own metadata; only a parameter of the action is required for having
         // no default value
-        if (parameterInfo != null && description.ModelMetadata?.MetadataKind == ModelMetadataKind.Parameter)
+        if (parameterInfo != null && description.ModelMetadata.MetadataKind == ModelMetadataKind.Parameter)
         {
             if (!parameterInfo.HasDefaultValue)
                 parameter.Required = true;
@@ -211,13 +219,19 @@ public class ClientOperationTransformer : IOpenApiOperationTransformer
             // one that may be null says so, or a client checks that it is not
             if (IsNullable(parameterInfo))
             {
-                if (parameter.Schema is OpenApiSchema { Type: { } schemaType } nullableSchema)
-                    nullableSchema.Type = schemaType | JsonSchemaType.Null;
-                else if (parameter.Schema is OpenApiSchemaReference reference)
-                    parameter.Schema = new OpenApiSchema
-                    {
-                        OneOf = [new OpenApiSchema { Type = JsonSchemaType.Null }, reference]
-                    };
+                switch (parameter.Schema)
+                {
+                    case OpenApiSchema { Type: { } schemaType } nullableSchema:
+                        nullableSchema.Type = schemaType | JsonSchemaType.Null;
+                        break;
+                    case OpenApiSchemaReference reference:
+                        parameter.Schema = new OpenApiSchema
+                        {
+                            OneOf = [new OpenApiSchema { Type = JsonSchemaType.Null }, reference]
+                        };
+
+                        break;
+                }
             }
         }
     }

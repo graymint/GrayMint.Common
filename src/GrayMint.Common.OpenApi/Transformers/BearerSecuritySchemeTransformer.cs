@@ -26,7 +26,6 @@ public class BearerSecuritySchemeTransformer : IOpenApiDocumentTransformer, IOpe
     public Task TransformAsync(OpenApiDocument document,
         OpenApiDocumentTransformerContext context, CancellationToken cancellationToken)
     {
-        // Define the Bearer security scheme
         var securityScheme = new OpenApiSecurityScheme
         {
             Type = SecuritySchemeType.Http,
@@ -36,7 +35,6 @@ public class BearerSecuritySchemeTransformer : IOpenApiDocumentTransformer, IOpe
             Description = "Paste your JWT token here. Do not include the 'Bearer' prefix."
         };
 
-        // Add it to document components
         document.Components ??= new OpenApiComponents();
         document.Components.SecuritySchemes = new Dictionary<string, IOpenApiSecurityScheme>
         {
@@ -47,6 +45,7 @@ public class BearerSecuritySchemeTransformer : IOpenApiDocumentTransformer, IOpe
         var operations = document.Paths.Values.Select(item => item.Operations ?? [])
             .SelectMany(operations => operations.Values)
             .Where(operation => operation.Metadata?.ContainsKey(AnonymousKey) != true);
+
         foreach (var operation in operations)
         {
             operation.Security ??= [];

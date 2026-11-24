@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 
@@ -31,7 +32,7 @@ public static class AcmeChallengeMiddleware
                 IsToken(token) && !string.IsNullOrEmpty(context.Request.Host.Host))
             {
                 keyAuthorization = await keyAuthorizationProvider(
-                    context.Request.Host.Host.TrimEnd('.').ToLowerInvariant(), token!, context.RequestAborted);
+                    context.Request.Host.Host.TrimEnd('.').ToLowerInvariant(), token, context.RequestAborted);
             }
 
             if (keyAuthorization == null)
@@ -45,9 +46,9 @@ public static class AcmeChallengeMiddleware
         });
     }
 
-    internal static bool IsToken(string? token)
+    internal static bool IsToken([NotNullWhen(true)] string? token)
     {
         return !string.IsNullOrEmpty(token) && token.Length <= MaxTokenLength &&
-               token.All(c => c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9') or '-' or '_');
+               token.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_');
     }
 }

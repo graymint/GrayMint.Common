@@ -38,11 +38,9 @@ public static class GrayMintExceptionHandlerExtension
                 var statusCode = GetStatusCode(ex);
                 context.Response.StatusCode = statusCode ?? (int)HttpStatusCode.BadRequest;
 
-                // create Api Error
                 var apiError = ex.ToApiError();
                 apiError = ApplyRootNamespace(apiError, appExceptionOptions.Value.RootNamespace);
 
-                // write json
                 var errorJson = apiError.ToJson();
                 context.Response.ContentType = MediaTypeNames.Application.Json;
                 await context.Response.WriteAsync(errorJson);

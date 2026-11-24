@@ -110,7 +110,7 @@
         var dialog = await dialogService.ShowAsync<GenericInputBox<T>>(title: parameters.Title,
             new DialogParameters
             {
-                [nameof(Params)] = parameters,
+                [nameof(Params)] = parameters
             },
             new DialogOptions
             {

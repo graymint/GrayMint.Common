@@ -4,7 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 
+// the package's users call these, and its strings hold SQL, not words to spell-check
 // ReSharper disable UnusedMember.Global
+// ReSharper disable StringLiteralTypo
 namespace GrayMint.Common.EntityFrameworkCore;
 
 public static class EfCoreUtil
@@ -28,10 +30,10 @@ public static class EfCoreUtil
         var oldEnumItemKeys = new List<TEnumType>();
         foreach (var dbItem in await dbSet.ToArrayAsync())
         {
-            // find 
             var dbItemKeyProp = dbItem.GetType().GetProperties().Single(x => x.Name.EndsWith("Id"));
             var dbItemKeyValue = dbItemKeyProp.GetValue(dbItem, null) ??
                                  throw new InvalidOperationException("LookupId can not be null");
+
             var dbItemNameProp = dbItem.GetType().GetProperties().Single(x => x.Name.EndsWith("Name"));
 
             if (enumItems.TryGetValue((TEnumType)dbItemKeyValue, out var itemValue))
@@ -45,12 +47,15 @@ public static class EfCoreUtil
             }
         }
 
-        // add new Items
         var newEnumItems = enumItems.ExceptBy(oldEnumItemKeys, x => x.Key);
         foreach (var item in newEnumItems)
         {
-            var newDbItem =
-                (T)Activator.CreateInstance(typeof(T), Enum.Parse(typeof(TEnum), item.Value!, true), item.Value)!;
+            var name = item.Value
+                       ?? throw new InvalidOperationException($"{typeof(TEnum).Name} has no name for {item.Key}.");
+
+            var newDbItem = (T)(Activator.CreateInstance(typeof(T), Enum.Parse(typeof(TEnum), name, true), name)
+                                ?? throw new InvalidOperationException($"{typeof(T).Name} could not be created."));
+
             dbSet.Add(newDbItem);
         }
     }
@@ -64,10 +69,8 @@ public static class EfCoreUtil
 
     public static async Task EnsureTablesCreated(DatabaseFacade database)
     {
-        // Creating unconditionally and swallowing the "already exists" error makes EF log a failed
-        // DbCommand on every start once the tables are there, which reads like a real fault in the
-        // log. Probe first and only emit DDL when a table is actually missing. The catch below is
-        // kept as a backstop for the probe being unavailable and for start-up races.
+        // Probe first: a create that fails as "already exists" logs a failed command, read as a fault, on every start.
+        // The catch stays for a probe that cannot run and for two starts at once.
         if (await AllTablesExist(database))
             return;
 
@@ -88,12 +91,8 @@ public static class EfCoreUtil
         }
     }
 
-    // True when every table of this context's model is already present. Deliberately not
-    // RelationalDatabaseCreator.HasTables(), which answers "does the database hold any table at
-    // all" — several contexts share one database here, so the first one to create its tables would
-    // make all the others skip. The probe itself is issued as a plain DbCommand rather than through
-    // EF, so it never reaches EF's command log; any failure returns false and falls back to
-    // create-and-catch.
+    // Not HasTables(), which is true for any table: contexts that share a database would skip theirs after the first.
+    // A plain DbCommand, so EF's log never shows the probe; a failure answers false, and the create's catch decides.
     private static async Task<bool> AllTablesExist(DatabaseFacade database)
     {
         try
@@ -124,6 +123,7 @@ public static class EfCoreUtil
                         // SQLite has no INFORMATION_SCHEMA and no schemas at all
                         command.CommandText =
                             "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = @name";
+
                         AddParameter(command, "@name", table.Name);
                     }
                     else
@@ -131,6 +131,7 @@ public static class EfCoreUtil
                         command.CommandText =
                             "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES " +
                             "WHERE TABLE_NAME = @name AND (@schema IS NULL OR TABLE_SCHEMA = @schema)";
+
                         AddParameter(command, "@name", table.Name);
                         AddParameter(command, "@schema", table.Schema);
                     }
@@ -168,20 +169,12 @@ public static class EfCoreUtil
 
     public static async Task<bool> SqlFunctionExists(DatabaseFacade database, string schema, string functionName)
     {
-        string sql;
-        if (IsPostgres(database))
-        {
-            sql = $"SELECT COUNT(1) FROM information_schema.routines " +
-                  $"WHERE routine_schema = '{schema}' AND routine_name = '{functionName}' " +
-                  $"AND routine_type = 'FUNCTION'";
-        }
-        else
-        {
-            // ReSharper disable StringLiteralTypo
-            sql = $"SELECT COUNT(1) FROM sys.objects WHERE object_id=OBJECT_ID(N'[{schema}].[{functionName}]') " +
-                  "AND type IN ( N'FN', N'IF', N'TF', N'FS', N'FT' )";
-            // ReSharper restore StringLiteralTypo
-        }
+        var sql = IsPostgres(database)
+            ? $"SELECT COUNT(1) FROM information_schema.routines " +
+              $"WHERE routine_schema = '{schema}' AND routine_name = '{functionName}' " +
+              $"AND routine_type = 'FUNCTION'"
+            : $"SELECT COUNT(1) FROM sys.objects WHERE object_id=OBJECT_ID(N'[{schema}].[{functionName}]') " +
+              "AND type IN ( N'FN', N'IF', N'TF', N'FS', N'FT' )";
 
         var res = await ExecuteScalar(database, sql);
         return res > 0;
@@ -189,20 +182,12 @@ public static class EfCoreUtil
 
     public static async Task<bool> SqlTableExists(DatabaseFacade database, string schema, string tableName)
     {
-        string sql;
-        if (IsPostgres(database))
-        {
-            sql = $"SELECT COUNT(1) FROM information_schema.tables " +
-                  $"WHERE table_schema = '{schema}' AND table_name = '{tableName}' " +
-                  $"AND table_type = 'BASE TABLE'";
-        }
-        else
-        {
-            // ReSharper disable StringLiteralTypo
-            sql = $"SELECT COUNT(1) FROM sys.objects WHERE object_id=OBJECT_ID(N'[{schema}].[{tableName}]') " +
-                  "AND type IN ( N'U' )";
-            // ReSharper restore StringLiteralTypo
-        }
+        var sql = IsPostgres(database)
+            ? $"SELECT COUNT(1) FROM information_schema.tables " +
+              $"WHERE table_schema = '{schema}' AND table_name = '{tableName}' " +
+              $"AND table_type = 'BASE TABLE'"
+            : $"SELECT COUNT(1) FROM sys.objects WHERE object_id=OBJECT_ID(N'[{schema}].[{tableName}]') " +
+              "AND type IN ( N'U' )";
 
         var res = await ExecuteScalar(database, sql);
         return res > 0;
@@ -220,8 +205,7 @@ public static class EfCoreUtil
 
         await using var command = connection.CreateCommand();
         command.CommandText = sql;
-        var scalar = (await command.ExecuteScalarAsync())!;
-        var res = Convert.ToInt32(scalar);
-        return res;
+        var scalar = await command.ExecuteScalarAsync();
+        return Convert.ToInt32(scalar);
     }
 }

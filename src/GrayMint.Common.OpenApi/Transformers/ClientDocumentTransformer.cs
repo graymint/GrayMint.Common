@@ -25,7 +25,7 @@ internal sealed class ClientDocumentTransformer(ClientSchemaRegistry registry) :
             builder.MarkNullableReferences();
             await builder.AddBaseClasses(cancellationToken);
             RemoveNullFromEnums(document.Components.Schemas);
-            RemoveUnusedSchemas(document);
+            RemoveUnusedSchemas(document, document.Components.Schemas);
         }
 
         NameSharedOperations(document);
@@ -36,10 +36,13 @@ internal sealed class ClientDocumentTransformer(ClientSchemaRegistry registry) :
     {
         foreach (var schema in schemas.Values.OfType<OpenApiSchema>())
         {
+            // the values are typed never null, but the framework puts a null among them
+            // ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (schema.Enum is not { Count: > 0 } values || !values.Any(x => x is null))
                 continue;
 
             schema.Enum = values.Where(x => x != null).ToList();
+            // ReSharper restore ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (schema.Type is { } type)
                 schema.Type = type & ~JsonSchemaType.Null;
         }
@@ -67,11 +70,10 @@ internal sealed class ClientDocumentTransformer(ClientSchemaRegistry registry) :
         }
     }
 
-    private static void RemoveUnusedSchemas(OpenApiDocument document)
+    private static void RemoveUnusedSchemas(OpenApiDocument document, IDictionary<string, IOpenApiSchema> schemas)
     {
-        var schemas = document.Components!.Schemas!;
         var used = new HashSet<string>();
-        foreach (var (_, _, operation) in Operations(document))
+        foreach (var operation in Operations(document).Select(x => x.Operation))
         {
             foreach (var response in operation.Responses?.Values.AsEnumerable() ?? [])
                 foreach (var schema in Schemas(response.Content))
@@ -88,29 +90,34 @@ internal sealed class ClientDocumentTransformer(ClientSchemaRegistry registry) :
 
         void Visit(IOpenApiSchema? schema)
         {
-            if (schema is OpenApiSchemaReference reference)
+            while (true)
             {
-                if (reference.Reference.Id is { } id && used.Add(id))
-                    Visit(schemas.TryGetValue(id, out var target) ? target : null);
-                return;
+                if (schema is OpenApiSchemaReference reference)
+                {
+                    if (reference.Reference.Id is not { } id || !used.Add(id))
+                        return;
+
+                    schema = schemas.TryGetValue(id, out var target) ? target : null;
+                    continue;
+                }
+
+                if (schema is not OpenApiSchema openApiSchema)
+                    return;
+
+                foreach (var part in (openApiSchema.AllOf ?? []).Concat(openApiSchema.OneOf ?? [])
+                             .Concat(openApiSchema.AnyOf ?? []).Concat(openApiSchema.Properties?.Values ?? []))
+                    Visit(part);
+
+                Visit(openApiSchema.Items);
+                schema = openApiSchema.AdditionalProperties;
             }
-
-            if (schema is not OpenApiSchema openApiSchema)
-                return;
-
-            foreach (var part in (openApiSchema.AllOf ?? []).Concat(openApiSchema.OneOf ?? [])
-                         .Concat(openApiSchema.AnyOf ?? []).Concat(openApiSchema.Properties?.Values ?? []))
-                Visit(part);
-            Visit(openApiSchema.Items);
-            Visit(openApiSchema.AdditionalProperties);
         }
     }
 
-    private static IEnumerable<(string Path, HttpMethod Method, OpenApiOperation Operation)> Operations(
-        OpenApiDocument document)
+    private static IEnumerable<DocumentOperation> Operations(OpenApiDocument document)
     {
-        return document.Paths.SelectMany(path =>
-            path.Value.Operations?.Select(x => (path.Key, x.Key, x.Value)) ?? []);
+        return document.Paths.SelectMany(path => path.Value.Operations?.Select(x =>
+            new DocumentOperation { Path = path.Key, Method = x.Key, Operation = x.Value }) ?? []);
     }
 
     private static IEnumerable<IOpenApiSchema?> Schemas(IDictionary<string, IOpenApiMediaType>? content)

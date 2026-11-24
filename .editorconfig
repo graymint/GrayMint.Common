@@ -2,3 +2,7 @@
 
 # CS1591: Missing XML comment for publicly visible type or member
 dotnet_diagnostic.CS1591.severity = silent
+
+# A method that has a token passes it to every call that takes one (CA2016). A token is the last parameter, so where
+# optional parameters come before it, it is optional too, and this is what keeps a call from forgetting it.
+dotnet_diagnostic.CA2016.severity = warning

@@ -64,7 +64,7 @@ internal static class ScalarFonts
 
                 // as Scalar's own files: the browser keeps it and asks each time whether it changed
                 response.Headers.CacheControl = "no-cache";
-                return Results.File(file.Content, "font/woff2", entityTag: file.EntityTag);
+                return Results.Bytes(file.Content, "font/woff2", entityTag: file.EntityTag);
             })
             .AllowAnonymous()
             .ExcludeFromDescription();

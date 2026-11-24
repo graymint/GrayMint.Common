@@ -34,6 +34,7 @@ public class GrayMinJobService<T> : BackgroundService where T : IGrayMintJob
             {
                 _logger.LogError("Job failed too many times and stopped. JobName: {JobName}, FailedCount: {FailedCount}",
                     _jobName, failedCount);
+
                 return;
             }
 

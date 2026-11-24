@@ -5,21 +5,20 @@ using Microsoft.AspNetCore.Http;
 namespace GrayMint.Common.Test;
 
 [TestClass]
-public class AcmeSelfCheckTest
+public class AcmeSelfCheckTest : TestBase
 {
     private const string Domain = "checkout.example.com";
     private const string Token = "abc_DEF-123";
     private const string KeyAuthorization = "abc_DEF-123.thumbprint";
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
 
-    private static async Task<AcmeSelfCheckException?> Check(RequestDelegate server)
+    private async Task<AcmeSelfCheckException?> Check(RequestDelegate server)
     {
-        var (app, port) = await AcmeTestUtil.StartWebServer(server);
-        await using var _ = app;
-        using var handler = AcmeTestUtil.CreateLoopbackHandler(port);
+        await using var app = await AcmeTestUtil.StartWebServer(server, cancellationToken: TestCt);
+        using var handler = AcmeTestUtil.CreateLoopbackHandler(AcmeTestUtil.GetPort(app));
         try
         {
-            await AcmeSelfCheck.Check(Domain, Token, KeyAuthorization, handler, Timeout);
+            await AcmeSelfCheck.Check(Domain, Token, KeyAuthorization, handler, Timeout, TestCt);
             return null;
         }
         catch (AcmeSelfCheckException ex)
@@ -37,7 +36,7 @@ public class AcmeSelfCheckTest
         {
             path = context.Request.Path;
             host = context.Request.Host.Value;
-            return context.Response.WriteAsync(KeyAuthorization + "\n");
+            return context.Response.WriteAsync(KeyAuthorization + "\n", context.RequestAborted);
         });
 
         Assert.IsNull(ex);
@@ -48,9 +47,10 @@ public class AcmeSelfCheckTest
     [TestMethod]
     public async Task Other_answer_fails()
     {
-        var ex = await Check(context => context.Response.WriteAsync("hello"));
-        Assert.AreEqual(AcmeSelfCheckError.OtherAnswer, ex?.Error);
-        StringAssert.Contains(ex!.Message, Domain);
+        var ex = await Check(context => context.Response.WriteAsync("hello", context.RequestAborted));
+        Assert.IsNotNull(ex);
+        Assert.AreEqual(AcmeSelfCheckError.OtherAnswer, ex.Error);
+        Assert.Contains(Domain, ex.Message);
     }
 
     [TestMethod]
@@ -61,13 +61,14 @@ public class AcmeSelfCheckTest
             context.Response.StatusCode = StatusCodes.Status404NotFound;
             return Task.CompletedTask;
         });
+
         Assert.AreEqual(AcmeSelfCheckError.OtherAnswer, ex?.Error);
     }
 
     [TestMethod]
     public async Task Long_answer_is_another_answer()
     {
-        var ex = await Check(context => context.Response.WriteAsync(new string('a', 10_000)));
+        var ex = await Check(context => context.Response.WriteAsync(new string('a', 10_000), context.RequestAborted));
         Assert.AreEqual(AcmeSelfCheckError.OtherAnswer, ex?.Error);
     }
 
@@ -79,6 +80,7 @@ public class AcmeSelfCheckTest
             context.Response.Redirect("http://127.0.0.1:2019/config");
             return Task.CompletedTask;
         });
+
         Assert.AreEqual(AcmeSelfCheckError.OtherAnswer, ex?.Error);
     }
 
@@ -87,7 +89,8 @@ public class AcmeSelfCheckTest
     {
         using var handler = AcmeTestUtil.CreateLoopbackHandler(AcmeTestUtil.GetFreePort());
         var ex = await Assert.ThrowsExactlyAsync<AcmeSelfCheckException>(() =>
-            AcmeSelfCheck.Check(Domain, Token, KeyAuthorization, handler, Timeout));
+            AcmeSelfCheck.Check(Domain, Token, KeyAuthorization, handler, Timeout, TestCt));
+
         Assert.AreEqual(AcmeSelfCheckError.NotReached, ex.Error);
     }
 
@@ -95,12 +98,11 @@ public class AcmeSelfCheckTest
     public async Task Name_with_no_address_has_no_address()
     {
         // as a handler that connects to public addresses only reports a name with private ones
-        using var handler = new SocketsHttpHandler
-        {
-            ConnectCallback = (_, _) => throw new SocketException((int)SocketError.HostNotFound)
-        };
+        using var handler = new SocketsHttpHandler();
+        handler.ConnectCallback = (_, _) => throw new SocketException((int)SocketError.HostNotFound);
         var ex = await Assert.ThrowsExactlyAsync<AcmeSelfCheckException>(() =>
-            AcmeSelfCheck.Check(Domain, Token, KeyAuthorization, handler, Timeout));
+            AcmeSelfCheck.Check(Domain, Token, KeyAuthorization, handler, Timeout, TestCt));
+
         Assert.AreEqual(AcmeSelfCheckError.NoAddress, ex.Error);
     }
 
@@ -108,13 +110,13 @@ public class AcmeSelfCheckTest
     public async Task Cancellation_is_not_a_failure_of_the_check()
     {
         using var cancellationTokenSource = new CancellationTokenSource();
-        var (app, port) = await AcmeTestUtil.StartWebServer(async context =>
+        await using var app = await AcmeTestUtil.StartWebServer(async context =>
         {
             await cancellationTokenSource.CancelAsync();
             await Task.Delay(TimeSpan.FromSeconds(30), context.RequestAborted);
-        });
-        await using var _ = app;
-        using var handler = AcmeTestUtil.CreateLoopbackHandler(port);
+        }, cancellationToken: TestCt);
+
+        using var handler = AcmeTestUtil.CreateLoopbackHandler(AcmeTestUtil.GetPort(app));
 
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
             AcmeSelfCheck.Check(Domain, Token, KeyAuthorization, handler, Timeout, cancellationTokenSource.Token));

@@ -3,7 +3,7 @@ using GrayMint.Common.Utils;
 namespace GrayMint.Common.Test;
 
 [TestClass]
-public class GmUtilsTest
+public class GmUtilsTest : TestBase
 {
     private class Dto
     {
@@ -40,9 +40,9 @@ public class GmUtilsTest
     {
         const string json = """{"password":"secret","name":"bob"}""";
         var redacted = GmUtils.RedactJsonValue(json, ["password"]);
-        StringAssert.Contains(redacted, "***");
-        Assert.IsFalse(redacted.Contains("secret"), "password value must be redacted");
-        StringAssert.Contains(redacted, "bob");
+        Assert.Contains("***", redacted);
+        Assert.DoesNotContain("secret", redacted, "password value must be redacted");
+        Assert.Contains("bob", redacted);
     }
 
     [TestMethod]
@@ -102,10 +102,10 @@ public class GmUtilsTest
         await GmUtils.ForEachAsync(items, async _ => {
             var now = Interlocked.Increment(ref current);
             InterlockedMax(ref maxObserved, now);
-            await Task.Delay(10);
+            await Task.Delay(10, TestCt);
             Interlocked.Decrement(ref current);
             Interlocked.Increment(ref processed);
-        }, maxDegree, CancellationToken.None);
+        }, maxDegree, TestCt);
 
         Assert.AreEqual(items.Length, processed);
         Assert.IsLessThanOrEqualTo(maxDegree, maxObserved);
@@ -113,10 +113,11 @@ public class GmUtilsTest
 
     private static void InterlockedMax(ref int location, int value)
     {
-        int snapshot;
-        do {
-            snapshot = Volatile.Read(ref location);
-            if (value <= snapshot) return;
-        } while (Interlocked.CompareExchange(ref location, value, snapshot) != snapshot);
+        while (true)
+        {
+            var snapshot = Volatile.Read(ref location);
+            if (value <= snapshot || Interlocked.CompareExchange(ref location, value, snapshot) == snapshot)
+                return;
+        }
     }
 }

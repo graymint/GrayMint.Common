@@ -16,12 +16,11 @@ internal sealed class ApiDocsDocumentTransformer(AddOpenApiOptions options) : IO
     internal const string JsonContentType = "application/json";
 
     // the same JSON body under other names the framework accepts and answers, which only lengthen the reference
-    internal static readonly string[] JsonAliases = ["text/json", "application/*+json", "text/plain"];
+    internal static readonly IReadOnlyList<string> JsonAliases = ["text/json", "application/*+json", "text/plain"];
 
     public Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context,
         CancellationToken cancellationToken)
     {
-        document.Info ??= new OpenApiInfo();
         if (options.Title != null)
             document.Info.Title = options.Title;
         if (options.Version != null)
@@ -33,6 +32,7 @@ internal sealed class ApiDocsDocumentTransformer(AddOpenApiOptions options) : IO
 
         var operations = document.Paths.Values
             .SelectMany(x => x.Operations?.Values ?? Enumerable.Empty<OpenApiOperation>());
+
         foreach (var operation in operations)
         {
             if (operation.RequestBody is OpenApiRequestBody { Content: not null } requestBody)

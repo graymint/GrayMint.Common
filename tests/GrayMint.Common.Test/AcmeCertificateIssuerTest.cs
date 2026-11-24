@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http;
 namespace GrayMint.Common.Test;
 
 [TestClass]
-public class AcmeCertificateIssuerTest
+public class AcmeCertificateIssuerTest : TestBase
 {
     private const string Domain = "checkout.example.com";
 
@@ -37,19 +37,19 @@ public class AcmeCertificateIssuerTest
         var acmeClient = new TestAcmeClient(domain => new TestAcmeOrder(domain, pendingCount: 2));
 
         // port 80 answers what was published
-        var (app, port) = await AcmeTestUtil.StartWebServer(context =>
+        await using var app = await AcmeTestUtil.StartWebServer(context =>
         {
             var order = acmeClient.Orders.Single();
             events.Add("self-check");
-            return context.Response.WriteAsync(order.KeyAuthorization);
-        });
-        await using var _ = app;
+            return context.Response.WriteAsync(order.KeyAuthorization, context.RequestAborted);
+        }, cancellationToken: TestCt);
 
+        var port = AcmeTestUtil.GetPort(app);
         var issuer = new AcmeCertificateIssuer(acmeClient);
-        var pfx = await issuer.Issue(CreateRequest(events, () => AcmeTestUtil.CreateLoopbackHandler(port)));
+        var pfx = await issuer.Issue(CreateRequest(events, () => AcmeTestUtil.CreateLoopbackHandler(port)), TestCt);
 
         var order = acmeClient.Orders.Single();
-        CollectionAssert.AreEqual(new[] { $"publish:{order.Token}", "self-check", $"withdraw:{order.Token}" }, events);
+        Assert.AreSequenceEqual([$"publish:{order.Token}", "self-check", $"withdraw:{order.Token}"], events);
         Assert.AreEqual(3, order.ValidateCount, "pending twice, then signed");
         using var certificate = X509CertificateLoader.LoadPkcs12(pfx, password: null);
         Assert.AreEqual($"CN={Domain}", certificate.Subject);
@@ -60,17 +60,19 @@ public class AcmeCertificateIssuerTest
     {
         var events = new List<string>();
         var acmeClient = new TestAcmeClient(domain => new TestAcmeOrder(domain));
-        var (app, port) = await AcmeTestUtil.StartWebServer(context => context.Response.WriteAsync("another server"));
-        await using var _ = app;
+        await using var app = await AcmeTestUtil.StartWebServer(
+            context => context.Response.WriteAsync("another server", context.RequestAborted),
+            cancellationToken: TestCt);
 
+        var port = AcmeTestUtil.GetPort(app);
         var issuer = new AcmeCertificateIssuer(acmeClient);
         var ex = await Assert.ThrowsExactlyAsync<AcmeSelfCheckException>(() =>
-            issuer.Issue(CreateRequest(events, () => AcmeTestUtil.CreateLoopbackHandler(port))));
+            issuer.Issue(CreateRequest(events, () => AcmeTestUtil.CreateLoopbackHandler(port)), TestCt));
 
         var order = acmeClient.Orders.Single();
         Assert.AreEqual(AcmeSelfCheckError.OtherAnswer, ex.Error);
         Assert.AreEqual(0, order.ValidateCount);
-        CollectionAssert.AreEqual(new[] { $"publish:{order.Token}", $"withdraw:{order.Token}" }, events);
+        Assert.AreSequenceEqual([$"publish:{order.Token}", $"withdraw:{order.Token}"], events);
     }
 
     [TestMethod]
@@ -81,10 +83,10 @@ public class AcmeCertificateIssuerTest
             new TestAcmeOrder(domain, failure: new AcmeException("The challenge is invalid.")));
 
         var issuer = new AcmeCertificateIssuer(acmeClient);
-        await Assert.ThrowsExactlyAsync<AcmeException>(() => issuer.Issue(CreateRequest(events)));
+        await Assert.ThrowsExactlyAsync<AcmeException>(() => issuer.Issue(CreateRequest(events), TestCt));
 
         var order = acmeClient.Orders.Single();
-        CollectionAssert.AreEqual(new[] { $"publish:{order.Token}", $"withdraw:{order.Token}" }, events);
+        Assert.AreSequenceEqual([$"publish:{order.Token}", $"withdraw:{order.Token}"], events);
     }
 
     [TestMethod]
@@ -103,10 +105,10 @@ public class AcmeCertificateIssuerTest
             WithdrawChallenge = request.WithdrawChallenge,
             PollInterval = TimeSpan.FromMilliseconds(10),
             ValidateTimeout = TimeSpan.FromMilliseconds(200)
-        }));
+        }, TestCt));
 
-        StringAssert.Contains(ex.Message, "did not check");
-        Assert.AreEqual(2, events.Count, "published and withdrawn");
+        Assert.Contains("did not check", ex.Message);
+        Assert.HasCount(2, events, "published and withdrawn");
     }
 
     [TestMethod]
@@ -127,10 +129,10 @@ public class AcmeCertificateIssuerTest
                 throw new InvalidOperationException("The save failed after the commit.");
             },
             WithdrawChallenge = request.WithdrawChallenge
-        }));
+        }, TestCt));
 
         var order = acmeClient.Orders.Single();
-        CollectionAssert.AreEqual(new[] { $"publish:{order.Token}", $"withdraw:{order.Token}" }, events);
+        Assert.AreSequenceEqual([$"publish:{order.Token}", $"withdraw:{order.Token}"], events);
         Assert.AreEqual(0, order.ValidateCount);
     }
 
@@ -145,6 +147,6 @@ public class AcmeCertificateIssuerTest
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
             issuer.Issue(CreateRequest(events), cancellationTokenSource.Token));
 
-        Assert.AreEqual(2, events.Count, "published and withdrawn");
+        Assert.HasCount(2, events, "published and withdrawn");
     }
 }

@@ -47,6 +47,7 @@ public static class GmUtils
 
     public static byte[] GenerateKey()
     {
+        // two overloads, as an optional parameter would change the package's public signature
         // ReSharper disable once IntroduceOptionalParameters.Global
         return GenerateKey(128);
     }
@@ -64,7 +65,10 @@ public static class GmUtils
         foreach (var key in keys) {
             // array
             var jsonLength = json.Length;
-            var pattern = @"""key""\s*:\s*\[[^\]]*\]".Replace("key", key);
+            var pattern = """
+                          "key"\s*:\s*\[[^\]]*\]
+                          """.Replace("key", key);
+
             json = Regex.Replace(json, pattern, $"\"{key}\": [\"***\"]");
             if (jsonLength != json.Length)
                 continue;

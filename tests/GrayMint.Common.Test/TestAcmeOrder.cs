@@ -10,12 +10,11 @@ internal class TestAcmeOrder(string domain, int pendingCount = 0, Exception? fai
     public string KeyAuthorization { get; } = $"key_{Guid.NewGuid():N}";
     public int ValidateCount { get; private set; }
 
-    public Task<byte[]?> Validate(CancellationToken cancellationToken = default)
+    public Task<byte[]?> Validate(CancellationToken cancellationToken)
     {
         ValidateCount++;
-        if (failure != null)
-            throw failure;
-
-        return Task.FromResult(ValidateCount > pendingCount ? AcmeTestUtil.CreatePfx(domain) : null);
+        return failure != null
+            ? throw failure
+            : Task.FromResult(ValidateCount > pendingCount ? AcmeTestUtil.CreatePfx(domain) : null);
     }
 }

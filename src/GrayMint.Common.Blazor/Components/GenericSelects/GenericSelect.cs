@@ -25,8 +25,8 @@ public partial class GenericSelect : SuperComponentBase
     private readonly GenericSelectItem _newSelectItem = new("{B3BE2231-3996-4BAF-8AF1-85CC3909EB6A}", CommonResource.AddNew);
     private GenericSelectItem? _selectedItem;
     private MudSelect<GenericSelectItem>? _selectControl;
+    private IReadOnlyList<GenericSelectItem> _items = [];
 
-    private GenericSelectItem[] _items = [];
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -52,7 +52,7 @@ public partial class GenericSelect : SuperComponentBase
         }
     }
 
-    private void AddControlItems(ICollection<GenericSelectItem> items)
+    private void AddControlItems(List<GenericSelectItem> items)
     {
         if (Provider.CanAdd)
         {
@@ -84,7 +84,6 @@ public partial class GenericSelect : SuperComponentBase
 
         _selectedItem = selectItem;
         ValueChanged.InvokeAsync(selectItem?.ItemId);
-        StateHasChanged();
     }
 
     private async Task OnAddNewItem()
@@ -102,7 +101,6 @@ public partial class GenericSelect : SuperComponentBase
     {
         await Task.Delay(700, cancellationToken);
         return await OnSearchInternal(value, cancellationToken);
-
     }
 
     private async Task<IEnumerable<GenericSelectItem>> OnSearchInternal(string? value, CancellationToken cancellationToken)

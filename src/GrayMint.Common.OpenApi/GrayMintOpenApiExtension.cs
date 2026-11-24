@@ -45,7 +45,6 @@ public static class GrayMintOpenApiExtension
     {
         options ??= new UseOpenApiOptions();
 
-        // validation
         if (_options == null)
             throw new InvalidOperationException(
                 "GrayMintOpenApiExtension is not initialized. Please call AddGrayMintOpenApi in IServiceCollection first.");
@@ -67,6 +66,7 @@ public static class GrayMintOpenApiExtension
             scalarOptions.WithCustomCss(ScalarFonts.Css);
             scalarOptions.DisableTelemetry();
         });
+
         app.MapScalarFonts(ScalarPrefix);
 
         if (options.RedirectRootToUi)

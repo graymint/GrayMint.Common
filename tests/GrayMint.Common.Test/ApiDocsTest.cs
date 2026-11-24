@@ -7,31 +7,34 @@ namespace GrayMint.Common.Test;
 // classes) and its packages' (ListResult and Patch, in GrayMint.Common), with the title, version and introduction the
 // app gives AddGrayMintOpenApi.
 [TestClass]
-public class ApiDocsTest
+public class ApiDocsTest : TestBase
 {
-    private static JsonObject _document = null!;
+    private static JsonObject? _document;
+
+    private static JsonObject Document =>
+        _document ?? throw new InvalidOperationException("The class has not been initialized.");
 
     [ClassInitialize]
     public static async Task ClassInitialize(TestContext testContext)
     {
         await using var factory = new WebApplicationFactory<TestWebApp.Program>();
         using var client = factory.CreateClient();
-        var json = await client.GetStringAsync("/openapi/v1.json");
+        var json = await client.GetStringAsync("/openapi/v1.json", testContext.CancellationToken);
         _document = JsonNode.Parse(json)?.AsObject() ?? throw new AssertFailedException("No description.");
     }
 
     [TestMethod]
     public void Document_has_the_apps_title_version_and_introduction()
     {
-        Assert.AreEqual("Test Shop", (string?)_document["info"]?["title"]);
-        Assert.AreEqual("1.2.3", (string?)_document["info"]?["version"]);
-        Assert.AreEqual("The shop's API, for its tests.", (string?)_document["info"]?["description"]);
+        Assert.AreEqual("Test Shop", (string?)Document["info"]?["title"]);
+        Assert.AreEqual("1.2.3", (string?)Document["info"]?["version"]);
+        Assert.AreEqual("The shop's API, for its tests.", (string?)Document["info"]?["description"]);
     }
 
     [TestMethod]
     public void Section_has_its_controllers_words_name_and_place()
     {
-        var tags = _document["tags"]?.AsArray() ?? [];
+        var tags = Document["tags"]?.AsArray() ?? [];
         var items = tags.FirstOrDefault(x => (string?)x?["name"] == "Items");
         Assert.AreEqual("The shop's items.\n\nEach item has a name and a size.", (string?)items?["description"]);
         Assert.AreEqual("Shop items", (string?)items?["x-displayName"]);
@@ -53,8 +56,10 @@ public class ApiDocsTest
         Assert.AreEqual("The item to add.", (string?)create["requestBody"]?["description"]);
 
         // the same JSON body under the framework's other names is left out
-        var contentTypes = create["requestBody"]?["content"]?.AsObject().Select(x => x.Key).ToArray();
-        CollectionAssert.AreEqual(new[] { "application/json" }, contentTypes);
+        var content = create["requestBody"]?["content"]?.AsObject()
+                      ?? throw new AssertFailedException("The body has no content.");
+
+        Assert.AreSequenceEqual(["application/json"], content.Select(x => x.Key));
     }
 
     [TestMethod]
@@ -92,13 +97,13 @@ public class ApiDocsTest
 
     private static JsonObject Operation(string path, string method)
     {
-        return _document["paths"]?[path]?[method]?.AsObject()
+        return Document["paths"]?[path]?[method]?.AsObject()
                ?? throw new AssertFailedException($"{method} {path} is not in the description.");
     }
 
     private static JsonObject Schema(string name)
     {
-        return _document["components"]?["schemas"]?[name]?.AsObject()
+        return Document["components"]?["schemas"]?[name]?.AsObject()
                ?? throw new AssertFailedException($"{name} is not in the description.");
     }
 }

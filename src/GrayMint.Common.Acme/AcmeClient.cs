@@ -15,7 +15,7 @@ public class AcmeClient(AcmeClientOptions? options = null) : IAcmeClient
     {
         // no contact: Let's Encrypt sends no expiry mail any more, nor keeps the addresses
         var acmeContext = CreateContext(null);
-        await acmeContext.NewAccount(contact: null!, termsOfServiceAgreed: true).WaitAsync(cancellationToken);
+        await acmeContext.NewAccount(contact: null, termsOfServiceAgreed: true).WaitAsync(cancellationToken);
         return acmeContext.AccountKey.ToPem();
     }
 
@@ -35,6 +35,6 @@ public class AcmeClient(AcmeClientOptions? options = null) : IAcmeClient
     private AcmeContext CreateContext(IKey? accountKey)
     {
         var http = _httpClient != null ? new AcmeHttpClient(_directoryUri, _httpClient) : null;
-        return new AcmeContext(_directoryUri, accountKey!, http!);
+        return new AcmeContext(_directoryUri, accountKey, http);
     }
 }
