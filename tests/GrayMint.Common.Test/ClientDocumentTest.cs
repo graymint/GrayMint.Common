@@ -20,7 +20,7 @@ public class ClientDocumentTest : TestBase
     {
         await using var factory = new WebApplicationFactory<TestWebApp.Program>();
         using var client = factory.CreateClient();
-        var json = await client.GetStringAsync("/openapi/v1.json", testContext.CancellationToken);
+        var json = await client.GetStringAsync("/openapi/v1.json");
         _document = JsonNode.Parse(json)?.AsObject() ?? throw new AssertFailedException("No description.");
     }
 

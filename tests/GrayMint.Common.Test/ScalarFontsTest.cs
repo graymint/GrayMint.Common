@@ -20,7 +20,7 @@ public partial class ScalarFontsTest : TestBase
         await using var factory = new WebApplicationFactory<TestWebApp.Program>();
         using var client = factory.CreateClient();
 
-        var page = await client.GetStringAsync(PageUri.AbsolutePath, TestCt);
+        var page = await client.GetStringAsync(PageUri.AbsolutePath);
         var configuration = ReadConfiguration(page);
         Assert.IsFalse(configuration.GetProperty("withDefaultFonts").GetBoolean(), "Scalar's CDN fonts are off.");
         var css = configuration.GetProperty("customCss").GetString() ?? "";
@@ -35,10 +35,10 @@ public partial class ScalarFontsTest : TestBase
             // relative to the page, so the browser asks the service that served it
             Assert.IsFalse(url.Contains(':') || url.StartsWith('/'), url);
 
-            using var response = await client.GetAsync(new Uri(PageUri, url).AbsolutePath, TestCt);
+            using var response = await client.GetAsync(new Uri(PageUri, url).AbsolutePath);
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, url);
             Assert.AreEqual("font/woff2", response.Content.Headers.ContentType?.MediaType, url);
-            var content = await response.Content.ReadAsByteArrayAsync(TestCt);
+            var content = await response.Content.ReadAsByteArrayAsync();
             Assert.AreEqual("wOF2", Encoding.ASCII.GetString(content, 0, 4), url);
         }
     }
@@ -50,12 +50,12 @@ public partial class ScalarFontsTest : TestBase
         using var client = factory.CreateClient();
         const string fontPath = "/scalar/fonts/inter-latin-wght-normal.woff2";
 
-        using var first = await client.GetAsync(fontPath, TestCt);
+        using var first = await client.GetAsync(fontPath);
         var entityTag = first.Headers.ETag ?? throw new AssertFailedException("The font has no ETag.");
 
         using var request = new HttpRequestMessage(HttpMethod.Get, fontPath);
         request.Headers.IfNoneMatch.Add(new EntityTagHeaderValue(entityTag.Tag));
-        using var second = await client.SendAsync(request, TestCt);
+        using var second = await client.SendAsync(request);
         Assert.AreEqual(HttpStatusCode.NotModified, second.StatusCode);
     }
 
@@ -65,10 +65,10 @@ public partial class ScalarFontsTest : TestBase
         await using var factory = new WebApplicationFactory<TestWebApp.Program>();
         using var client = factory.CreateClient();
 
-        using var response = await client.GetAsync("/scalar/fonts/GrayMint.Common.OpenApi.dll", TestCt);
+        using var response = await client.GetAsync("/scalar/fonts/GrayMint.Common.OpenApi.dll");
         Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
 
-        var description = await client.GetStringAsync("/openapi/v1.json", TestCt);
+        var description = await client.GetStringAsync("/openapi/v1.json");
         Assert.DoesNotContain("/scalar/fonts", description);
     }
 

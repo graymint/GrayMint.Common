@@ -14,11 +14,11 @@ public class AcmeSelfCheckTest : TestBase
 
     private async Task<AcmeSelfCheckException?> Check(RequestDelegate server)
     {
-        await using var app = await AcmeTestUtil.StartWebServer(server, cancellationToken: TestCt);
+        await using var app = await AcmeTestUtil.StartWebServer(server);
         using var handler = AcmeTestUtil.CreateLoopbackHandler(AcmeTestUtil.GetPort(app));
         try
         {
-            await AcmeSelfCheck.Check(Domain, Token, KeyAuthorization, handler, Timeout, TestCt);
+            await AcmeSelfCheck.Check(Domain, Token, KeyAuthorization, handler, Timeout);
             return null;
         }
         catch (AcmeSelfCheckException ex)
@@ -89,7 +89,7 @@ public class AcmeSelfCheckTest : TestBase
     {
         using var handler = AcmeTestUtil.CreateLoopbackHandler(AcmeTestUtil.GetFreePort());
         var ex = await Assert.ThrowsExactlyAsync<AcmeSelfCheckException>(() =>
-            AcmeSelfCheck.Check(Domain, Token, KeyAuthorization, handler, Timeout, TestCt));
+            AcmeSelfCheck.Check(Domain, Token, KeyAuthorization, handler, Timeout));
 
         Assert.AreEqual(AcmeSelfCheckError.NotReached, ex.Error);
     }
@@ -101,7 +101,7 @@ public class AcmeSelfCheckTest : TestBase
         using var handler = new SocketsHttpHandler();
         handler.ConnectCallback = (_, _) => throw new SocketException((int)SocketError.HostNotFound);
         var ex = await Assert.ThrowsExactlyAsync<AcmeSelfCheckException>(() =>
-            AcmeSelfCheck.Check(Domain, Token, KeyAuthorization, handler, Timeout, TestCt));
+            AcmeSelfCheck.Check(Domain, Token, KeyAuthorization, handler, Timeout));
 
         Assert.AreEqual(AcmeSelfCheckError.NoAddress, ex.Error);
     }
@@ -114,7 +114,7 @@ public class AcmeSelfCheckTest : TestBase
         {
             await cancellationTokenSource.CancelAsync();
             await Task.Delay(TimeSpan.FromSeconds(30), context.RequestAborted);
-        }, cancellationToken: TestCt);
+        });
 
         using var handler = AcmeTestUtil.CreateLoopbackHandler(AcmeTestUtil.GetPort(app));
 

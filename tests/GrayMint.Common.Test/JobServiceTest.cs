@@ -22,7 +22,7 @@ public class JobServiceTest : TestBase
 
         var stopwatch = Stopwatch.StartNew();
         await jobService.StartAsync(TestCt);
-        await runs.ThirdStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TestCt);
+        await runs.ThirdStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
         await jobService.StopAsync(TestCt);
 
         // two intervals between the three runs: the wait is not skipped
@@ -39,7 +39,7 @@ public class JobServiceTest : TestBase
             new GrayMintJobOptions { DueTime = TimeSpan.Zero, Interval = TimeSpan.FromMilliseconds(50) });
 
         await jobService.StartAsync(TestCt);
-        await runs.ThirdStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TestCt);
+        await runs.ThirdStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
         await jobService.StopAsync(TestCt);
 
         Assert.AreEqual(LogLevel.Error, logger.Level);
@@ -57,7 +57,7 @@ public class JobServiceTest : TestBase
 
         await jobService.StartAsync(TestCt);
         Assert.IsNotNull(jobService.ExecuteTask);
-        await jobService.ExecuteTask.WaitAsync(TimeSpan.FromSeconds(10), TestCt);
+        await jobService.ExecuteTask.WaitAsync(TimeSpan.FromSeconds(10));
         await jobService.StopAsync(TestCt);
 
         Assert.AreEqual(3, runs.Count);
@@ -73,8 +73,8 @@ public class JobServiceTest : TestBase
             new GrayMintJobOptions { DueTime = TimeSpan.Zero, ExecuteOnShutdown = true });
 
         await jobService.StartAsync(TestCt);
-        await runs.FirstStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TestCt);
-        await jobService.StopAsync(TestCt).WaitAsync(TimeSpan.FromSeconds(10), TestCt);
+        await runs.FirstStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await jobService.StopAsync(TestCt).WaitAsync(TimeSpan.FromSeconds(10));
 
         Assert.AreSequenceEqual(["start 1", "end 1", "start 2", "end 2"], runs.Events);
     }
@@ -89,10 +89,10 @@ public class JobServiceTest : TestBase
             new GrayMintJobOptions { DueTime = TimeSpan.Zero });
 
         await jobService.StartAsync(TestCt);
-        await runs.FirstStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TestCt);
+        await runs.FirstStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
         using var shutdownCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
         // not the shutdown token for the wait: it is the one under test
-        await jobService.StopAsync(shutdownCts.Token).WaitAsync(TimeSpan.FromSeconds(10), TestCt);
+        await jobService.StopAsync(shutdownCts.Token).WaitAsync(TimeSpan.FromSeconds(10));
 
         Assert.AreEqual(LogLevel.Warning, logger.Level);
         runs.Release.SetResult();

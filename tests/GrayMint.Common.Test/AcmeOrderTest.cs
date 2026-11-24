@@ -19,7 +19,7 @@ public class AcmeOrderTest : TestBase
         var order = new AcmeOrder(orderContext, new TestChallengeContext(ChallengeStatus.Valid), Domain);
 
         // the test order stops at the download, once the request is built and sent
-        await Assert.ThrowsExactlyAsync<NotSupportedException>(() => order.Validate(TestCt));
+        await Assert.ThrowsExactlyAsync<NotSupportedException>(() => order.Validate());
 
         var request = orderContext.Request ?? throw new InvalidOperationException("No request has been sent.");
         var subject = CertificateRequest.LoadSigningRequest(request, HashAlgorithmName.SHA256).SubjectName.Name;
@@ -32,8 +32,8 @@ public class AcmeOrderTest : TestBase
         var challengeContext = new TestChallengeContext(ChallengeStatus.Pending, ChallengeStatus.Processing);
         var order = new AcmeOrder(new TestOrderContext(Domain), challengeContext, Domain);
 
-        Assert.IsNull(await order.Validate(TestCt));
-        Assert.IsNull(await order.Validate(TestCt));
+        Assert.IsNull(await order.Validate());
+        Assert.IsNull(await order.Validate());
         Assert.AreEqual(1, challengeContext.ValidateCount);
         Assert.AreEqual(1, challengeContext.ResourceCount);
     }
@@ -48,7 +48,7 @@ public class AcmeOrderTest : TestBase
 
         var order = new AcmeOrder(new TestOrderContext(Domain), challengeContext, Domain);
 
-        var ex = await Assert.ThrowsExactlyAsync<AcmeException>(() => order.Validate(TestCt));
+        var ex = await Assert.ThrowsExactlyAsync<AcmeException>(() => order.Validate());
         Assert.Contains(Domain, ex.Message);
         Assert.Contains("Connection refused", ex.Message);
     }
@@ -59,7 +59,7 @@ public class AcmeOrderTest : TestBase
         var orderContext = new SigningOrderContext(Domain);
         var order = new AcmeOrder(orderContext, new TestChallengeContext(ChallengeStatus.Valid), Domain);
 
-        var pfx = await order.Validate(TestCt);
+        var pfx = await order.Validate();
 
         Assert.IsNotNull(pfx);
         var certificates = X509CertificateLoader.LoadPkcs12Collection(pfx, password: null);
@@ -68,7 +68,7 @@ public class AcmeOrderTest : TestBase
         Assert.AreEqual("CN=Test Intermediate", certificates.Single(x => !x.HasPrivateKey).Subject);
 
         // asked again, the order gives what it has, and signs nothing more
-        Assert.AreSame(pfx, await order.Validate(TestCt));
+        Assert.AreSame(pfx, await order.Validate());
         Assert.AreEqual(1, orderContext.FinalizeCount);
     }
 

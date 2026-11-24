@@ -25,7 +25,7 @@ public class AcmeChallengeMiddlewareTest : TestBase
         });
 
         app.Run(context => context.Response.WriteAsync("the app", context.RequestAborted));
-        await app.StartAsync(TestCt);
+        await app.StartAsync();
         return app;
     }
 
@@ -34,8 +34,8 @@ public class AcmeChallengeMiddlewareTest : TestBase
         using var client = app.GetTestClient();
         using var request = new HttpRequestMessage(method ?? HttpMethod.Get, path);
         request.Headers.Host = host;
-        using var response = await client.SendAsync(request, TestCt);
-        var body = await response.Content.ReadAsStringAsync(TestCt);
+        using var response = await client.SendAsync(request);
+        var body = await response.Content.ReadAsStringAsync();
         return new TestResponse(response.StatusCode, body);
     }
 

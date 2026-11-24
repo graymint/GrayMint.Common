@@ -102,7 +102,7 @@ public class GmUtilsTest : TestBase
         await GmUtils.ForEachAsync(items, async _ => {
             var now = Interlocked.Increment(ref current);
             InterlockedMax(ref maxObserved, now);
-            await Task.Delay(10, TestCt);
+            await Task.Delay(10);
             Interlocked.Decrement(ref current);
             Interlocked.Increment(ref processed);
         }, maxDegree, TestCt);

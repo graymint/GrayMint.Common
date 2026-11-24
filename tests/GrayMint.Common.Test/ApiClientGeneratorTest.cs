@@ -22,11 +22,11 @@ public class ApiClientGeneratorTest : TestBase
     {
         var itemsClient = new ItemsClient(Factory.CreateClient());
 
-        var item = await itemsClient.CreateAsync(new ItemCreateRequest { Name = "cup", Size = ItemSize.Large }, TestCt);
+        var item = await itemsClient.CreateAsync(new ItemCreateRequest { Name = "cup", Size = ItemSize.Large });
         Assert.AreEqual("cup", item.Name);
         Assert.AreEqual(ItemSize.Large, item.Size);
 
-        item = await itemsClient.GetAsync("42", TestCt);
+        item = await itemsClient.GetAsync("42");
         Assert.AreEqual("42", item.ItemId);
     }
 
@@ -39,7 +39,7 @@ public class ApiClientGeneratorTest : TestBase
             DefaultAuthorization = new AuthenticationHeaderValue("Bearer", "test-token")
         };
 
-        await itemsClient.CountAsync(TestCt);
+        await itemsClient.CountAsync();
         Assert.AreEqual("Bearer test-token", handler.LastRequest?.Headers.Authorization?.ToString());
     }
 
@@ -49,7 +49,7 @@ public class ApiClientGeneratorTest : TestBase
         var apiDir = Path.Combine(FindRepoRoot(), "tests", "TestWebApp.Client", "Api");
         Assert.IsTrue(File.Exists(Path.Combine(apiDir, "TestWebApp.json")));
         Assert.IsTrue(File.Exists(Path.Combine(apiDir, "Api.cs")));
-        var typeScript = await File.ReadAllTextAsync(Path.Combine(apiDir, "Api.ts"), TestCt);
+        var typeScript = await File.ReadAllTextAsync(Path.Combine(apiDir, "Api.ts"));
         Assert.Contains("export class ItemsClient", typeScript);
     }
 
@@ -59,7 +59,7 @@ public class ApiClientGeneratorTest : TestBase
         // the client's doc file, copied beside this test's assembly, has the API's words for an IDE to show
         var docFile = Path.Combine(AppContext.BaseDirectory, "TestWebApp.Client.xml");
         Assert.IsTrue(File.Exists(docFile));
-        var docs = await File.ReadAllTextAsync(docFile, TestCt);
+        var docs = await File.ReadAllTextAsync(docFile);
         Assert.Contains("Get an item", docs);
     }
 

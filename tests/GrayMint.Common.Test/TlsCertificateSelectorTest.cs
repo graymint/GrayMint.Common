@@ -39,20 +39,20 @@ public class TlsCertificateSelectorTest : TestBase
     {
         return AcmeTestUtil.StartWebServer(
             context => context.Response.WriteAsync(context.Request.Host.Host, context.RequestAborted),
-            listenOptions => listenOptions.UseHttps(selector), TestCt);
+            listenOptions => listenOptions.UseHttps(selector));
     }
 
     // the subject of the certificate the server sent for the name
     private async Task<string> Connect(int port, string? serverName)
     {
         using var client = new TcpClient();
-        await client.ConnectAsync(IPAddress.Loopback, port, TestCt);
+        await client.ConnectAsync(IPAddress.Loopback, port);
         await using var sslStream = new SslStream(client.GetStream(), false, (_, _, _, _) => true);
         await sslStream.AuthenticateAsClientAsync(new SslClientAuthenticationOptions
         {
             // an IP address as the target host sends no name, as a client that names none
             TargetHost = serverName ?? IPAddress.Loopback.ToString()
-        }, TestCt);
+        });
 
         return sslStream.RemoteCertificate?.Subject
                ?? throw new AssertFailedException("The server sent no certificate.");
@@ -83,7 +83,7 @@ public class TlsCertificateSelectorTest : TestBase
         // a client of this test's own, for its check of the certificate
         // ReSharper disable once ShortLivedHttpClient
         using var httpClient = new HttpClient(handler);
-        Assert.AreEqual(Domain1, await httpClient.GetStringAsync($"https://{Domain1}/", TestCt));
+        Assert.AreEqual(Domain1, await httpClient.GetStringAsync($"https://{Domain1}/"));
     }
 
     [TestMethod]
@@ -116,8 +116,8 @@ public class TlsCertificateSelectorTest : TestBase
         var expiringSelector = new TlsCertificateSelector(loader.Load,
             new TlsCertificateSelectorOptions { CacheTimeout = TimeSpan.Zero });
 
-        var options1 = await expiringSelector.GetServerOptions(Domain2, TestCt);
-        var options2 = await expiringSelector.GetServerOptions(Domain2, TestCt);
+        var options1 = await expiringSelector.GetServerOptions(Domain2);
+        var options2 = await expiringSelector.GetServerOptions(Domain2);
         Assert.AreNotSame(options1.ServerCertificateContext, options2.ServerCertificateContext);
     }
 
@@ -141,7 +141,7 @@ public class TlsCertificateSelectorTest : TestBase
 
         await Assert.ThrowsAsync<Exception>(() => Connect(port, "unknown.example"));
         await Assert.ThrowsExactlyAsync<AuthenticationException>(async () =>
-            await new TlsCertificateSelector(new Loader().Load).GetServerOptions("unknown.example", TestCt));
+            await new TlsCertificateSelector(new Loader().Load).GetServerOptions("unknown.example"));
     }
 
     [TestMethod]
@@ -155,9 +155,9 @@ public class TlsCertificateSelectorTest : TestBase
                 : ValueTask.FromResult<byte[]?>(DomainCertificates[domain]),
             new TlsCertificateSelectorOptions { CacheTimeout = TimeSpan.Zero });
 
-        var options1 = await selector.GetServerOptions(Domain1, TestCt);
+        var options1 = await selector.GetServerOptions(Domain1);
         fail = true;
-        var options2 = await selector.GetServerOptions(Domain1, TestCt);
+        var options2 = await selector.GetServerOptions(Domain1);
         Assert.AreSame(options1.ServerCertificateContext, options2.ServerCertificateContext);
     }
 
@@ -171,13 +171,13 @@ public class TlsCertificateSelectorTest : TestBase
                 ValueTask.FromResult<byte[]?>(corrupt ? [1, 2, 3] : DomainCertificates[domain]),
             new TlsCertificateSelectorOptions { CacheTimeout = TimeSpan.Zero });
 
-        var options1 = await selector.GetServerOptions(Domain1, TestCt);
+        var options1 = await selector.GetServerOptions(Domain1);
         corrupt = true;
-        var options2 = await selector.GetServerOptions(Domain1, TestCt);
+        var options2 = await selector.GetServerOptions(Domain1);
         Assert.AreSame(options1.ServerCertificateContext, options2.ServerCertificateContext);
 
         // with none loaded before, the connection is refused, as with no certificate at all
-        await Assert.ThrowsAsync<Exception>(async () => await selector.GetServerOptions(Domain2, TestCt));
+        await Assert.ThrowsAsync<Exception>(async () => await selector.GetServerOptions(Domain2));
     }
 
     [TestMethod]
@@ -191,17 +191,17 @@ public class TlsCertificateSelectorTest : TestBase
             IdleTimeout = TimeSpan.FromMinutes(20)
         }, timeProvider: time);
 
-        await selector.GetServerOptions(Domain1, TestCt);
+        await selector.GetServerOptions(Domain1);
         time.Advance(TimeSpan.FromMinutes(15));
-        await selector.GetServerOptions(Domain2, TestCt); // no sweep yet: the last one was 15 minutes ago
+        await selector.GetServerOptions(Domain2); // no sweep yet: the last one was 15 minutes ago
         time.Advance(TimeSpan.FromMinutes(10));
         loader.Certificates.Remove(Domain1);
 
         // a sweep: Domain1 has been idle 25 minutes and goes, Domain2 10
-        await selector.GetServerOptions(Domain2, TestCt);
+        await selector.GetServerOptions(Domain2);
 
         // gone from the cache, it is loaded again, and the store has no certificate for it any more
-        await Assert.ThrowsAsync<Exception>(async () => await selector.GetServerOptions(Domain1, TestCt));
+        await Assert.ThrowsAsync<Exception>(async () => await selector.GetServerOptions(Domain1));
     }
 
     [TestMethod]

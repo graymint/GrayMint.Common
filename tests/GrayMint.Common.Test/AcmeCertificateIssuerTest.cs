@@ -42,11 +42,11 @@ public class AcmeCertificateIssuerTest : TestBase
             var order = acmeClient.Orders.Single();
             events.Add("self-check");
             return context.Response.WriteAsync(order.KeyAuthorization, context.RequestAborted);
-        }, cancellationToken: TestCt);
+        });
 
         var port = AcmeTestUtil.GetPort(app);
         var issuer = new AcmeCertificateIssuer(acmeClient);
-        var pfx = await issuer.Issue(CreateRequest(events, () => AcmeTestUtil.CreateLoopbackHandler(port)), TestCt);
+        var pfx = await issuer.Issue(CreateRequest(events, () => AcmeTestUtil.CreateLoopbackHandler(port)));
 
         var order = acmeClient.Orders.Single();
         Assert.AreSequenceEqual([$"publish:{order.Token}", "self-check", $"withdraw:{order.Token}"], events);
@@ -61,13 +61,12 @@ public class AcmeCertificateIssuerTest : TestBase
         var events = new List<string>();
         var acmeClient = new TestAcmeClient(domain => new TestAcmeOrder(domain));
         await using var app = await AcmeTestUtil.StartWebServer(
-            context => context.Response.WriteAsync("another server", context.RequestAborted),
-            cancellationToken: TestCt);
+            context => context.Response.WriteAsync("another server", context.RequestAborted));
 
         var port = AcmeTestUtil.GetPort(app);
         var issuer = new AcmeCertificateIssuer(acmeClient);
         var ex = await Assert.ThrowsExactlyAsync<AcmeSelfCheckException>(() =>
-            issuer.Issue(CreateRequest(events, () => AcmeTestUtil.CreateLoopbackHandler(port)), TestCt));
+            issuer.Issue(CreateRequest(events, () => AcmeTestUtil.CreateLoopbackHandler(port))));
 
         var order = acmeClient.Orders.Single();
         Assert.AreEqual(AcmeSelfCheckError.OtherAnswer, ex.Error);
@@ -83,7 +82,7 @@ public class AcmeCertificateIssuerTest : TestBase
             new TestAcmeOrder(domain, failure: new AcmeException("The challenge is invalid.")));
 
         var issuer = new AcmeCertificateIssuer(acmeClient);
-        await Assert.ThrowsExactlyAsync<AcmeException>(() => issuer.Issue(CreateRequest(events), TestCt));
+        await Assert.ThrowsExactlyAsync<AcmeException>(() => issuer.Issue(CreateRequest(events)));
 
         var order = acmeClient.Orders.Single();
         Assert.AreSequenceEqual([$"publish:{order.Token}", $"withdraw:{order.Token}"], events);
@@ -105,7 +104,7 @@ public class AcmeCertificateIssuerTest : TestBase
             WithdrawChallenge = request.WithdrawChallenge,
             PollInterval = TimeSpan.FromMilliseconds(10),
             ValidateTimeout = TimeSpan.FromMilliseconds(200)
-        }, TestCt));
+        }));
 
         Assert.Contains("did not check", ex.Message);
         Assert.HasCount(2, events, "published and withdrawn");
@@ -129,7 +128,7 @@ public class AcmeCertificateIssuerTest : TestBase
                 throw new InvalidOperationException("The save failed after the commit.");
             },
             WithdrawChallenge = request.WithdrawChallenge
-        }, TestCt));
+        }));
 
         var order = acmeClient.Orders.Single();
         Assert.AreSequenceEqual([$"publish:{order.Token}", $"withdraw:{order.Token}"], events);
