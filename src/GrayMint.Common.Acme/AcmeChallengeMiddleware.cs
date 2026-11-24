@@ -3,13 +3,6 @@ using Microsoft.AspNetCore.Http;
 
 namespace GrayMint.Common.Acme;
 
-/// <summary>
-/// Gives the key authorization of a challenge's token on its domain, or <see langword="null"/> when there is no such
-/// challenge. The domain is the request's host, lower-cased, without its port.
-/// </summary>
-public delegate ValueTask<string?> AcmeKeyAuthorizationProvider(string domain, string token,
-    CancellationToken cancellationToken);
-
 public static class AcmeChallengeMiddleware
 {
     // RFC 8555 makes a token of base64url characters, at least 128 bits of them; Let's Encrypt's have 43

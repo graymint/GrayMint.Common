@@ -3,37 +3,10 @@ using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace GrayMint.Common.Acme;
-
-/// <summary>
-/// Gives the certificate of a domain, as PFX bytes with no password (its key, the certificate and its intermediates),
-/// or <see langword="null"/> when the domain has none. The domain is the name the client asked for, lower-cased,
-/// without a trailing dot. Every connection to a name not in the cache calls it, whatever name the client sends, so a
-/// name the app does not serve should be refused without a database read.
-/// </summary>
-public delegate ValueTask<byte[]?> TlsCertificateLoader(string domain, CancellationToken cancellationToken);
-
-public class TlsCertificateSelectorOptions
-{
-    /// <summary>How long a loaded certificate is used before it is loaded again, which takes a renewed one.</summary>
-    public TimeSpan CacheTimeout { get; set; } = TimeSpan.FromMinutes(10);
-
-    /// <summary>
-    /// How long a domain no connection names stays in the cache, so one gone for good is not kept; a domain in use keeps
-    /// the certificate loaded before, for a load that fails.
-    /// </summary>
-    public TimeSpan IdleTimeout { get; set; } = TimeSpan.FromHours(1);
-
-    /// <summary>
-    /// The domain whose certificate a connection gets when it names no domain, or one with no certificate;
-    /// <see langword="null"/> refuses such a connection.
-    /// </summary>
-    public string? DefaultDomain { get; set; }
-}
 
 /// <summary>
 /// The certificate of each TLS connection, by the domain the client names (SNI), for Kestrel: see
@@ -144,18 +117,5 @@ public class TlsCertificateSelector(
     {
         domain = domain?.Trim().TrimEnd('.').ToLowerInvariant();
         return string.IsNullOrEmpty(domain) ? null : domain;
-    }
-}
-
-public static class TlsCertificateSelectorExtensions
-{
-    /// <summary>HTTPS on the listener, with the certificate of each connection from the selector.</summary>
-    public static ListenOptions UseHttps(this ListenOptions listenOptions, TlsCertificateSelector selector)
-    {
-        return Microsoft.AspNetCore.Hosting.ListenOptionsHttpsExtensions.UseHttps(listenOptions, new TlsHandshakeCallbackOptions
-        {
-            OnConnection = context =>
-                selector.GetServerOptions(context.ClientHelloInfo.ServerName, context.CancellationToken)
-        });
     }
 }

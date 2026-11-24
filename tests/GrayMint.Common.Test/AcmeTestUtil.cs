@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using GrayMint.Common.Acme;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
@@ -97,40 +96,5 @@ internal static class AcmeTestUtil
         var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!
             .Addresses.Single();
         return (app, new Uri(address).Port);
-    }
-}
-
-/// <summary>An order whose challenge stays pending a number of reads, then gives a certificate, or fails.</summary>
-internal class TestAcmeOrder(string domain, int pendingCount = 0, Exception? failure = null) : IAcmeOrder
-{
-    public string Domain => domain;
-    public string Token { get; } = $"token_{Guid.NewGuid():N}";
-    public string KeyAuthorization { get; } = $"key_{Guid.NewGuid():N}";
-    public int ValidateCount { get; private set; }
-
-    public Task<byte[]?> Validate(CancellationToken cancellationToken = default)
-    {
-        ValidateCount++;
-        if (failure != null)
-            throw failure;
-
-        return Task.FromResult(ValidateCount > pendingCount ? AcmeTestUtil.CreatePfx(domain) : null);
-    }
-}
-
-internal class TestAcmeClient(Func<string, TestAcmeOrder> createOrder) : IAcmeClient
-{
-    public List<TestAcmeOrder> Orders { get; } = [];
-
-    public Task<string> CreateAccount(CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult($"account_{Guid.NewGuid():N}");
-    }
-
-    public Task<IAcmeOrder> CreateOrder(string accountKeyPem, string domain, CancellationToken cancellationToken = default)
-    {
-        var order = createOrder(domain);
-        Orders.Add(order);
-        return Task.FromResult<IAcmeOrder>(order);
     }
 }
