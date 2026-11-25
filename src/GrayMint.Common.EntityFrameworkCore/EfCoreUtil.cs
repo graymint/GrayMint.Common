@@ -171,43 +171,51 @@ public static class EfCoreUtil
         CancellationToken cancellationToken)
     {
         var sql = IsPostgres(database)
-            ? $"SELECT COUNT(1) FROM information_schema.routines " +
-              $"WHERE routine_schema = '{schema}' AND routine_name = '{functionName}' " +
-              $"AND routine_type = 'FUNCTION'"
-            : $"SELECT COUNT(1) FROM sys.objects WHERE object_id=OBJECT_ID(N'[{schema}].[{functionName}]') " +
-              "AND type IN ( N'FN', N'IF', N'TF', N'FS', N'FT' )";
+            ? "SELECT COUNT(1) FROM information_schema.routines " +
+              "WHERE routine_schema = @schema AND routine_name = @name AND routine_type = 'FUNCTION'"
+            : "SELECT COUNT(1) FROM sys.objects " +
+              "WHERE object_id = OBJECT_ID(QUOTENAME(@schema) + N'.' + QUOTENAME(@name)) " +
+              "AND type IN (N'FN', N'IF', N'TF', N'FS', N'FT')";
 
-        var res = await ExecuteScalar(database, sql, cancellationToken);
-        return res > 0;
+        return await CountByName(database, sql, schema, functionName, cancellationToken) > 0;
     }
 
     public static async Task<bool> SqlTableExists(DatabaseFacade database, string schema, string tableName,
         CancellationToken cancellationToken)
     {
         var sql = IsPostgres(database)
-            ? $"SELECT COUNT(1) FROM information_schema.tables " +
-              $"WHERE table_schema = '{schema}' AND table_name = '{tableName}' " +
-              $"AND table_type = 'BASE TABLE'"
-            : $"SELECT COUNT(1) FROM sys.objects WHERE object_id=OBJECT_ID(N'[{schema}].[{tableName}]') " +
-              "AND type IN ( N'U' )";
+            ? "SELECT COUNT(1) FROM information_schema.tables " +
+              "WHERE table_schema = @schema AND table_name = @name AND table_type = 'BASE TABLE'"
+            : "SELECT COUNT(1) FROM sys.objects " +
+              "WHERE object_id = OBJECT_ID(QUOTENAME(@schema) + N'.' + QUOTENAME(@name)) AND type IN (N'U')";
 
-        var res = await ExecuteScalar(database, sql, cancellationToken);
-        return res > 0;
+        return await CountByName(database, sql, schema, tableName, cancellationToken) > 0;
     }
 
-    private static async Task<int> ExecuteScalar(DatabaseFacade database, string sql, CancellationToken cancellationToken)
+    // The names go as parameters, never into the SQL. The command runs in the context's transaction when it has one,
+    // as SQL Server refuses a command outside the transaction its connection has open, and the connection goes back
+    // as it was found.
+    private static async Task<int> CountByName(DatabaseFacade database, string sql, string schema, string name,
+        CancellationToken cancellationToken)
     {
-        await using var cmd = database.GetDbConnection().CreateCommand();
-        if (database.CurrentTransaction != null) cmd.Transaction = database.CurrentTransaction.GetDbTransaction();
+        var connection = database.GetDbConnection();
+        var wasClosed = connection.State != ConnectionState.Open;
+        if (wasClosed)
+            await database.OpenConnectionAsync(cancellationToken);
 
-        ArgumentNullException.ThrowIfNull(cmd.Connection);
-        var connection = cmd.Connection;
-        if (connection.State != ConnectionState.Open)
-            await connection.OpenAsync(cancellationToken);
-
-        await using var command = connection.CreateCommand();
-        command.CommandText = sql;
-        var scalar = await command.ExecuteScalarAsync(cancellationToken);
-        return Convert.ToInt32(scalar);
+        try
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText = sql;
+            command.Transaction = database.CurrentTransaction?.GetDbTransaction();
+            AddParameter(command, "@schema", schema);
+            AddParameter(command, "@name", name);
+            return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken));
+        }
+        finally
+        {
+            if (wasClosed)
+                await database.CloseConnectionAsync();
+        }
     }
 }

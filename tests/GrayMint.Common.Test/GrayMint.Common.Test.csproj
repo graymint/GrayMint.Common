@@ -11,6 +11,9 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.0.0" />
+    <!-- EfCoreUtil's probes, on the two servers compose.yaml starts -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="11.0.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="11.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="4.5.3" />
     <PackageReference Include="MSTest.TestFramework" Version="4.5.3" />
@@ -20,6 +23,7 @@
     <ProjectReference Include="..\..\src\GrayMint.Common\GrayMint.Common.csproj" />
     <ProjectReference Include="..\..\src\GrayMint.Common.Acme\GrayMint.Common.Acme.csproj" />
     <ProjectReference Include="..\..\src\GrayMint.Common.AspNetCore\GrayMint.Common.AspNetCore.csproj" />
+    <ProjectReference Include="..\..\src\GrayMint.Common.EntityFrameworkCore\GrayMint.Common.EntityFrameworkCore.csproj" />
     <!-- a web app on GrayMint.Common.OpenApi, for its Scalar page -->
     <ProjectReference Include="..\TestWebApp\TestWebApp.csproj" />
     <!-- TestWebApp's client, made by GrayMint.Common.OpenApi.ClientGenerator's targets -->

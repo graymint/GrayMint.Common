@@ -327,8 +327,12 @@ Before editing files under `src/GrayMint.Common`, see [docs/synced-classes.md](d
 
 See [docs/versioning-and-nuget-updates.md](docs/versioning-and-nuget-updates.md) for how the versioning, publish, and auto-update mechanism works and how to reuse it in another repo.
 
+The tests need Docker: `compose.yaml` holds the PostgreSQL and SQL Server that EfCoreUtil's tests run on, and CI
+starts it before the tests.
+
 ```sh
 dotnet build GrayMint.Common.slnx
+docker compose up --detach --wait
 dotnet test GrayMint.Common.slnx
 ```
 

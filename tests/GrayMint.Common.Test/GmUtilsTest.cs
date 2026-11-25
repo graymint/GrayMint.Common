@@ -1,10 +1,34 @@
+using System.Collections.Concurrent;
 using GrayMint.Common.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace GrayMint.Common.Test;
 
 [TestClass]
 public class GmUtilsTest : TestBase
 {
+    private sealed class ListLogger : ILogger
+    {
+        public ConcurrentQueue<LogEntry> Entries { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            Entries.Enqueue(new LogEntry { Level = logLevel, Message = formatter(state, exception), Exception = exception });
+        }
+    }
+
+    private sealed class LogEntry
+    {
+        public required LogLevel Level { get; init; }
+        public required string Message { get; init; }
+        public required Exception? Exception { get; init; }
+    }
+
     private class Dto
     {
         public string Name { get; init; } = "";
@@ -78,6 +102,25 @@ public class GmUtilsTest : TestBase
 
         var ok = GmUtils.TryInvoke("ok", () => 42);
         Assert.AreEqual(42, ok);
+    }
+
+    [TestMethod]
+    public void TryInvoke_logs_what_it_catches()
+    {
+        var logger = new ListLogger();
+        var appLogger = GmUtils.Logger;
+        GmUtils.Logger = logger;
+        try {
+            var error = new InvalidOperationException("broken");
+            GmUtils.TryInvoke("read the file", () => throw error);
+
+            // other tests may log here meanwhile: only this one's entry counts
+            Assert.Contains(x => x.Exception == error && x is { Level: LogLevel.Warning, Message: "Could not read the file." },
+                logger.Entries);
+        }
+        finally {
+            GmUtils.Logger = appLogger;
+        }
     }
 
     [TestMethod]

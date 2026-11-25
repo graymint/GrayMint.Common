@@ -8,7 +8,6 @@ namespace GrayMint.Common.OpenApi;
 public static class GrayMintOpenApiExtension
 {
     private const string ScalarPrefix = "/scalar";
-    private static AddOpenApiOptions? _options;
 
     // ASP.NET Core's own OpenAPI document, at /openapi/v1.json, saying what NSwag's did, so a client generated from it
     // keeps its names and types, with the words of the app's doc comments. An app's own transformers, added to the
@@ -18,7 +17,9 @@ public static class GrayMintOpenApiExtension
         AddOpenApiOptions? options = null)
     {
         options ??= new AddOpenApiOptions();
-        _options = options;
+
+        // the app's own, for its UseGrayMintOpenApi: another app in the process, as in tests, keeps its own
+        services.AddSingleton(options);
 
         services.TryAddEnumerable(ServiceDescriptor.Transient<IApiDescriptionProvider, JsonAliasApiDescriptionProvider>());
         services.AddOpenApi(openApiOptions =>
@@ -45,15 +46,15 @@ public static class GrayMintOpenApiExtension
     {
         options ??= new UseOpenApiOptions();
 
-        if (_options == null)
-            throw new InvalidOperationException(
-                "GrayMintOpenApiExtension is not initialized. Please call AddGrayMintOpenApi in IServiceCollection first.");
+        var addOptions = app.Services.GetService<AddOpenApiOptions>()
+                         ?? throw new InvalidOperationException(
+                             "GrayMintOpenApiExtension is not initialized. Please call AddGrayMintOpenApi in IServiceCollection first.");
 
         app.MapOpenApi();
-        if (!_options.AddScalar)
+        if (!addOptions.AddScalar)
             return;
 
-        var title = _options.Title;
+        var title = addOptions.Title;
         app.MapScalarApiReference(ScalarPrefix, scalarOptions =>
         {
             if (!string.IsNullOrEmpty(title))

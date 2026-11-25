@@ -1,4 +1,6 @@
 using System.Net;
+using GrayMint.Common.Utils;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace GrayMint.Common.AspNetCore;
@@ -36,6 +38,14 @@ public static class GrayMintCommonExtension
 
     public static IApplicationBuilder UseGrayMintCommonServices(this WebApplication app, UseServicesOptions options)
     {
+        // what GmUtils' TryInvoke methods catch goes to the app's log while the app runs
+        var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("GrayMint.Common");
+        GmUtils.Logger = logger;
+        app.Lifetime.ApplicationStopped.Register(() => {
+            if (GmUtils.Logger == logger)
+                GmUtils.Logger = NullLogger.Instance;
+        });
+
         if (options.UseCors)
             app.UseCors(GrayMintApp.CorsPolicyName);
 

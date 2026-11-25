@@ -3,11 +3,16 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using GrayMint.Common.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace GrayMint.Common.Utils;
 
 public static class GmUtils
 {
+    // where the TryInvoke methods log what they catch: nowhere until an app gives one, as UseGrayMintCommonServices does
+    public static ILogger Logger { get; set; } = NullLogger.Instance;
+
     public static async Task ForEachAsync<T>(IReadOnlyList<T> source, Func<T, Task> body, int maxDegreeOfParallelism,
         CancellationToken cancellationToken)
     {
@@ -172,8 +177,11 @@ public static class GmUtils
 
     private static void LogInvokeError(Exception exception, string? actionName)
     {
-        _ = exception;
-        _ = actionName;
-        // no error logging implementation yet
+        try {
+            Logger.LogWarning(exception, "Could not {ActionName}.", actionName ?? "run an action");
+        }
+        catch {
+            // a logger that can't write, as a stopped app's, has nowhere to report to; TryInvoke must not throw
+        }
     }
 }
