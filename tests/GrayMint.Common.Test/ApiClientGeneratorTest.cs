@@ -65,14 +65,12 @@ public class ApiClientGeneratorTest : TestBase
         Assert.Contains("export class ItemsClient", typeScript);
     }
 
-    // Api/Api.cs and Api/Api.ts were the defaults: a client made there keeps them, as one written beside the project
-    // file would define its types twice
+    // a client goes beside its project file, as Clients.*: Api/, the default before, is kept for none made there
     [TestMethod]
-    [DataRow(null, "", "Clients")]
-    [DataRow("Api.cs", "Api", "Api")]
-    [DataRow("Api.ts", "Api", "Api")]
-    public async Task A_client_goes_beside_the_project_file_unless_made_in_Api(string? clientFile, string expectedFolder,
-        string expectedFileName)
+    [DataRow(null)]
+    [DataRow("Api.cs")]
+    [DataRow("Api.ts")]
+    public async Task A_client_goes_beside_the_project_file(string? clientFileInApi)
     {
         var projectDir = Directory.CreateTempSubdirectory("ApiClientDirectory").FullName;
         try {
@@ -83,9 +81,9 @@ public class ApiClientGeneratorTest : TestBase
                   <Import Project="{Path.Combine(build, "GrayMint.Common.OpenApi.ClientGenerator.targets")}" />
                 </Project>
                 """, TestCt);
-            if (clientFile != null) {
+            if (clientFileInApi != null) {
                 Directory.CreateDirectory(Path.Combine(projectDir, "Api"));
-                await File.WriteAllTextAsync(Path.Combine(projectDir, "Api", clientFile), "", TestCt);
+                await File.WriteAllTextAsync(Path.Combine(projectDir, "Api", clientFileInApi), "", TestCt);
             }
 
             using var msbuild = Process.Start(new ProcessStartInfo("dotnet",
@@ -99,9 +97,9 @@ public class ApiClientGeneratorTest : TestBase
 
             Assert.AreEqual(0, msbuild.ExitCode, output);
             var properties = JsonDocument.Parse(output).RootElement.GetProperty("Properties");
-            Assert.AreEqual(Path.GetFullPath(Path.Combine(projectDir, expectedFolder)).TrimEnd('\\', '/'),
+            Assert.AreEqual(Path.GetFullPath(projectDir).TrimEnd('\\', '/'),
                 Path.GetFullPath(properties.GetProperty("ApiClientDirectory").GetString() ?? "").TrimEnd('\\', '/'));
-            Assert.AreEqual(expectedFileName, properties.GetProperty("ApiClientFileName").GetString());
+            Assert.AreEqual("Clients", properties.GetProperty("ApiClientFileName").GetString());
         }
         finally {
             Directory.Delete(projectDir, recursive: true);
