@@ -59,7 +59,9 @@
       "namespace": "$(namespace)",
       "requiredPropertiesMustBeDefined": true,
       "dateType": "System.DateTime",
-      "jsonConverters": null,
+      "jsonConverters": [
+        "System.Text.Json.Serialization.JsonStringEnumConverter"
+      ],
       "anyType": "object",
       "dateTimeType": "System.DateTime",
       "timeType": "System.TimeSpan",

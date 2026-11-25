@@ -6,7 +6,8 @@
     The API project writes its OpenAPI document (Microsoft's build-time generator,
     Microsoft.Extensions.ApiDescription.Server), and NSwag makes the C# client, the TypeScript client or both from it
     with this package's settings (CSharpClient.nswag, TypeScriptClient.nswag beside this file), so every client comes
-    out the same way.
+    out the same way. The C# clients read an enum sent by name wherever it is: NSwag gives a single enum property its
+    converter but not a list of enums, so their JSON options carry one for all.
 
     The client project sets:
       ApiServerProject                    the API project, a path (required)

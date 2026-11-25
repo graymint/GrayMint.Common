@@ -237,7 +237,8 @@ build. The document and the clients, `Clients.cs` and `Clients.ts`, are written 
 keep in git so a commit shows how the API changed, and again only when the API's build, the client project or the
 package changed. A client made in `Api/` as `Api.cs` or `Api.ts`, the defaults before, keeps that folder and name
 until its files are moved. The C#
-clients derive from `GrayMint.Common.ApiClients.ApiClientCommon` and throw its `ApiException`; an `ApiException.ts`
+clients derive from `GrayMint.Common.ApiClients.ApiClientCommon`, throw its `ApiException` and read an enum sent by
+name wherever it is, in a list too; an `ApiException.ts`
 beside them is the TypeScript client's own exception class. A client's package carries its doc comments, the API's
 words, which an IDE shows for each call and type. Where a client needs another value:
 `ApiClientDirectory`, `ApiClientFileName` (`Clients`), `ApiClientBaseClass`, `ApiClientExceptionClass`,

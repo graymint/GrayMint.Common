@@ -64,4 +64,14 @@ public class ItemsController : ControllerBase
     {
         return 0;
     }
+
+    /// <summary>
+    /// List the sizes
+    /// </summary>
+    /// <returns>The sizes an item comes in, by name.</returns>
+    [HttpGet("sizes")]
+    public IReadOnlyList<ItemSize> ListSizes()
+    {
+        return [ItemSize.Small, ItemSize.Large];
+    }
 }

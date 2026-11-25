@@ -33,6 +33,16 @@ public class ApiClientGeneratorTest : TestBase
     }
 
     [TestMethod]
+    public async Task Client_reads_a_list_of_enums_sent_by_name()
+    {
+        // NSwag gives a single enum property its by-name converter but not a list of them; the clients' options carry one
+        var itemsClient = new ItemsClient(Factory.CreateClient());
+
+        var sizes = await itemsClient.ListSizesAsync();
+        CollectionAssert.AreEqual(new[] { ItemSize.Small, ItemSize.Large }, sizes.ToArray());
+    }
+
+    [TestMethod]
     public async Task Client_takes_the_base_class_defaults()
     {
         // the base class's defaults reach the request only through its async hooks, which the settings ask for

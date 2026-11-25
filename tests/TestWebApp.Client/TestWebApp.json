@@ -144,6 +144,35 @@
         }
       }
     },
+    "/api/items/sizes": {
+      "get": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "List the sizes",
+        "operationId": "Items_ListSizes",
+        "responses": {
+          "200": {
+            "description": "The sizes an item comes in, by name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ItemSize"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/shop": {
       "get": {
         "tags": [
