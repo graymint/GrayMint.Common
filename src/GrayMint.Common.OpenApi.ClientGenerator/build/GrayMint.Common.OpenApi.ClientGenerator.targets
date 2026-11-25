@@ -14,9 +14,8 @@
       ApiClientTypeScript                 generate the TypeScript client: true or false (default)
     and only where it needs another value:
       ApiClientNamespace                  the C# client's namespace (default: the project's RootNamespace)
-      ApiClientDirectory                  where the document and the clients go (default: the project's folder;
-                                          Api/ for a client made there, when that was the default)
-      ApiClientFileName                   the clients' file name, without extension (default: Api)
+      ApiClientDirectory                  where the document and the clients go (default: the project's folder)
+      ApiClientFileName                   the clients' file name, without extension (default: Clients)
       ApiClientBaseClass                  the C# clients' base class (default: GrayMint.Common.ApiClients.ApiClientCommon)
       ApiClientExceptionClass             the C# clients' exception (default: GrayMint.Common.ApiClients.ApiException)
       ApiClientTypeScriptTemplate         Angular (default), Axios, Fetch, ...
@@ -25,19 +24,25 @@
 
     The files stay in the project and in git, so a commit shows how the API changed. They are written again when the
     API's build changed, or the project file or this package did. An ApiException.ts beside them is the TypeScript
-    client's own exception class.
+    client's own exception class. A client made in Api/ as Api.cs or Api.ts, the defaults before, keeps that folder and
+    name until its files are moved.
   -->
 
   <PropertyGroup>
     <ApiClientCSharp Condition="'$(ApiClientCSharp)' == ''">true</ApiClientCSharp>
     <ApiClientTypeScript Condition="'$(ApiClientTypeScript)' == ''">false</ApiClientTypeScript>
     <ApiClientNamespace Condition="'$(ApiClientNamespace)' == ''">$(RootNamespace)</ApiClientNamespace>
-    <ApiClientFileName Condition="'$(ApiClientFileName)' == ''">Api</ApiClientFileName>
-    <!-- A client project holds its client and little else, so the files go beside the project file, in its namespace's
-         folder. Api/ was the default before: a client made there stays until its files are moved, as one written
-         beside them would define every type twice. -->
-    <ApiClientDirectory Condition="'$(ApiClientDirectory)' == '' And (Exists('$(MSBuildProjectDirectory)/Api/$(ApiClientFileName).cs') Or Exists('$(MSBuildProjectDirectory)/Api/$(ApiClientFileName).ts'))">$(MSBuildProjectDirectory)/Api</ApiClientDirectory>
+    <!-- A client project holds an API's clients and little else, so its files go beside the project file, in its
+         namespace's folder, as Clients.cs and Clients.ts. They went to Api/ as Api.cs and Api.ts before: a client made
+         there keeps that folder and name until its files are moved, as one written beside them would define every
+         type twice. -->
+    <_ApiClientFileNameInApi>$(ApiClientFileName)</_ApiClientFileNameInApi>
+    <_ApiClientFileNameInApi Condition="'$(_ApiClientFileNameInApi)' == ''">Api</_ApiClientFileNameInApi>
+    <_ApiClientMadeInApi Condition="'$(ApiClientDirectory)' == '' And (Exists('$(MSBuildProjectDirectory)/Api/$(_ApiClientFileNameInApi).cs') Or Exists('$(MSBuildProjectDirectory)/Api/$(_ApiClientFileNameInApi).ts'))">true</_ApiClientMadeInApi>
+    <ApiClientDirectory Condition="'$(_ApiClientMadeInApi)' == 'true'">$(MSBuildProjectDirectory)/Api</ApiClientDirectory>
+    <ApiClientFileName Condition="'$(_ApiClientMadeInApi)' == 'true'">$(_ApiClientFileNameInApi)</ApiClientFileName>
     <ApiClientDirectory Condition="'$(ApiClientDirectory)' == ''">$(MSBuildProjectDirectory)</ApiClientDirectory>
+    <ApiClientFileName Condition="'$(ApiClientFileName)' == ''">Clients</ApiClientFileName>
     <ApiClientBaseClass Condition="'$(ApiClientBaseClass)' == ''">GrayMint.Common.ApiClients.ApiClientCommon</ApiClientBaseClass>
     <ApiClientExceptionClass Condition="'$(ApiClientExceptionClass)' == ''">GrayMint.Common.ApiClients.ApiException</ApiClientExceptionClass>
     <ApiClientTypeScriptTemplate Condition="'$(ApiClientTypeScriptTemplate)' == ''">Angular</ApiClientTypeScriptTemplate>

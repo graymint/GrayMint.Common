@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net.Http.Headers;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using TestWebApp.Client;
 
@@ -49,17 +50,19 @@ public class ApiClientGeneratorTest : TestBase
     {
         var projectDir = Path.Combine(FindRepoRoot(), "tests", "TestWebApp.Client");
         Assert.IsTrue(File.Exists(Path.Combine(projectDir, "TestWebApp.json")));
-        Assert.IsTrue(File.Exists(Path.Combine(projectDir, "Api.cs")));
-        var typeScript = await File.ReadAllTextAsync(Path.Combine(projectDir, "Api.ts"));
+        Assert.IsTrue(File.Exists(Path.Combine(projectDir, "Clients.cs")));
+        var typeScript = await File.ReadAllTextAsync(Path.Combine(projectDir, "Clients.ts"));
         Assert.Contains("export class ItemsClient", typeScript);
     }
 
-    // Api/ was the default: a client made there stays, as one written beside the project file would define its types twice
+    // Api/Api.cs and Api/Api.ts were the defaults: a client made there keeps them, as one written beside the project
+    // file would define its types twice
     [TestMethod]
-    [DataRow(null, "")]
-    [DataRow("Api.cs", "Api")]
-    [DataRow("Api.ts", "Api")]
-    public async Task A_client_goes_beside_the_project_file_unless_made_in_Api(string? clientFile, string expectedFolder)
+    [DataRow(null, "", "Clients")]
+    [DataRow("Api.cs", "Api", "Api")]
+    [DataRow("Api.ts", "Api", "Api")]
+    public async Task A_client_goes_beside_the_project_file_unless_made_in_Api(string? clientFile, string expectedFolder,
+        string expectedFileName)
     {
         var projectDir = Directory.CreateTempSubdirectory("ApiClientDirectory").FullName;
         try {
@@ -76,7 +79,8 @@ public class ApiClientGeneratorTest : TestBase
             }
 
             using var msbuild = Process.Start(new ProcessStartInfo("dotnet",
-                ["msbuild", "-nologo", Path.Combine(projectDir, "Client.csproj"), "-getProperty:ApiClientDirectory"]) {
+                ["msbuild", "-nologo", Path.Combine(projectDir, "Client.csproj"), "-getProperty:ApiClientDirectory",
+                    "-getProperty:ApiClientFileName"]) {
                 RedirectStandardOutput = true,
                 Environment = { ["DOTNET_NOLOGO"] = "1" }
             }) ?? throw new AssertFailedException("dotnet did not start.");
@@ -84,8 +88,10 @@ public class ApiClientGeneratorTest : TestBase
             await msbuild.WaitForExitAsync(TestCt);
 
             Assert.AreEqual(0, msbuild.ExitCode, output);
+            var properties = JsonDocument.Parse(output).RootElement.GetProperty("Properties");
             Assert.AreEqual(Path.GetFullPath(Path.Combine(projectDir, expectedFolder)).TrimEnd('\\', '/'),
-                Path.GetFullPath(output.Trim()).TrimEnd('\\', '/'));
+                Path.GetFullPath(properties.GetProperty("ApiClientDirectory").GetString() ?? "").TrimEnd('\\', '/'));
+            Assert.AreEqual(expectedFileName, properties.GetProperty("ApiClientFileName").GetString());
         }
         finally {
             Directory.Delete(projectDir, recursive: true);
