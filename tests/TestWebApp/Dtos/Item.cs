@@ -5,7 +5,7 @@ namespace TestWebApp.Dtos;
 /// </summary>
 public class Item
 {
-    /// <summary>The item's id.</summary>
+    /// <summary>The item's id; `*/*` names any item.</summary>
     public required string ItemId { get; init; }
 
     /// <summary>The item's name.</summary>

@@ -21,12 +21,7 @@ public class ClientSchemaTransformer : IOpenApiSchemaTransformer
     public Task TransformAsync(OpenApiSchema schema, OpenApiSchemaTransformerContext context,
         CancellationToken cancellationToken)
     {
-        if (schema.Type is { } type && (type & (JsonSchemaType.Integer | JsonSchemaType.Number)) != 0 &&
-            (type & JsonSchemaType.String) != 0)
-        {
-            schema.Type = type & ~JsonSchemaType.String;
-            schema.Pattern = null;
-        }
+        RemoveNumberString(schema);
 
         // an enum of names is a string, which the document leaves unsaid; its values are typed never null, but the
         // framework puts a null among them
@@ -83,6 +78,16 @@ public class ClientSchemaTransformer : IOpenApiSchemaTransformer
         }
 
         return Task.CompletedTask;
+    }
+
+    internal static void RemoveNumberString(OpenApiSchema schema)
+    {
+        if (schema.Type is not { } type || (type & (JsonSchemaType.Integer | JsonSchemaType.Number)) == 0 ||
+            (type & JsonSchemaType.String) == 0)
+            return;
+
+        schema.Type = type & ~JsonSchemaType.String;
+        schema.Pattern = null;
     }
 
     internal static bool IsNullable(Type type, MemberInfo? member, NullabilityInfoContext nullabilityContext)

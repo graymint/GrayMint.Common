@@ -57,6 +57,57 @@ public class ClientDocumentTest : TestBase
     }
 
     [TestMethod]
+    public void Any_json_is_any_value_not_a_class()
+    {
+        Assert.IsNull(Document["components"]?["schemas"]?["JsonElement"]);
+        var data = Required(Schema("Order")["properties"], "data");
+        Assert.IsNull(data["$ref"]);
+        Assert.IsNull(data["type"]);
+        Assert.IsTrue((bool?)data["nullable"]);
+    }
+
+    [TestMethod]
+    public void Struct_met_first_as_a_nullable_value_has_its_fields_rules()
+    {
+        // the framework runs no schema transformer on such a schema: its fields would be optional, and numbers or strings
+        var totals = Schema("OrderTotals");
+        var required = Required(totals, "required").AsArray().Select(x => (string?)x).ToArray();
+        Assert.Contains("items", required);
+        Assert.Contains("paid", required);
+        Assert.AreEqual("integer", (string?)totals["properties"]?["items"]?["type"]);
+        Assert.IsNull(totals["properties"]?["items"]?["pattern"]);
+    }
+
+    [TestMethod]
+    public void Field_read_never_null_is_not_nullable_though_its_setter_takes_null()
+    {
+        var order = Schema("Order");
+        Assert.AreEqual("object", (string?)order["properties"]?["tags"]?["type"]);
+        Assert.Contains("tags", Required(order, "required").AsArray().Select(x => (string?)x));
+    }
+
+    [TestMethod]
+    public void Enum_written_as_numbers_has_numbers_and_their_names()
+    {
+        var priority = Schema("OrderPriority");
+        Assert.AreEqual("integer", (string?)priority["type"]);
+        Assert.AreSequenceEqual(["0", "5"], Required(priority, "enum").AsArray().Select(x => x?.ToJsonString()));
+        Assert.AreSequenceEqual(["Low", "High"], Required(priority, "x-enumNames").AsArray().Select(x => (string?)x));
+    }
+
+    [TestMethod]
+    public void Enum_written_as_names_takes_a_members_enum_member_value()
+    {
+        var channel = Schema("OrderChannel");
+        Assert.AreEqual("string", (string?)channel["type"]);
+        Assert.AreSequenceEqual(["web-shop", "Phone"], Required(channel, "enum").AsArray().Select(x => (string?)x));
+        Assert.AreSequenceEqual(["Web", "Phone"], Required(channel, "x-enumNames").AsArray().Select(x => (string?)x));
+
+        // names alone where every value is its member's name
+        Assert.IsNull(Schema("OrderState")["x-enumNames"]);
+    }
+
+    [TestMethod]
     public void Schema_the_framework_empties_is_built_again()
     {
         // the framework leaves Order's lines as {}, with no schema for OrderLine

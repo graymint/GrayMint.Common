@@ -5,7 +5,7 @@ namespace GrayMint.Common.OpenApi.Transformers;
 // One name per type in a document, as NSwag names them: ClientSchemaNames' name, and a second type of the same name
 // numbered after it (User, then User2). The framework's own name is the type's alone, so two types of one name would
 // share a schema, and one of them would be described as the other. A file is no schema of its own: a client takes it
-// as a file.
+// as a file, and any JSON (a JsonElement) no schema either: a client takes it as any value, not as a class of that name.
 internal sealed class ClientSchemaRegistry
 {
     private readonly Lock _lock = new();
@@ -14,7 +14,7 @@ internal sealed class ClientSchemaRegistry
 
     public string? CreateSchemaReferenceId(JsonTypeInfo typeInfo)
     {
-        if (typeof(IFormFile).IsAssignableFrom(typeInfo.Type))
+        if (typeof(IFormFile).IsAssignableFrom(typeInfo.Type) || ClientSchemaBuilder.IsAnyValue(typeInfo.Type))
             return null;
 
         // a nullable value has its value's schema

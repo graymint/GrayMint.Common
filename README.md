@@ -173,7 +173,7 @@ To have the certificates kept, renewed and served for you, in tables of their ow
 
 `AddGrayMintOpenApi` / `UseGrayMintOpenApi` set up ASP.NET Core's own OpenAPI document at `/openapi/v1.json` with the Scalar UI, register a bearer-token security scheme, fix primitive-type schemas, and optionally redirect `/` to the docs UI. The Scalar page loads nothing from Scalar's servers: the service itself serves Scalar's fonts, Inter and JetBrains Mono (SIL Open Font License), at `/scalar/fonts/`, and Scalar's telemetry is off.
 
-The document says what NSwag's own document said, so a client generated from it keeps NSwag's names and types: a `{Controller}Client` class per controller with an `{Action}Async` method per action and its parameters in NSwag's order, a body parameter by its C# name, a generic type by NSwag's name (`PatchOfNullableInteger`) and a second type of one name numbered (`User2`), a class with its base class, a `decimal` as a decimal, a form's file as an optional file, a file for any `IActionResult`, an object, a collection or a string an action answers as never null even where the action declares it nullable (`Task<Order?>`), a nullable collection's items as nullable, and a property required when it is never null or declared `required`. Where ASP.NET Core's generator leaves a schema empty (a type it first meets in a collection, with a property back to a type above it), adds null to an enum's or, since .NET 11, to a nullable answer's, the document has the schema NSwag's had. Only the schemas' order differs: Microsoft.OpenApi writes them by name, so a client's classes come in that order.
+The document says what NSwag's own document said, so a client generated from it keeps NSwag's names and types: a `{Controller}Client` class per controller with an `{Action}Async` method per action and its parameters in NSwag's order, a body parameter by its C# name, a generic type by NSwag's name (`PatchOfNullableInteger`) and a second type of one name numbered (`User2`), a class with its base class, a `decimal` as a decimal, a form's file as an optional file, a file for any `IActionResult`, an object, a collection or a string an action answers as never null even where the action declares it nullable (`Task<Order?>`), a nullable collection's items as nullable, a property required when it is never null or declared `required` (a struct's too) and nullable only when it is read as null (not for an `[AllowNull]` setter), any JSON (`JsonElement`) as any value, and an enum as the serializer writes it: numbers with their names (`x-enumNames`), or names, an `[EnumMember]` value first. Where ASP.NET Core's generator leaves a schema empty (a type it first meets in a collection, with a property back to a type above it), adds null to an enum's or, since .NET 11, to a nullable answer's, the document has the schema NSwag's had. Only the schemas' order differs: Microsoft.OpenApi writes them by name, so a client's classes come in that order.
 
 #### Its words come from the doc comments
 
@@ -239,8 +239,10 @@ package changed. A client made in `Api/` as `Api.cs` or `Api.ts`, the defaults b
 until its files are moved. The C#
 clients derive from `GrayMint.Common.ApiClients.ApiClientCommon`, throw its `ApiException` and read an enum sent by
 name wherever it is, in a list too; an `ApiException.ts`
-beside them is the TypeScript client's own exception class. A client's package carries its doc comments, the API's
-words, which an IDE shows for each call and type. Where a client needs another value:
+beside them is the TypeScript client's own exception class, and a `*/` in the API's words, which would end a TypeScript
+comment early, is written `*\/` there. A client's package carries its doc comments, the API's words, which an IDE
+shows for each call and type. A build of the client project alone, as on a fresh clone, restores the API project
+first. Where a client needs another value:
 `ApiClientDirectory`, `ApiClientFileName` (`Clients`), `ApiClientBaseClass`, `ApiClientExceptionClass`,
 `ApiClientTypeScriptTemplate` (`Angular`, `Axios`, `Fetch`, ...), `ApiClientTypeScriptWithCredentials` (`true`) and
 `ApiClientEnvironment` (`Development`, the environment the API starts in to write its document).

@@ -109,6 +109,16 @@ public class ApiClientGeneratorTest : TestBase
     }
 
     [TestMethod]
+    public async Task TypeScript_comments_end_where_they_should()
+    {
+        // a */ in the API's words, as Item.ItemId's `*/*`, would end its /** */ comment early
+        var apiFile = Path.Combine(FindRepoRoot(), "tests", "TestWebApp.Client", "Clients.ts");
+        var typeScript = await File.ReadAllTextAsync(apiFile);
+        Assert.Contains(@"`*\/*` names any item", typeScript);
+        Assert.DoesNotContain("`*/*`", typeScript);
+    }
+
+    [TestMethod]
     public async Task Client_carries_the_api_words_as_doc_comments()
     {
         // the client's doc file, copied beside this test's assembly, has the API's words for an IDE to show

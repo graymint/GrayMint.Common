@@ -562,7 +562,7 @@
         "properties": {
           "itemId": {
             "type": "string",
-            "description": "The item's id."
+            "description": "The item's id; `*/*` names any item."
           },
           "name": {
             "type": "string",
@@ -683,7 +683,10 @@
           "clientIp",
           "state",
           "price",
-          "extras"
+          "extras",
+          "tags",
+          "priority",
+          "channel"
         ],
         "type": "object",
         "properties": {
@@ -735,6 +738,31 @@
             "items": {
               "$ref": "#/components/schemas/OrderLine"
             }
+          },
+          "totals": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OrderTotals"
+              }
+            ]
+          },
+          "data": {
+            "nullable": true
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "priority": {
+            "$ref": "#/components/schemas/OrderPriority"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/OrderChannel"
           }
         },
         "additionalProperties": false
@@ -750,6 +778,17 @@
           }
         },
         "additionalProperties": false
+      },
+      "OrderChannel": {
+        "enum": [
+          "web-shop",
+          "Phone"
+        ],
+        "type": "string",
+        "x-enumNames": [
+          "Web",
+          "Phone"
+        ]
       },
       "OrderLine": {
         "required": [
@@ -773,6 +812,17 @@
           }
         },
         "additionalProperties": false
+      },
+      "OrderPriority": {
+        "enum": [
+          0,
+          5
+        ],
+        "type": "integer",
+        "x-enumNames": [
+          "Low",
+          "High"
+        ]
       },
       "OrderState": {
         "enum": [
@@ -810,6 +860,24 @@
             "additionalProperties": false
           }
         ]
+      },
+      "OrderTotals": {
+        "required": [
+          "items",
+          "paid"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "paid": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false
       },
       "PatchOfString": {
         "type": "object",

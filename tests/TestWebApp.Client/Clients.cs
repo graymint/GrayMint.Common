@@ -1758,7 +1758,7 @@ namespace TestWebApp.Client
     {
 
         /// <summary>
-        /// The item's id.
+        /// The item's id; `*/*` names any item.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("itemId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -1917,6 +1917,24 @@ namespace TestWebApp.Client
         [System.Text.Json.Serialization.JsonPropertyName("lines")]
         public System.Collections.Generic.IList<OrderLine>? Lines { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("totals")]
+        public OrderTotals? Totals { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("data")]
+        public object? Data { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("tags")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.IDictionary<string, string> Tags { get; set; } = new System.Collections.Generic.Dictionary<string, string>();
+
+        [System.Text.Json.Serialization.JsonPropertyName("priority")]
+        public OrderPriority Priority { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("channel")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<OrderChannel>))]
+        public OrderChannel Channel { get; set; } = default!;
+
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.8.0.0 (NJsonSchema v11.6.2.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -1930,6 +1948,18 @@ namespace TestWebApp.Client
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.8.0.0 (NJsonSchema v11.6.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum OrderChannel
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"web-shop")]
+        Web = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Phone")]
+        Phone = 1,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.8.0.0 (NJsonSchema v11.6.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class OrderLine
     {
 
@@ -1938,6 +1968,16 @@ namespace TestWebApp.Client
 
         [System.Text.Json.Serialization.JsonPropertyName("order")]
         public Order? Order { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.8.0.0 (NJsonSchema v11.6.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum OrderPriority
+    {
+
+        Low = 0,
+
+        High = 5,
 
     }
 
@@ -1962,6 +2002,18 @@ namespace TestWebApp.Client
 
         [System.Text.Json.Serialization.JsonPropertyName("giftLabel")]
         public Label2? GiftLabel { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.8.0.0 (NJsonSchema v11.6.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class OrderTotals
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("items")]
+        public long Items { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("paid")]
+        public long Paid { get; set; } = default!;
 
     }
 

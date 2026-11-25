@@ -975,7 +975,7 @@ export class WeatherForecastClient {
 
 /** An item of the shop. */
 export class Item implements IItem {
-    /** The item's id. */
+    /** The item's id; `*\/*` names any item. */
     itemId!: string;
     /** The item's name. */
     name!: string;
@@ -1017,7 +1017,7 @@ export class Item implements IItem {
 
 /** An item of the shop. */
 export interface IItem {
-    /** The item's id. */
+    /** The item's id; `*\/*` names any item. */
     itemId: string;
     /** The item's name. */
     name: string;
@@ -1261,6 +1261,11 @@ export class Order implements IOrder {
     label?: Label | null;
     clientIp!: string;
     lines?: OrderLine[] | null;
+    totals?: OrderTotals | null;
+    data?: any | null;
+    tags!: { [key: string]: string; };
+    priority!: OrderPriority;
+    channel!: OrderChannel;
 
     constructor(data?: IOrder) {
         if (data) {
@@ -1271,6 +1276,7 @@ export class Order implements IOrder {
         }
         if (!data) {
             this.extras = {};
+            this.tags = {};
         }
     }
 
@@ -1301,6 +1307,20 @@ export class Order implements IOrder {
             else {
                 this.lines = null as any;
             }
+            this.totals = _data["totals"] ? OrderTotals.fromJS(_data["totals"]) : null as any;
+            this.data = _data["data"] !== undefined ? _data["data"] : null as any;
+            if (_data["tags"]) {
+                this.tags = {} as any;
+                for (let key in _data["tags"]) {
+                    if (_data["tags"].hasOwnProperty(key))
+                        (this.tags as any)![key] = _data["tags"][key] !== undefined ? _data["tags"][key] : null as any;
+                }
+            }
+            else {
+                this.tags = null as any;
+            }
+            this.priority = _data["priority"] !== undefined ? _data["priority"] : null as any;
+            this.channel = _data["channel"] !== undefined ? _data["channel"] : null as any;
         }
     }
 
@@ -1332,6 +1352,17 @@ export class Order implements IOrder {
             for (let item of this.lines)
                 data["lines"].push(item ? item.toJSON() : null as any);
         }
+        data["totals"] = this.totals ? this.totals.toJSON() : null as any;
+        data["data"] = this.data !== undefined ? this.data : null as any;
+        if (this.tags) {
+            data["tags"] = {};
+            for (let key in this.tags) {
+                if (this.tags.hasOwnProperty(key))
+                    (data["tags"] as any)[key] = this.tags[key] !== undefined ? this.tags[key] : null as any;
+            }
+        }
+        data["priority"] = this.priority !== undefined ? this.priority : null as any;
+        data["channel"] = this.channel !== undefined ? this.channel : null as any;
         return data;
     }
 }
@@ -1346,6 +1377,11 @@ export interface IOrder {
     label?: Label | null;
     clientIp: string;
     lines?: OrderLine[] | null;
+    totals?: OrderTotals | null;
+    data?: any | null;
+    tags: { [key: string]: string; };
+    priority: OrderPriority;
+    channel: OrderChannel;
 }
 
 export class OrderBase implements IOrderBase {
@@ -1382,6 +1418,11 @@ export class OrderBase implements IOrderBase {
 
 export interface IOrderBase {
     orderId: string;
+}
+
+export enum OrderChannel {
+    Web = "web-shop",
+    Phone = "Phone",
 }
 
 export class OrderLine implements IOrderLine {
@@ -1424,6 +1465,11 @@ export interface IOrderLine {
     order?: Order | null;
 }
 
+export enum OrderPriority {
+    Low = 0,
+    High = 5,
+}
+
 export enum OrderState {
     Open = "Open",
     Closed = "Closed",
@@ -1464,6 +1510,46 @@ export class OrderSummary extends OrderBase implements IOrderSummary {
 export interface IOrderSummary extends IOrderBase {
     lineCount: number;
     giftLabel?: Label2 | null;
+}
+
+export class OrderTotals implements IOrderTotals {
+    items!: number;
+    paid!: number;
+
+    constructor(data?: IOrderTotals) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.items = _data["items"] !== undefined ? _data["items"] : null as any;
+            this.paid = _data["paid"] !== undefined ? _data["paid"] : null as any;
+        }
+    }
+
+    static fromJS(data: any): OrderTotals {
+        data = typeof data === 'object' ? data : {};
+        let result = new OrderTotals();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["items"] = this.items !== undefined ? this.items : null as any;
+        data["paid"] = this.paid !== undefined ? this.paid : null as any;
+        return data;
+    }
+}
+
+export interface IOrderTotals {
+    items: number;
+    paid: number;
 }
 
 /** A change to one field, as `{ "value": ... }`. Leave the field out to keep its value. */

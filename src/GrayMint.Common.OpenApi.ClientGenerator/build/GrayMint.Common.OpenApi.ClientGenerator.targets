@@ -79,6 +79,16 @@
                       SkipGetTargetFrameworkProperties="true" GlobalPropertiesToRemove="$(_ApiServerPropertiesToRemove)" />
   </ItemGroup>
 
+  <!-- NuGet's restore reads no package's targets, so it never sees the reference above: the client's restore leaves the
+       API unrestored, and a build of the client alone (a fresh clone, as CI's, or after the API's packages changed)
+       would build the API without its packages. The API is restored first; when it is up to date, this only reads. -->
+  <Target Name="_RestoreApiServer" BeforeTargets="ResolveProjectReferences"
+          Condition="'$(ApiServerProject)' != '' AND '$(DesignTimeBuild)' != 'true' AND '$(BuildingProject)' != 'false'">
+    <MSBuild Projects="$(_ApiServerProjectPath)" Targets="Restore"
+             Properties="MSBuildRestoreSessionId=$([System.Guid]::NewGuid());ExcludeRestorePackageImports=true"
+             RemoveProperties="$(_ApiServerPropertiesToRemove)" />
+  </Target>
+
   <!-- Not in a design-time build (the IDE's), which builds no reference. -->
   <Target Name="GenerateApiClient" BeforeTargets="CoreCompile"
           Condition="'$(ApiServerProject)' != '' AND '$(DesignTimeBuild)' != 'true' AND '$(BuildingProject)' != 'false'"
@@ -116,7 +126,28 @@
           Outputs="$(_ApiClientTypeScriptFile)">
     <Error Condition="'$(NSwagExe_Net110)' == ''" Text="NSwag.MSBuild's props are missing: reference GrayMint.Common.OpenApi.ClientGenerator as a package, without ExcludeAssets." />
     <Exec Command="$(NSwagExe_Net110) run &quot;$(MSBuildThisFileDirectory)TypeScriptClient.nswag&quot; &quot;/variables:document=$(_ApiClientNSwagDocument),output=$(_ApiClientNSwagTypeScriptFile),template=$(ApiClientTypeScriptTemplate),withCredentials=$(ApiClientTypeScriptWithCredentials),extensionCode=$(_ApiClientNSwagTypeScriptExtension)&quot;" />
+    <_ApiClientEscapeCommentEnds File="$(_ApiClientTypeScriptFile)" />
     <Touch Files="$(_ApiClientTypeScriptFile)" />
   </Target>
+
+  <!-- NSwag copies the API's words into the TypeScript client's /** */ comments as they are, so a */ in them, as in a
+       media type's */*, ends a comment early and the client does not parse: such a */ is written *\/. -->
+  <UsingTask TaskName="_ApiClientEscapeCommentEnds" TaskFactory="RoslynCodeTaskFactory"
+             AssemblyFile="$(MSBuildToolsPath)/Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <File ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        var bytes = System.IO.File.ReadAllBytes(File);
+        var hasBom = bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
+        var text = System.IO.File.ReadAllText(File);
+        // a */ before the one that ends its line's comment
+        var escaped = System.Text.RegularExpressions.Regex.Replace(text, @"\*/(?=[^\r\n]*\*/)", @"*\/");
+        if (escaped != text)
+            System.IO.File.WriteAllText(File, escaped, new System.Text.UTF8Encoding(hasBom));
+      ]]></Code>
+    </Task>
+  </UsingTask>
 
 </Project>

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -15,7 +16,11 @@ namespace GrayMint.Common.OpenApi.Transformers;
 // - one the framework leaves empty is built again: a type it first meets in a collection, with a property back to a
 //   type above it, comes out as {} with no schema of its own;
 // - a class with a base class has the base's schema and its own fields (allOf), so a client's class keeps the base;
-// - a property that may be null and refers to another schema is nullable, also without nullable annotations.
+// - a property that may be null and refers to another schema is nullable, also without nullable annotations;
+// - a class's fields follow ClientSchemaTransformer's rules, which the framework does not run on a schema it first met
+//   as a nullable value (a struct, as `OrderTotals?`), and a field that is never read as null is not nullable, though
+//   its setter takes null ([AllowNull]);
+// - an enum is what the serializer writes: numbers, with their names for a client's members, or names.
 // A class is a schema of its own the others refer to, a collection an array of its element's, a dictionary an object
 // of its value's, and anything else the framework's own schema.
 internal sealed class ClientSchemaBuilder(
@@ -90,6 +95,104 @@ internal sealed class ClientSchemaBuilder(
             schema.Properties = null;
             schema.AllOf = [baseReference, own];
         }
+    }
+
+    public void ApplyObjectRules()
+    {
+        foreach (var (name, component) in Schemas)
+        {
+            if (component is not OpenApiSchema { Properties: { } properties } schema ||
+                registry.FindType(name) is not { } classType ||
+                _jsonOptions.GetTypeInfo(classType) is not { Kind: JsonTypeInfoKind.Object } typeInfo)
+                continue;
+
+            foreach (var property in typeInfo.Properties)
+            {
+                if (!properties.TryGetValue(property.Name, out var propertySchema))
+                    continue;
+
+                var member = property.AttributeProvider as MemberInfo;
+                if (member?.IsDefined(typeof(ObsoleteAttribute), inherit: true) == true)
+                {
+                    properties.Remove(property.Name);
+                    schema.Required?.Remove(property.Name);
+                    continue;
+                }
+
+                var nullable = IsNullable(property.PropertyType, member);
+                if (!nullable || property.IsRequired || member?.IsDefined(typeof(RequiredAttribute), inherit: true) == true)
+                    (schema.Required ??= new HashSet<string>()).Add(property.Name);
+                else
+                    schema.Required?.Remove(property.Name);
+
+                // any JSON is an empty schema; NSwag's TypeScript reads one as nullable only by OpenAPI 3.0's nullable
+                if (IsAnyValue(property.PropertyType))
+                {
+                    var anyValue = new OpenApiSchema { Description = propertySchema.Description };
+                    if (nullable)
+                        anyValue.Extensions = new Dictionary<string, IOpenApiExtension>
+                        {
+                            ["nullable"] = new JsonNodeExtension(JsonValue.Create(true))
+                        };
+
+                    properties[property.Name] = anyValue;
+                    continue;
+                }
+
+                if (propertySchema is not OpenApiSchema inlineSchema)
+                    continue;
+
+                if (!nullable && inlineSchema.Type is { } propertyType)
+                    inlineSchema.Type = propertyType & ~JsonSchemaType.Null;
+
+                ClientSchemaTransformer.RemoveNumberString(inlineSchema);
+                if (inlineSchema.Items is OpenApiSchema items)
+                    ClientSchemaTransformer.RemoveNumberString(items);
+            }
+        }
+    }
+
+    public void DescribeEnums()
+    {
+        foreach (var (name, component) in Schemas)
+        {
+            if (component is not OpenApiSchema schema || registry.FindType(name) is not { IsEnum: true } enumType)
+                continue;
+
+            var names = Enum.GetNames(enumType);
+            var written = Enum.GetValues(enumType).Cast<object>()
+                .Select(x => JsonSerializer.SerializeToNode(x, enumType, _jsonOptions))
+                .ToArray();
+
+            if (written.All(x => x?.GetValueKind() == JsonValueKind.Number))
+            {
+                schema.Type = JsonSchemaType.Integer;
+                schema.Enum = written.OfType<JsonNode>().ToList();
+                SetEnumNames(schema, names);
+            }
+            else if (written.All(x => x?.GetValueKind() == JsonValueKind.String))
+            {
+                // an [EnumMember] value first, as NSwag took it, though the serializer reads only its own attribute;
+                // a client's members keep the enum's names where the values differ
+                var values = names
+                    .Select((x, index) => enumType.GetField(x)?.GetCustomAttribute<EnumMemberAttribute>()?.Value ??
+                                          written[index]?.GetValue<string>() ?? x)
+                    .ToArray();
+
+                schema.Type = JsonSchemaType.String;
+                schema.Enum = values.Select(JsonNode (x) => JsonValue.Create(x)).ToList();
+                if (!values.SequenceEqual(names))
+                    SetEnumNames(schema, names);
+            }
+        }
+    }
+
+    // the names of an enum's members, as NSwag's x-enumNames, beside values that are not those names
+    private static void SetEnumNames(OpenApiSchema schema, IEnumerable<string> names)
+    {
+        schema.Extensions ??= new Dictionary<string, IOpenApiExtension>();
+        schema.Extensions["x-enumNames"] =
+            new JsonNodeExtension(new JsonArray(names.Select(JsonNode? (x) => JsonValue.Create(x)).ToArray()));
     }
 
     // the base whose schema NSwag gave a class: a class of the app or a package with fields of its own, not one the
@@ -320,7 +423,7 @@ internal sealed class ClientSchemaBuilder(
     }
 
     // a property of any JSON, whose schema is empty on purpose
-    private static bool IsAnyValue(Type type)
+    internal static bool IsAnyValue(Type type)
     {
         return type == typeof(object) || type == typeof(JsonElement) || type == typeof(JsonElement?) ||
                typeof(JsonNode).IsAssignableFrom(type);

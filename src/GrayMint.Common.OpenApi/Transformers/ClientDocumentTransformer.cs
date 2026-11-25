@@ -6,7 +6,8 @@ namespace GrayMint.Common.OpenApi.Transformers;
 
 // What a client generator such as NSwag's needs from the whole document to name and type its code as NSwag's own
 // document did; it runs after every other transformer:
-// - the schemas the framework leaves empty, the nullable references and the base classes (ClientSchemaBuilder);
+// - the schemas the framework leaves empty, the classes' fields, the enums, the nullable references and the base classes
+//   (ClientSchemaBuilder);
 // - an enum's schema without null: the framework adds it when a nullable use comes first, and every use then reads
 //   the enum as nullable;
 // - one action's several methods each with the method after its operation id (Provider_ReturnGET, Provider_ReturnPOST);
@@ -22,6 +23,8 @@ internal sealed class ClientDocumentTransformer(ClientSchemaRegistry registry) :
         {
             var builder = new ClientSchemaBuilder(document, context, registry);
             await builder.RepairEmptySchemas(cancellationToken);
+            builder.ApplyObjectRules();
+            builder.DescribeEnums();
             builder.MarkNullableReferences();
             await builder.AddBaseClasses(cancellationToken);
             RemoveNullFromEnums(document.Components.Schemas);
