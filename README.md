@@ -223,8 +223,8 @@ makes the C# client, the TypeScript client or both from it, with this package's 
 <PropertyGroup>
   <ApiServerProject>../MyApi/MyApi.csproj</ApiServerProject>
   <ApiClientNamespace>MyApi.Client</ApiClientNamespace>
-  <ApiClientCSharp>true</ApiClientCSharp>         <!-- Api/Api.cs, the default -->
-  <ApiClientTypeScript>true</ApiClientTypeScript> <!-- Api/Api.ts -->
+  <ApiClientCSharp>true</ApiClientCSharp>         <!-- Api.cs, the default -->
+  <ApiClientTypeScript>true</ApiClientTypeScript> <!-- Api.ts -->
 </PropertyGroup>
 <ItemGroup>
   <PackageReference Include="GrayMint.Common" Version="..." />
@@ -233,8 +233,9 @@ makes the C# client, the TypeScript client or both from it, with this package's 
 ```
 
 The API project takes `Microsoft.Extensions.ApiDescription.Server` (above); it need not write the document on its own
-build. The document and the clients are written in the client project's `Api/` folder, to keep in git so a commit
-shows how the API changed, and again only when the API's build, the client project or the package changed. The C#
+build. The document and the clients are written beside the client project's file, to keep in git so a commit shows
+how the API changed, and again only when the API's build, the client project or the package changed. A client made
+when the default was the project's `Api/` folder stays there until its files are moved beside the project file. The C#
 clients derive from `GrayMint.Common.ApiClients.ApiClientCommon` and throw its `ApiException`; an `ApiException.ts`
 beside them is the TypeScript client's own exception class. A client's package carries its doc comments, the API's
 words, which an IDE shows for each call and type. Where a client needs another value:

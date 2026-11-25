@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using TestWebApp.Client;
@@ -44,13 +45,51 @@ public class ApiClientGeneratorTest : TestBase
     }
 
     [TestMethod]
-    public async Task Clients_are_written_beside_the_document()
+    public async Task Clients_are_written_beside_the_project_file()
     {
-        var apiDir = Path.Combine(FindRepoRoot(), "tests", "TestWebApp.Client", "Api");
-        Assert.IsTrue(File.Exists(Path.Combine(apiDir, "TestWebApp.json")));
-        Assert.IsTrue(File.Exists(Path.Combine(apiDir, "Api.cs")));
-        var typeScript = await File.ReadAllTextAsync(Path.Combine(apiDir, "Api.ts"));
+        var projectDir = Path.Combine(FindRepoRoot(), "tests", "TestWebApp.Client");
+        Assert.IsTrue(File.Exists(Path.Combine(projectDir, "TestWebApp.json")));
+        Assert.IsTrue(File.Exists(Path.Combine(projectDir, "Api.cs")));
+        var typeScript = await File.ReadAllTextAsync(Path.Combine(projectDir, "Api.ts"));
         Assert.Contains("export class ItemsClient", typeScript);
+    }
+
+    // Api/ was the default: a client made there stays, as one written beside the project file would define its types twice
+    [TestMethod]
+    [DataRow(null, "")]
+    [DataRow("Api.cs", "Api")]
+    [DataRow("Api.ts", "Api")]
+    public async Task A_client_goes_beside_the_project_file_unless_made_in_Api(string? clientFile, string expectedFolder)
+    {
+        var projectDir = Directory.CreateTempSubdirectory("ApiClientDirectory").FullName;
+        try {
+            var build = Path.Combine(FindRepoRoot(), "src", "GrayMint.Common.OpenApi.ClientGenerator", "build");
+            await File.WriteAllTextAsync(Path.Combine(projectDir, "Client.csproj"), $"""
+                <Project>
+                  <PropertyGroup><ApiServerProject>../Server/Server.csproj</ApiServerProject></PropertyGroup>
+                  <Import Project="{Path.Combine(build, "GrayMint.Common.OpenApi.ClientGenerator.targets")}" />
+                </Project>
+                """, TestCt);
+            if (clientFile != null) {
+                Directory.CreateDirectory(Path.Combine(projectDir, "Api"));
+                await File.WriteAllTextAsync(Path.Combine(projectDir, "Api", clientFile), "", TestCt);
+            }
+
+            using var msbuild = Process.Start(new ProcessStartInfo("dotnet",
+                ["msbuild", "-nologo", Path.Combine(projectDir, "Client.csproj"), "-getProperty:ApiClientDirectory"]) {
+                RedirectStandardOutput = true,
+                Environment = { ["DOTNET_NOLOGO"] = "1" }
+            }) ?? throw new AssertFailedException("dotnet did not start.");
+            var output = await msbuild.StandardOutput.ReadToEndAsync(TestCt);
+            await msbuild.WaitForExitAsync(TestCt);
+
+            Assert.AreEqual(0, msbuild.ExitCode, output);
+            Assert.AreEqual(Path.GetFullPath(Path.Combine(projectDir, expectedFolder)).TrimEnd('\\', '/'),
+                Path.GetFullPath(output.Trim()).TrimEnd('\\', '/'));
+        }
+        finally {
+            Directory.Delete(projectDir, recursive: true);
+        }
     }
 
     [TestMethod]

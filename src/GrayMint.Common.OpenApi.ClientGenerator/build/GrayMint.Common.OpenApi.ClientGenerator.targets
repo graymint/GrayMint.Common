@@ -14,7 +14,8 @@
       ApiClientTypeScript                 generate the TypeScript client: true or false (default)
     and only where it needs another value:
       ApiClientNamespace                  the C# client's namespace (default: the project's RootNamespace)
-      ApiClientDirectory                  where the document and the clients go (default: Api/ in the project)
+      ApiClientDirectory                  where the document and the clients go (default: the project's folder;
+                                          Api/ for a client made there, when that was the default)
       ApiClientFileName                   the clients' file name, without extension (default: Api)
       ApiClientBaseClass                  the C# clients' base class (default: GrayMint.Common.ApiClients.ApiClientCommon)
       ApiClientExceptionClass             the C# clients' exception (default: GrayMint.Common.ApiClients.ApiException)
@@ -31,8 +32,12 @@
     <ApiClientCSharp Condition="'$(ApiClientCSharp)' == ''">true</ApiClientCSharp>
     <ApiClientTypeScript Condition="'$(ApiClientTypeScript)' == ''">false</ApiClientTypeScript>
     <ApiClientNamespace Condition="'$(ApiClientNamespace)' == ''">$(RootNamespace)</ApiClientNamespace>
-    <ApiClientDirectory Condition="'$(ApiClientDirectory)' == ''">$(MSBuildProjectDirectory)/Api</ApiClientDirectory>
     <ApiClientFileName Condition="'$(ApiClientFileName)' == ''">Api</ApiClientFileName>
+    <!-- A client project holds its client and little else, so the files go beside the project file, in its namespace's
+         folder. Api/ was the default before: a client made there stays until its files are moved, as one written
+         beside them would define every type twice. -->
+    <ApiClientDirectory Condition="'$(ApiClientDirectory)' == '' And (Exists('$(MSBuildProjectDirectory)/Api/$(ApiClientFileName).cs') Or Exists('$(MSBuildProjectDirectory)/Api/$(ApiClientFileName).ts'))">$(MSBuildProjectDirectory)/Api</ApiClientDirectory>
+    <ApiClientDirectory Condition="'$(ApiClientDirectory)' == ''">$(MSBuildProjectDirectory)</ApiClientDirectory>
     <ApiClientBaseClass Condition="'$(ApiClientBaseClass)' == ''">GrayMint.Common.ApiClients.ApiClientCommon</ApiClientBaseClass>
     <ApiClientExceptionClass Condition="'$(ApiClientExceptionClass)' == ''">GrayMint.Common.ApiClients.ApiException</ApiClientExceptionClass>
     <ApiClientTypeScriptTemplate Condition="'$(ApiClientTypeScriptTemplate)' == ''">Angular</ApiClientTypeScriptTemplate>
